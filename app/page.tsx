@@ -94,14 +94,8 @@ export default function Home() {
             Order Shabbat Box - $115
           </a>
         </div>
-        <div className="flex-1 bg-zinc-900 rounded-2xl p-10 border border-zinc-800 text-center">
-          <img src="/shabbat%20fred.png" alt="Shabbat Fred" className="w-40 mx-auto mb-4" />
-          <p className="text-2xl font-black mb-2">Shabbat Box</p>
-          <p className="text-zinc-400 text-sm leading-relaxed">
-            Protein + Starch + Veggie + Salad + 2 Challahs<br />
-            Rotating weekly menu
-          </p>
-          <p className="text-yellow-400 font-black text-3xl mt-4">$115</p>
+        <div className="flex-1 flex justify-center">
+          <img src="/shabbat%20fred.png" alt="Shabbat Fred" className="w-72" />
         </div>
       </section>
 
