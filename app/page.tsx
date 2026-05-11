@@ -13,7 +13,7 @@ export default function Home() {
           <a href="#shabbat" className="hover:text-white transition-colors">Shabbat</a>
           <a href="#concepts" className="hover:text-white transition-colors">Our Concepts</a>
         </div>
-        <a href="#order" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors">
+        <a href="/menu" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors">
           Order Now
         </a>
       </nav>
@@ -35,7 +35,7 @@ export default function Home() {
             Delivered to your coop.
           </p>
           <div className="flex flex-wrap gap-4">
-            <a href="#order" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-8 py-4 rounded-full text-lg transition-colors">
+            <a href="/menu" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-8 py-4 rounded-full text-lg transition-colors">
               Order Pickup
             </a>
             <a href="#catering" className="border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-black px-8 py-4 rounded-full text-lg transition-colors">
