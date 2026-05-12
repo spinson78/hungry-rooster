@@ -90,6 +90,22 @@ export default function DinnerPage() {
       .update({ quantity_remaining: dinner.quantity_remaining - 1 })
       .eq("id", dinner.id);
 
+    // Send notification email
+    await fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_type: "dinner",
+        customer_name: form.name,
+        customer_phone: form.phone,
+        customer_email: form.email,
+        customer_address: form.address,
+        special_requests: form.special_requests,
+        items: [{ name: "Dinner Drop", protein: dinner.protein, side1: dinner.side1, side2: dinner.side2, extra: dinner.extra }],
+        total: 85,
+      }),
+    });
+
     setSubmitted(true);
     setSubmitting(false);
   };

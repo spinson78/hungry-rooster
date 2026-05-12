@@ -133,6 +133,22 @@ export default function ShabbatPage() {
         .eq("id", menu.id);
     }
 
+    // Send notification email
+    await fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order_type: "shabbat",
+        customer_name: form.name,
+        customer_phone: form.phone,
+        customer_email: form.email,
+        customer_address: form.address,
+        special_requests: form.special_requests,
+        items,
+        total: getTotal(),
+      }),
+    });
+
     setSubmitted(true);
     setSubmitting(false);
   };
