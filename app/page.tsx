@@ -1,4 +1,5 @@
 import DinnerDropSection from "./components/DinnerDropSection";
+import ShabbatSection from "./components/ShabbatSection";
 
 export default function Home() {
   return (
@@ -55,8 +56,8 @@ export default function Home() {
       {/* FEATURED DISHES */}
       <section id="menu" className="px-6 py-20 max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-black">Here is what we are serving up</h2>
-          <a href="#menu" className="text-teal-400 font-bold text-sm hover:text-teal-300 transition-colors">View full menu</a>
+          <h2 className="text-3xl font-black">{"Here's what we're serving up"}</h2>
+          <a href="/menu" className="text-teal-400 font-bold text-sm hover:text-teal-300 transition-colors">View full menu</a>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
@@ -80,29 +81,12 @@ export default function Home() {
 
       <div className="border-t border-zinc-800" />
 
-      {/* SHABBAT */}
-      <section id="shabbat" className="px-6 py-20 max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
-        <div className="flex-1">
-          <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-4">Every Friday</p>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
-            Thank Fred<br />It is Friday.
-          </h2>
-          <p className="text-zinc-400 text-lg mb-4 leading-relaxed">
-            Let Fred do the cooking this Shabbat. Protein, starch, veggie,
-            fresh salad, and 2 challahs - delivered straight to your door.
-          </p>
-          <p className="text-zinc-500 text-sm mb-8">Kosher. Scratch-made. No stress. Cutoff every Friday at 9am CST.</p>
-          <a href="/shabbat" className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg transition-colors inline-block">
-            Order Shabbat Box - $115
-          </a>
-        </div>
-        <div className="flex-1 flex justify-center">
-          <img src="/shabbat%20fred.png" alt="Shabbat Fred" className="w-72" />
-        </div>
-      </section>
+      {/* SHABBAT — dynamic */}
+      <ShabbatSection />
 
       <div className="border-t border-zinc-800" />
 
+      {/* DINNER DROP — dynamic */}
       <DinnerDropSection />
 
       <div className="border-t border-zinc-800" />
@@ -149,7 +133,7 @@ export default function Home() {
           and make you look like a rockstar.
         </h2>
         <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
-          Corporate. Schools. Weddings. Shiva. Whatever the occasion - we show up with food that hits.
+          Corporate. Schools. Weddings. Shiva. Whatever the occasion — we show up with food that hits.
         </p>
         <a href="#catering-inquiry" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-10 py-5 rounded-full text-xl transition-colors inline-block">
           Get a Catering Quote
@@ -169,4 +153,10 @@ export default function Home() {
             <a href="https://facebook.com/thehungryroostertx" className="hover:text-white transition-colors">Facebook</a>
             <a href="https://tiktok.com/@thehungryroostertx" className="hover:text-white transition-colors">TikTok</a>
           </div>
-          <
+          <p className="text-zinc-600 text-xs">Food that happens to be kosher. Fred Approved.</p>
+        </div>
+      </footer>
+
+    </main>
+  );
+}
