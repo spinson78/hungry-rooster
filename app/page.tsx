@@ -97,7 +97,9 @@ export default function Home() {
         <p className="text-zinc-400 mb-10">One kitchen. Three personalities. All Fred-approved.</p>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-teal-500 transition-colors">
-            <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-24 mb-4" />
+            <div className="bg-black rounded-xl p-3 inline-block mb-4">
+              <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20" />
+            </div>
             <h3 className="text-xl font-black mb-2">The Hungry Rooster</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               The main event. Breakfast, lunch, salads, and catering. Scratch-made, unapologetically good.
@@ -105,7 +107,9 @@ export default function Home() {
             <span className="text-teal-400 text-sm font-bold">Ghost Kitchen + Catering</span>
           </div>
           <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-yellow-400 transition-colors">
-            <img src="/esther.png" alt="Esther" className="w-24 mb-4" />
+            <div className="bg-black rounded-xl p-3 inline-block mb-4">
+              <img src="/esther.png" alt="Esther" className="w-20" />
+            </div>
             <h3 className="text-xl font-black mb-2">Esther</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Food cart, 3x a week. Mon + Thu: sandwiches and salads. Friday: pastry-heavy for Shabbat.
@@ -113,7 +117,9 @@ export default function Home() {
             <span className="text-yellow-400 text-sm font-bold">Find the cart</span>
           </div>
           <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-teal-500 transition-colors">
-            <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-24 mb-4" />
+            <div className="bg-black rounded-xl p-3 inline-block mb-4">
+              <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-20" />
+            </div>
             <h3 className="text-xl font-black mb-2">Rico Saucey</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Order kiosk with dirty sodas and serious flavor. Plus signature sauces to take home.
