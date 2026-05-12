@@ -49,13 +49,12 @@ export default function ShabbatPage() {
 
   useEffect(() => {
     const fetchMenu = async () => {
-      const today = new Date().toISOString().split("T")[0];
       const now = new Date();
       const { data } = await supabase
         .from("shabbat_menus")
         .select("*")
-        .gte("week_of", today)
-        .order("week_of", { ascending: true })
+        .gte("cutoff_time", now.toISOString())
+        .order("cutoff_time", { ascending: true })
         .limit(1);
       if (data && data.length > 0) {
         const shabbat = data[0];
