@@ -1,5 +1,6 @@
 import DinnerDropSection from "./components/DinnerDropSection";
 import ShabbatSection from "./components/ShabbatSection";
+import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
 
 export default function Home() {
   return (
@@ -95,31 +96,25 @@ export default function Home() {
       <section id="concepts" className="px-6 py-20 max-w-6xl mx-auto">
         <h2 className="text-3xl font-black mb-2">Our Concepts</h2>
         <p className="text-zinc-400 mb-10">One kitchen. Three personalities. All Fred-approved.</p>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-teal-500 transition-colors">
-            <div className="bg-black rounded-xl p-3 inline-block mb-4">
-              <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20" />
-            </div>
+        <div className="grid md:grid-cols-3 gap-10">
+          <div>
+            <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-36 mb-5" />
             <h3 className="text-xl font-black mb-2">The Hungry Rooster</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               The main event. Breakfast, lunch, salads, and catering. Scratch-made, unapologetically good.
             </p>
             <span className="text-teal-400 text-sm font-bold">Ghost Kitchen + Catering</span>
           </div>
-          <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-yellow-400 transition-colors">
-            <div className="bg-black rounded-xl p-3 inline-block mb-4">
-              <img src="/esther.png" alt="Esther" className="w-20" />
-            </div>
+          <div>
+            <img src="/esther.png" alt="Esther" className="w-36 mb-5" />
             <h3 className="text-xl font-black mb-2">Esther</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Food cart, 3x a week. Mon + Thu: sandwiches and salads. Friday: pastry-heavy for Shabbat.
             </p>
             <span className="text-yellow-400 text-sm font-bold">Find the cart</span>
           </div>
-          <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-800 hover:border-teal-500 transition-colors">
-            <div className="bg-black rounded-xl p-3 inline-block mb-4">
-              <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-20" />
-            </div>
+          <div>
+            <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36 mb-5" />
             <h3 className="text-xl font-black mb-2">Rico Saucey</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Order kiosk with dirty sodas and serious flavor. Plus signature sauces to take home.
@@ -163,6 +158,7 @@ export default function Home() {
         </div>
       </footer>
 
+      <ShabbatReminderPopup />
     </main>
   );
 }
