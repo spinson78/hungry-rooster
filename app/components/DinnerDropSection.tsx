@@ -100,9 +100,15 @@ export default function DinnerDropSection() {
                 <li><span className="text-yellow-400 font-bold">Side 2:</span> {dinner.side2}</li>
                 <li><span className="text-yellow-400 font-bold">Side 3:</span> {dinner.extra}</li>
               </ul>
-              <p className="text-teal-400 font-bold text-sm mb-8">
-                {dinner.quantity_remaining} left · Orders close at 12PM
-              </p>
+              {dinner.quantity_remaining === 0 ? (
+                <p className="text-red-500 font-black text-lg mb-8">SOLD OUT</p>
+              ) : dinner.quantity_remaining <= 2 ? (
+                <p className="text-red-400 font-black text-sm mb-8">
+                  Only {dinner.quantity_remaining} left · Orders close at 12PM
+                </p>
+              ) : (
+                <p className="text-teal-400 font-bold text-sm mb-8">Orders close at 12PM</p>
+              )}
             </>
           ) : (
             <p className="text-zinc-400 text-lg mb-8">

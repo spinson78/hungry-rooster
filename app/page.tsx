@@ -92,7 +92,7 @@ export default function Home() {
             fresh salad, and 2 challahs - delivered straight to your door.
           </p>
           <p className="text-zinc-500 text-sm mb-8">Kosher. Scratch-made. No stress. Cutoff every Friday at 9am CST.</p>
-          <a href="#shabbat-order" className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg transition-colors inline-block">
+          <a href="/shabbat" className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg transition-colors inline-block">
             Order Shabbat Box - $115
           </a>
         </div>
@@ -169,10 +169,4 @@ export default function Home() {
             <a href="https://facebook.com/thehungryroostertx" className="hover:text-white transition-colors">Facebook</a>
             <a href="https://tiktok.com/@thehungryroostertx" className="hover:text-white transition-colors">TikTok</a>
           </div>
-          <p className="text-zinc-600 text-xs">Food that happens to be kosher. Fred Approved.</p>
-        </div>
-      </footer>
-
-    </main>
-  );
-}
+          <
