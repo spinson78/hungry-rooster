@@ -1,3 +1,5 @@
+import DinnerDropSection from "./components/DinnerDropSection";
+
 export default function Home() {
   return (
     <main className="bg-black text-white min-h-screen">
@@ -98,6 +100,10 @@ export default function Home() {
           <img src="/shabbat%20fred.png" alt="Shabbat Fred" className="w-72" />
         </div>
       </section>
+
+      <div className="border-t border-zinc-800" />
+
+      <DinnerDropSection />
 
       <div className="border-t border-zinc-800" />
 

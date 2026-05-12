@@ -220,6 +220,7 @@ export default function MenuPage() {
   const [qty, setQty] = useState(1);
   const [cartOpen, setCartOpen] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
+  const [upsellShown, setUpsellShown] = useState(false);
 
   const categories = Object.keys(menu);
 
@@ -275,8 +276,9 @@ export default function MenuPage() {
   const hasDessert = cart.some((item) => item.addons.includes("Dessert of the day"));
 
   const handlePlaceOrder = () => {
-    if (!hasDrink || !hasDessert) {
+    if (!upsellShown && (!hasDrink || !hasDessert)) {
       setUpsellOpen(true);
+      setUpsellShown(true);
     } else {
       alert("Order placed! (Payment coming soon)");
     }
