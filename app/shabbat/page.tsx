@@ -449,7 +449,7 @@ export default function ShabbatPage() {
       {showUpsell && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
-            <div className="text-5xl mb-4">🕍</div>
+            <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20 mx-auto mb-4" />
             <h2 className="text-2xl font-black mb-2">Shabbat Shalom!</h2>
             <p className="text-zinc-300 font-bold mb-1">Is your table complete?</p>
             <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
