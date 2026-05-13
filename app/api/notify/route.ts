@@ -7,6 +7,8 @@ export async function POST(req: NextRequest) {
   const typeLabel =
     order_type === "shabbat" ? "🕍 Shabbat Order" :
     order_type === "dinner" ? "🍽️ Dinner Drop Order" :
+    order_type === "catering" ? "🍽️ Catering Package Order" :
+    order_type === "catering_inquiry" ? "📋 Catering Inquiry" :
     "📦 New Order";
 
   const itemsList = Array.isArray(items)

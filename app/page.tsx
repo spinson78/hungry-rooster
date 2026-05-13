@@ -136,9 +136,14 @@ export default function Home() {
         <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">
           Corporate. Schools. Weddings. Shiva. Whatever the occasion — we show up with food that hits.
         </p>
-        <a href="#catering-inquiry" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-10 py-5 rounded-full text-xl transition-colors inline-block">
-          Get a Catering Quote
-        </a>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <a href="/catering" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-10 py-5 rounded-full text-xl transition-colors inline-block">
+            Order a Package
+          </a>
+          <a href="/catering" className="border-2 border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-black font-black px-10 py-5 rounded-full text-xl transition-colors inline-block">
+            Get a Custom Quote
+          </a>
+        </div>
       </section>
 
       {/* FOOTER */}
