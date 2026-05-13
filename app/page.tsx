@@ -14,6 +14,7 @@ export default function Home() {
         <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
           <a href="#menu" className="hover:text-white transition-colors">Menu</a>
           <a href="/catering" className="hover:text-white transition-colors">Catering</a>
+          <a href="/group" className="hover:text-white transition-colors">Group Orders</a>
           <a href="#shabbat" className="hover:text-white transition-colors">Shabbat</a>
           <a href="#concepts" className="hover:text-white transition-colors">Our Concepts</a>
         </div>
