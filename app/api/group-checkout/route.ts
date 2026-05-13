@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     cancel_url: `${baseUrl}/group/${locationSlug}`,
     metadata,
     custom_text: {
-      submit: { message: `Ordering for ${locationName} · Delivery ${deliveryDate}` },
+      submit: { message: `Ordering for ${locationName} - Delivery ${deliveryDate}` },
     },
   });
 
