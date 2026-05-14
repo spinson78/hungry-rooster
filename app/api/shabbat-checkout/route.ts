@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
     custom_text: {
       submit: { message: "Your Shabbat Box will be delivered Friday. Shabbat Shalom!" },
     },
-    appearance: { theme: "night" },
   });
 
   return NextResponse.json({ url: session.url });
