@@ -37,7 +37,7 @@ export default function ShabbatReminderPopup() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full">
-      <div className="bg-zinc-900 border border-yellow-400 rounded-2xl p-6 shadow-2xl">
+      <div className="bg-black border border-yellow-400 rounded-2xl p-6 shadow-2xl">
         <button
           onClick={dismiss}
           className="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg leading-none"
@@ -45,7 +45,7 @@ export default function ShabbatReminderPopup() {
           ✕
         </button>
         <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-8 mb-4" />
-        <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Shabbat is coming 🕯️</p>
+        <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Shabbat is coming</p>
         <p className="text-white font-black text-lg mb-2">Don't forget your Shabbat Box!</p>
         <p className="text-zinc-400 text-sm mb-4">Orders close Friday at 9AM. Let Fred handle dinner this week.</p>
         <a
