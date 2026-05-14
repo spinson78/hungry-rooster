@@ -18,7 +18,8 @@ export default function GroupOrdersPage() {
   const [form, setForm] = useState({ name: "", company: "", phone: "", email: "", address: "", notes: "" });
 
   useEffect(() => {
-    supabase.from("group_locations").select("*").eq("is_active", true).then(({ data }) => {
+    supabase.from("group_locations").select("*").then(({ data, error }) => {
+      console.log("locations:", data, error);
       if (data) setLocations(data);
     });
   }, []);
