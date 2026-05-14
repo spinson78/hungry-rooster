@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     custom_text: {
       submit: { message: "Fred is on it. We'll confirm delivery by text." },
     },
+    appearance: { theme: "night" },
   });
 
   return NextResponse.json({ url: session.url });
