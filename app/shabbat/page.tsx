@@ -25,7 +25,6 @@ export default function ShabbatPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [orderType, setOrderType] = useState<"box" | "snackpack" | null>(null);
   const [showUpsell, setShowUpsell] = useState(false);
@@ -77,6 +76,29 @@ export default function ShabbatPage() {
     return total;
   };
 
+  const buildLineItems = () => {
+    if (orderType === "snackpack") {
+      return [{ price_data: { currency: "usd", product_data: { name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles & brownies" }, unit_amount: 10000 }, quantity: 1 }];
+    }
+    const items = [{ price_data: { currency: "usd", product_data: { name: `Shabbat Box — ${selectedSize.label}`, description: `${menu?.protein}, ${menu?.side1}, ${menu?.side2}, ${menu?.extra}` }, unit_amount: selectedSize.price * 100 }, quantity: 1 }];
+    if (addons.greens.selected) items.push({ price_data: { currency: "usd", product_data: { name: `Certified Greens (${addons.greens.choice})`, description: "Choice of kale or romaine" }, unit_amount: 1500 }, quantity: 1 });
+    if (addons.dessert.selected) items.push({ price_data: { currency: "usd", product_data: { name: "Friday Night Dessert Add On", description: "Check socials for this week" }, unit_amount: 2500 }, quantity: 1 });
+    if (addons.babka.selected) items.push({ price_data: { currency: "usd", product_data: { name: `Signature Babka (${addons.babka.choice})`, description: "Chocolate or cinnamon" }, unit_amount: 1800 }, quantity: 1 });
+    if (addons.salmon.selected) items.push({ price_data: { currency: "usd", product_data: { name: "Roasted Salmon Add On (6 filets)", description: "6 x 6oz filets" }, unit_amount: 4800 }, quantity: 1 });
+    return items;
+  };
+
+  const buildItems = () => {
+    if (orderType === "snackpack") return [{ name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles, brownies" }];
+    return [
+      { name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra },
+      ...(addons.greens.selected ? [{ name: `Certified Greens — ${addons.greens.choice}` }] : []),
+      ...(addons.dessert.selected ? [{ name: "Friday Night Dessert Add On" }] : []),
+      ...(addons.babka.selected ? [{ name: `Signature Babka — ${addons.babka.choice}` }] : []),
+      ...(addons.salmon.selected ? [{ name: "Roasted Salmon Add On (6 filets)" }] : []),
+    ];
+  };
+
   const handleSubmit = async () => {
     if (!form.name || !form.phone || !form.address) {
       setError("Please fill in your name, phone, and delivery address.");
@@ -84,7 +106,6 @@ export default function ShabbatPage() {
     }
     if (!menu && orderType !== "snackpack") return;
 
-    // Shabbat upsell popup — only show once, only for box orders
     if (orderType === "box" && !upsellShown) {
       const missingAny = !addons.greens.selected || !addons.babka.selected || !addons.salmon.selected;
       if (missingAny) {
@@ -97,82 +118,36 @@ export default function ShabbatPage() {
     setSubmitting(true);
     setError("");
 
-    const items = orderType === "snackpack"
-      ? [{ name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles, brownies" }]
-      : [
-          { name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra },
-          ...(addons.greens.selected ? [{ name: `Certified Greens — ${addons.greens.choice}` }] : []),
-          ...(addons.dessert.selected ? [{ name: "Friday Night Dessert Add On" }] : []),
-          ...(addons.babka.selected ? [{ name: `Signature Babka — ${addons.babka.choice}` }] : []),
-          ...(addons.salmon.selected ? [{ name: "Roasted Salmon Add On (6 filets)" }] : []),
-        ];
-
-    const { error: dbError } = await supabase.from("orders").insert({
-      order_type: "shabbat",
-      menu_id: menu?.id || null,
-      customer_name: form.name,
-      customer_email: form.email,
-      customer_phone: form.phone,
-      customer_address: form.address,
-      special_requests: form.special_requests,
-      items,
-      total: getTotal(),
-      status: "pending",
-    });
-
-    if (dbError) {
+    try {
+      const res = await fetch("/api/shabbat-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lineItems: buildLineItems(),
+          metadata: {
+            order_type: orderType === "snackpack" ? "snackpack" : "shabbat",
+            menu_id: menu?.id || "",
+            customer_name: form.name,
+            customer_phone: form.phone,
+            customer_email: form.email,
+            customer_address: form.address,
+            special_requests: form.special_requests,
+            items: JSON.stringify(buildItems()),
+          },
+        }),
+      });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
-      return;
     }
-
-    if (menu && orderType === "box") {
-      await supabase
-        .from("shabbat_menus")
-        .update({ quantity_remaining: menu.quantity_remaining - 1 })
-        .eq("id", menu.id);
-    }
-
-    // Send notification email
-    await fetch("/api/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        order_type: "shabbat",
-        customer_name: form.name,
-        customer_phone: form.phone,
-        customer_email: form.email,
-        customer_address: form.address,
-        special_requests: form.special_requests,
-        items,
-        total: getTotal(),
-      }),
-    });
-
-    setSubmitted(true);
-    setSubmitting(false);
   };
 
   if (loading) {
     return (
       <main className="bg-black text-white min-h-screen flex items-center justify-center">
         <p className="text-zinc-400">Loading this week's Shabbat menu...</p>
-      </main>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <main className="bg-black text-white min-h-screen flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-6">🕍</div>
-          <h1 className="text-4xl font-black mb-4">Shabbat Shalom!</h1>
-          <p className="text-zinc-400 text-lg mb-2">Your order is in. Fred will have it to you by Friday.</p>
-          <p className="text-zinc-500 text-sm mb-8">We'll confirm by text with delivery details.</p>
-          <a href="/" className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg transition-colors inline-block">
-            Back to Home
-          </a>
-        </div>
       </main>
     );
   }
@@ -189,25 +164,18 @@ export default function ShabbatPage() {
         <h1 className="text-4xl font-black mb-2">Shabbat Box</h1>
         <p className="text-zinc-400 mb-10">Delivered Friday. Free delivery on orders $100+. Order by Friday 9AM.</p>
 
-        {/* ORDER TYPE SELECTION */}
         {!orderType && (
           <div className="space-y-4">
             <p className="text-zinc-300 font-bold mb-4">What would you like to order?</p>
-
             {isOpen && menu && (
-              <button
-                onClick={() => setOrderType("box")}
-                className="w-full bg-zinc-900 border border-zinc-700 hover:border-yellow-400 rounded-2xl p-6 text-left transition-colors"
-              >
+              <button onClick={() => setOrderType("box")} className="w-full bg-zinc-900 border border-zinc-700 hover:border-yellow-400 rounded-2xl p-6 text-left transition-colors">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-black text-xl mb-1">Shabbat Box</p>
                     <p className="text-zinc-400 text-sm">Protein, 2 sides, side 3 + add-ons available</p>
                     <p className="text-zinc-500 text-xs mt-2">
-                      {menu.quantity_remaining === 0
-                        ? <span className="text-red-500 font-black">SOLD OUT</span>
-                        : menu.quantity_remaining <= 2
-                        ? <span className="text-red-400 font-bold">Only {menu.quantity_remaining} left</span>
+                      {menu.quantity_remaining === 0 ? <span className="text-red-500 font-black">SOLD OUT</span>
+                        : menu.quantity_remaining <= 2 ? <span className="text-red-400 font-bold">Only {menu.quantity_remaining} left</span>
                         : "Available this week"}
                     </p>
                   </div>
@@ -215,11 +183,7 @@ export default function ShabbatPage() {
                 </div>
               </button>
             )}
-
-            <button
-              onClick={() => setOrderType("snackpack")}
-              className="w-full bg-zinc-900 border border-zinc-700 hover:border-yellow-400 rounded-2xl p-6 text-left transition-colors"
-            >
+            <button onClick={() => setOrderType("snackpack")} className="w-full bg-zinc-900 border border-zinc-700 hover:border-yellow-400 rounded-2xl p-6 text-left transition-colors">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-black text-xl mb-1">Shabbat Snack Pack</p>
@@ -229,7 +193,6 @@ export default function ShabbatPage() {
                 <span className="text-yellow-400 font-black text-lg">$100</span>
               </div>
             </button>
-
             {!isOpen && (
               <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 text-center">
                 <p className="font-bold mb-2">Shabbat Box ordering opens Monday at 9PM</p>
@@ -239,12 +202,9 @@ export default function ShabbatPage() {
           </div>
         )}
 
-        {/* SHABBAT BOX ORDER */}
         {orderType === "box" && menu && (
           <div className="space-y-6">
             <button onClick={() => setOrderType(null)} className="text-zinc-400 hover:text-white text-sm mb-2">← Back</button>
-
-            {/* THIS WEEK'S MENU */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">This week's menu</p>
               <div className="space-y-1 text-base">
@@ -255,7 +215,6 @@ export default function ShabbatPage() {
               </div>
             </div>
 
-            {/* SIZE */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <p className="font-bold mb-4 text-sm uppercase tracking-wide text-zinc-300">Choose your size</p>
               <div className="space-y-3">
@@ -274,20 +233,14 @@ export default function ShabbatPage() {
               </div>
             </div>
 
-            {/* ADD-ONS */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <p className="font-bold mb-4 text-sm uppercase tracking-wide text-zinc-300">Add-ons</p>
               <div className="space-y-3">
-
-                {/* Greens */}
                 <div className={`p-4 rounded-xl border transition-colors ${addons.greens.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
                   <label className="flex items-center justify-between cursor-pointer">
                     <div className="flex items-center gap-3">
                       <input type="checkbox" checked={addons.greens.selected} onChange={(e) => setAddons({ ...addons, greens: { ...addons.greens, selected: e.target.checked } })} className="accent-yellow-400" />
-                      <div>
-                        <p className="font-bold text-sm">Certified Greens</p>
-                        <p className="text-zinc-500 text-xs">Choice of kale or romaine</p>
-                      </div>
+                      <div><p className="font-bold text-sm">Certified Greens</p><p className="text-zinc-500 text-xs">Choice of kale or romaine</p></div>
                     </div>
                     <span className="text-zinc-400 text-sm">+$15</span>
                   </label>
@@ -295,35 +248,24 @@ export default function ShabbatPage() {
                     <div className="flex gap-3 mt-3 ml-7">
                       {["Kale", "Romaine"].map((g) => (
                         <label key={g} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition-colors ${addons.greens.choice === g ? "border-yellow-400 text-yellow-400" : "border-zinc-600 text-zinc-400"}`}>
-                          <input type="radio" name="greens" checked={addons.greens.choice === g} onChange={() => setAddons({ ...addons, greens: { ...addons.greens, choice: g } })} className="hidden" />
-                          {g}
+                          <input type="radio" name="greens" checked={addons.greens.choice === g} onChange={() => setAddons({ ...addons, greens: { ...addons.greens, choice: g } })} className="hidden" />{g}
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
-
-                {/* Dessert */}
                 <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.dessert.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
                   <div className="flex items-center gap-3">
                     <input type="checkbox" checked={addons.dessert.selected} onChange={(e) => setAddons({ ...addons, dessert: { selected: e.target.checked } })} className="accent-yellow-400" />
-                    <div>
-                      <p className="font-bold text-sm">Friday Night Dessert</p>
-                      <p className="text-zinc-500 text-xs">Check our socials for this week's dessert</p>
-                    </div>
+                    <div><p className="font-bold text-sm">Friday Night Dessert</p><p className="text-zinc-500 text-xs">Check our socials for this week's dessert</p></div>
                   </div>
                   <span className="text-zinc-400 text-sm">+$25</span>
                 </label>
-
-                {/* Babka */}
                 <div className={`p-4 rounded-xl border transition-colors ${addons.babka.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
                   <label className="flex items-center justify-between cursor-pointer">
                     <div className="flex items-center gap-3">
                       <input type="checkbox" checked={addons.babka.selected} onChange={(e) => setAddons({ ...addons, babka: { ...addons.babka, selected: e.target.checked } })} className="accent-yellow-400" />
-                      <div>
-                        <p className="font-bold text-sm">Signature Babka</p>
-                        <p className="text-zinc-500 text-xs">Choice of chocolate or cinnamon</p>
-                      </div>
+                      <div><p className="font-bold text-sm">Signature Babka</p><p className="text-zinc-500 text-xs">Choice of chocolate or cinnamon</p></div>
                     </div>
                     <span className="text-zinc-400 text-sm">+$18</span>
                   </label>
@@ -331,53 +273,30 @@ export default function ShabbatPage() {
                     <div className="flex gap-3 mt-3 ml-7">
                       {["Chocolate", "Cinnamon"].map((b) => (
                         <label key={b} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition-colors ${addons.babka.choice === b ? "border-yellow-400 text-yellow-400" : "border-zinc-600 text-zinc-400"}`}>
-                          <input type="radio" name="babka" checked={addons.babka.choice === b} onChange={() => setAddons({ ...addons, babka: { ...addons.babka, choice: b } })} className="hidden" />
-                          {b}
+                          <input type="radio" name="babka" checked={addons.babka.choice === b} onChange={() => setAddons({ ...addons, babka: { ...addons.babka, choice: b } })} className="hidden" />{b}
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
-
-                {/* Salmon */}
                 <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.salmon.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
                   <div className="flex items-center gap-3">
                     <input type="checkbox" checked={addons.salmon.selected} onChange={(e) => setAddons({ ...addons, salmon: { selected: e.target.checked } })} className="accent-yellow-400" />
-                    <div>
-                      <p className="font-bold text-sm">Roasted Salmon Add On</p>
-                      <p className="text-zinc-500 text-xs">6 × 6oz filets</p>
-                    </div>
+                    <div><p className="font-bold text-sm">Roasted Salmon Add On</p><p className="text-zinc-500 text-xs">6 x 6oz filets</p></div>
                   </div>
                   <span className="text-zinc-400 text-sm">+$48</span>
                 </label>
-
               </div>
             </div>
 
-            {/* DELIVERY FORM */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <h2 className="text-xl font-black mb-6">Delivery Info</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label>
-                  <input type="text" placeholder="Jane Smith" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone Number *</label>
-                  <input type="tel" placeholder="(214) 555-0100" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label>
-                  <input type="email" placeholder="jane@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
-                  <input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label>
-                  <textarea placeholder="Allergies, gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" />
-                </div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label><input type="text" placeholder="Jane Smith" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone Number *</label><input type="tel" placeholder="(214) 555-0100" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label><input type="email" placeholder="jane@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label><input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" /></div>
               </div>
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
               <div className="flex items-center justify-between mt-6 mb-3">
@@ -386,14 +305,13 @@ export default function ShabbatPage() {
               </div>
               {getTotal() < 100 && <p className="text-zinc-500 text-xs mb-4">Add more to reach $100 for free delivery.</p>}
               <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50">
-                {submitting ? "Placing order..." : `Place Order — $${getTotal()}`}
+                {submitting ? "Redirecting to payment..." : `Pay $${getTotal()} — Secure Checkout`}
               </button>
-              <p className="text-zinc-600 text-xs text-center mt-3">Payment collected on delivery. We'll confirm by text.</p>
+              <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
             </div>
           </div>
         )}
 
-        {/* SNACK PACK ORDER */}
         {orderType === "snackpack" && (
           <div className="space-y-6">
             <button onClick={() => setOrderType(null)} className="text-zinc-400 hover:text-white text-sm mb-2">← Back</button>
@@ -410,90 +328,55 @@ export default function ShabbatPage() {
                 <p className="text-white font-black text-2xl">$100</p>
               </div>
             </div>
-
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <h2 className="text-xl font-black mb-6">Delivery Info</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label>
-                  <input type="text" placeholder="Jane Smith" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone Number *</label>
-                  <input type="tel" placeholder="(214) 555-0100" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label>
-                  <input type="email" placeholder="jane@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
-                  <input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label>
-                  <textarea placeholder="Gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" />
-                </div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label><input type="text" placeholder="Jane Smith" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone Number *</label><input type="tel" placeholder="(214) 555-0100" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label><input type="email" placeholder="jane@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label><input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" /></div>
               </div>
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
               <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
-                {submitting ? "Placing order..." : "Place Order — $100"}
+                {submitting ? "Redirecting to payment..." : "Pay $100 — Secure Checkout"}
               </button>
-              <p className="text-zinc-600 text-xs text-center mt-3">Payment collected on delivery. We'll confirm by text.</p>
+              <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* SHABBAT UPSELL POPUP */}
       {showUpsell && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
             <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20 mx-auto mb-4" />
             <h2 className="text-2xl font-black mb-2">Shabbat Shalom!</h2>
             <p className="text-zinc-300 font-bold mb-1">Is your table complete?</p>
-            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
-              Don't forget — you can add on our Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.
-            </p>
+            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Don't forget — you can add our Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.</p>
             <div className="space-y-3 mb-6 text-left">
               {!addons.greens.selected && (
-                <button
-                  onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, selected: true } }); setShowUpsell(false); }}
-                  className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors"
-                >
-                  <span className="font-bold text-sm">Add Certified Greens</span>
-                  <span className="text-yellow-400 font-black text-sm">+$15</span>
+                <button onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+                  <span className="font-bold text-sm">Add Certified Greens</span><span className="text-yellow-400 font-black text-sm">+$15</span>
                 </button>
               )}
               {!addons.babka.selected && (
-                <button
-                  onClick={() => { setAddons({ ...addons, babka: { ...addons.babka, selected: true } }); setShowUpsell(false); }}
-                  className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors"
-                >
-                  <span className="font-bold text-sm">Add Signature Babka</span>
-                  <span className="text-yellow-400 font-black text-sm">+$18</span>
+                <button onClick={() => { setAddons({ ...addons, babka: { ...addons.babka, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+                  <span className="font-bold text-sm">Add Signature Babka</span><span className="text-yellow-400 font-black text-sm">+$18</span>
                 </button>
               )}
               {!addons.salmon.selected && (
-                <button
-                  onClick={() => { setAddons({ ...addons, salmon: { selected: true } }); setShowUpsell(false); }}
-                  className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors"
-                >
-                  <span className="font-bold text-sm">Add Roasted Salmon (6 filets)</span>
-                  <span className="text-yellow-400 font-black text-sm">+$48</span>
+                <button onClick={() => { setAddons({ ...addons, salmon: { selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+                  <span className="font-bold text-sm">Add Roasted Salmon (6 filets)</span><span className="text-yellow-400 font-black text-sm">+$48</span>
                 </button>
               )}
             </div>
-            <button
-              onClick={() => { setShowUpsell(false); handleSubmit(); }}
-              className="w-full border-2 border-zinc-600 hover:border-zinc-400 text-zinc-300 font-bold py-3 rounded-full text-sm transition-colors"
-            >
-              No thanks — complete my order
+            <button onClick={() => { setShowUpsell(false); handleSubmit(); }} className="w-full border-2 border-zinc-600 hover:border-zinc-400 text-zinc-300 font-bold py-3 rounded-full text-sm transition-colors">
+              No thanks — proceed to payment
             </button>
           </div>
         </div>
       )}
-
     </main>
   );
 }

@@ -55,7 +55,7 @@ export default function GroupOrdersPage() {
       <section className="px-6 py-20 max-w-5xl mx-auto text-center">
         <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-4">Group Orders</p>
         <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-6">
-          Lunch for the whole office.<br />
+          Lunch for the whole flock.<br />
           <span className="text-yellow-400">No Uber fees. Ever.</span>
         </h1>
         <p className="text-zinc-400 text-lg max-w-2xl mx-auto mb-10">
@@ -66,13 +66,13 @@ export default function GroupOrdersPage() {
             href="#locations"
             className="bg-teal-500 hover:bg-teal-400 text-black font-black px-8 py-4 rounded-full text-lg transition-colors"
           >
-            Order for My Office
+            Feed My Flock
           </a>
           <button
             onClick={() => setShowForm(true)}
             className="border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-black px-8 py-4 rounded-full text-lg transition-colors"
           >
-            Bring This to My Office
+            Get Us Our Own Link 🐓
           </button>
         </div>
       </section>
@@ -82,7 +82,7 @@ export default function GroupOrdersPage() {
         <h2 className="text-3xl font-black text-center mb-12">How it works</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {[
-            { step: "01", title: "Share the link", desc: "Your office gets a dedicated ordering link. Share it with the team — takes 10 seconds." },
+            { step: "01", title: "Share the link", desc: "Your flock gets a dedicated ordering link. Share it with the crew — takes 10 seconds." },
             { step: "02", title: "Everyone orders", desc: "Each person picks what they want from our group menu. Min. 10 orders per delivery." },
             { step: "03", title: "We deliver flat", desc: "One delivery to your door, 2 hours after your cutoff. No Uber, no third-party fees." },
           ].map(item => (
@@ -99,12 +99,11 @@ export default function GroupOrdersPage() {
       <section className="px-6 py-12 max-w-5xl mx-auto">
         <div className="grid md:grid-cols-3 gap-4">
           {[
-            { icon: "🚫", label: "Zero platform fees", sub: "No Uber Eats, no DoorDash markup" },
-            { icon: "🕑", label: "2-hour delivery", sub: "Order by cutoff, delivered fresh" },
-            { icon: "✡️", label: "Certified Kosher", sub: "Full community approved" },
+            { label: "Zero platform fees", sub: "No Uber Eats, no DoorDash markup" },
+            { label: "2-hour delivery", sub: "Order by cutoff, delivered fresh" },
+            { label: "Certified Kosher", sub: "Full community approved" },
           ].map(item => (
             <div key={item.label} className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 text-center">
-              <p className="text-3xl mb-2">{item.icon}</p>
               <p className="font-black text-lg">{item.label}</p>
               <p className="text-zinc-400 text-sm">{item.sub}</p>
             </div>
@@ -114,8 +113,8 @@ export default function GroupOrdersPage() {
 
       {/* ACTIVE LOCATIONS */}
       <section id="locations" className="px-6 py-16 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-black mb-2">Order for your office</h2>
-        <p className="text-zinc-400 mb-8">Click your location to place your order.</p>
+        <h2 className="text-3xl font-black mb-2">Find your flock</h2>
+        <p className="text-zinc-400 mb-8">Click your location and place your order. Fred handles the rest.</p>
         {locations.length === 0 ? (
           <p className="text-zinc-500">No locations set up yet.</p>
         ) : (
@@ -127,7 +126,7 @@ export default function GroupOrdersPage() {
                 className="bg-zinc-900 border border-zinc-700 hover:border-teal-500 rounded-2xl p-6 transition-colors block"
               >
                 <p className="font-black text-lg mb-1">{loc.name}</p>
-                <p className="text-zinc-400 text-sm mb-4">📍 {loc.address}</p>
+                <p className="text-zinc-400 text-sm mb-4">{loc.address}</p>
                 <span className="text-teal-400 font-bold text-sm">Place your order →</span>
               </a>
             ))}
@@ -137,13 +136,13 @@ export default function GroupOrdersPage() {
 
       {/* INTERESTED? CTA */}
       <section className="px-6 py-16 max-w-5xl mx-auto border-t border-zinc-800 text-center">
-        <h2 className="text-3xl font-black mb-3">Not on the list yet?</h2>
-        <p className="text-zinc-400 mb-8 max-w-lg mx-auto">We're expanding to new offices and schools across Dallas. Get in touch and we'll get your team set up.</p>
+        <h2 className="text-3xl font-black mb-3">Your flock not listed?</h2>
+        <p className="text-zinc-400 mb-8 max-w-lg mx-auto">We're roosting at new spots across Dallas. Hit us up and we'll get your crew their own link — fast.</p>
         <button
           onClick={() => setShowForm(true)}
           className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-10 py-4 rounded-full text-lg transition-colors"
         >
-          Bring Group Orders to My Office
+          Set Up Our Link 🐓
         </button>
       </section>
 
@@ -152,14 +151,14 @@ export default function GroupOrdersPage() {
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-md w-full shadow-2xl">
             <button onClick={() => setShowForm(false)} className="float-right text-zinc-500 hover:text-white text-lg">✕</button>
-            <h2 className="text-2xl font-black mb-1">Get Group Orders</h2>
-            <p className="text-zinc-400 text-sm mb-6">Fill this out and our team will be in touch within 24 hours.</p>
+            <h2 className="text-2xl font-black mb-1">Let's Get Your Flock Fed 🐓</h2>
+            <p className="text-zinc-400 text-sm mb-6">Fill this out and we'll set up your crew's dedicated ordering link within 24 hours.</p>
             <div className="space-y-3">
               <input type="text" placeholder="Your name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
               <input type="text" placeholder="Company / Organization *" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
               <input type="tel" placeholder="Phone *" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
               <input type="email" placeholder="Email *" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
-              <input type="text" placeholder="Office address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
+              <input type="text" placeholder="Flock address (delivery location)" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
               <textarea placeholder="Anything else we should know? (team size, preferred days...)" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20 text-sm" />
             </div>
             <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
@@ -174,7 +173,7 @@ export default function GroupOrdersPage() {
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
             <div className="text-5xl mb-4">🐓</div>
             <h2 className="text-2xl font-black mb-2">We'll be in touch!</h2>
-            <p className="text-zinc-400 mb-6">Our team will reach out within 24 hours to get your office set up.</p>
+            <p className="text-zinc-400 mb-6">We'll reach out within 24 hours and get your flock their own link. Fred can't wait.</p>
             <button onClick={() => { setShowForm(false); setSubmitted(false); }} className="bg-teal-500 text-black font-black px-8 py-3 rounded-full">Done</button>
           </div>
         </div>
