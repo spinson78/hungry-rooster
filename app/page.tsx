@@ -18,9 +18,9 @@ export default function Home() {
           <a href="#shabbat" className="hover:text-white transition-colors">Shabbat</a>
           <a href="#concepts" className="hover:text-white transition-colors">Our Concepts</a>
         </div>
-        <a href="/menu" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors">
-          Order Now
-        </a>
+        <span className="bg-zinc-700 text-zinc-400 font-black px-5 py-2 rounded-full text-sm cursor-not-allowed">
+          Coming Soon
+        </span>
       </nav>
 
       {/* HERO */}
@@ -40,12 +40,12 @@ export default function Home() {
             Delivered to your coop.
           </p>
           <div className="flex flex-wrap gap-4">
-            <a href="/menu" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-8 py-4 rounded-full text-lg transition-colors">
-              Order Pickup
-            </a>
-            <a href="#catering" className="border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-black px-8 py-4 rounded-full text-lg transition-colors">
-              Book Catering
-            </a>
+            <span className="bg-zinc-700 text-zinc-400 font-black px-8 py-4 rounded-full text-lg cursor-not-allowed">
+              Order Pickup — Coming Soon
+            </span>
+            <span className="border-2 border-zinc-700 text-zinc-500 font-black px-8 py-4 rounded-full text-lg cursor-not-allowed">
+              Book Catering — Coming Soon
+            </span>
           </div>
         </div>
         <div className="flex-1 flex justify-center">
@@ -138,12 +138,12 @@ export default function Home() {
           Corporate. Schools. Weddings. Shiva. Whatever the occasion — we show up with food that hits.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
-          <a href="/catering" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-10 py-5 rounded-full text-xl transition-colors inline-block">
-            Order a Package
-          </a>
-          <a href="/catering" className="border-2 border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-black font-black px-10 py-5 rounded-full text-xl transition-colors inline-block">
-            Get a Custom Quote
-          </a>
+          <span className="bg-zinc-700 text-zinc-400 font-black px-10 py-5 rounded-full text-xl cursor-not-allowed inline-block">
+            Order a Package — Coming Soon
+          </span>
+          <span className="border-2 border-zinc-700 text-zinc-500 font-black px-10 py-5 rounded-full text-xl cursor-not-allowed inline-block">
+            Get a Custom Quote — Coming Soon
+          </span>
         </div>
       </section>
 
