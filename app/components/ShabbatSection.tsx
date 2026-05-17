@@ -29,6 +29,7 @@ export default function ShabbatSection() {
         .from("shabbat_menus")
         .select("*")
         .gte("cutoff_time", now.toISOString())
+        .eq("is_active", true)
         .order("cutoff_time", { ascending: true })
         .limit(1);
 
@@ -63,11 +64,11 @@ export default function ShabbatSection() {
 
         {!menu ? (
           <>
+            <p className="text-white font-black text-2xl mb-2">Chag Sameach! 🌸</p>
             <p className="text-zinc-400 text-lg mb-4 leading-relaxed">
-              Let Fred do the cooking this Shabbat. Protein, starch, veggie,
-              fresh salad, and 2 challahs — delivered straight to your door.
+              No Shabbat Box this week in honor of Shavuot. We'll be back next Friday — see you then!
             </p>
-            <p className="text-zinc-500 text-sm mb-8">Kosher. Scratch-made. No stress. Cutoff every Friday at 9AM CST.</p>
+            <p className="text-zinc-500 text-sm mb-8">Follow us on Instagram for next week's drop.</p>
           </>
         ) : !isRevealed ? (
           <>

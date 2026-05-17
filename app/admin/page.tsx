@@ -18,6 +18,7 @@ type DinnerEntry = {
   side2: string;
   extra: string;
   quantity: number;
+  price: number;
 };
 
 type ShabbatEntry = {
@@ -63,6 +64,7 @@ export default function AdminPage() {
       side2: "",
       extra: "",
       quantity: 20,
+      price: 85,
     }))
   );
 
@@ -133,6 +135,7 @@ export default function AdminPage() {
         quantity_available: dinner.quantity,
         quantity_remaining: dinner.quantity,
         is_active: false,
+        price: dinner.price,
         reveal_time: revealDate.toISOString(),
         cutoff_time: cutoffDate.toISOString(),
       }, { onConflict: "date" });
@@ -232,7 +235,7 @@ export default function AdminPage() {
                 {dinners.map((dinner, i) => (
                   <div key={dinner.day} className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
                     <h3 className="font-black text-lg mb-4 text-yellow-400">{dinner.day}</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Date</label>
                         <input type="date" value={dinner.date} onChange={(e) => updateDinner(i, "date", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-sm" />
@@ -240,6 +243,13 @@ export default function AdminPage() {
                       <div>
                         <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Quantity</label>
                         <input type="number" value={dinner.quantity} onChange={(e) => updateDinner(i, "quantity", parseInt(e.target.value))} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Price <span className="text-yellow-400 normal-case">(default $85)</span></label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
+                          <input type="number" value={dinner.price} onChange={(e) => updateDinner(i, "price", parseFloat(e.target.value))} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-7 pr-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm" />
+                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-4">

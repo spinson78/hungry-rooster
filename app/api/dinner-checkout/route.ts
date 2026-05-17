@@ -5,7 +5,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { metadata, dinnerLabel } = body;
+  const { metadata, dinnerLabel, price } = body;
+  const unitAmount = price ? Math.round(price * 100) : 8500;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
             name: "The Dinner Drop",
             description: dinnerLabel,
           },
-          unit_amount: 8500,
+          unit_amount: unitAmount,
         },
         quantity: 1,
       },

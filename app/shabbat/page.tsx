@@ -164,6 +164,18 @@ export default function ShabbatPage() {
         <h1 className="text-4xl font-black mb-2">Shabbat Box</h1>
         <p className="text-zinc-400 mb-10">Delivered Friday. Free delivery on orders $100+. Order by Friday 9AM.</p>
 
+        {!isOpen && !menu && (
+          <div className="bg-zinc-900 rounded-2xl p-8 border border-yellow-400/30 text-center mb-8">
+            <p className="text-3xl mb-3">🌸</p>
+            <h2 className="text-2xl font-black mb-2">Chag Sameach!</h2>
+            <p className="text-zinc-300 font-bold mb-2">No Shabbat Box this week in honor of Shavuot.</p>
+            <p className="text-zinc-500 text-sm">We'll be back next week — follow us on Instagram for the drop announcement.</p>
+            <a href="https://instagram.com/thehungryroostertx" target="_blank" className="inline-block mt-6 border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-black px-8 py-3 rounded-full text-sm transition-colors">
+              Follow @thehungryroostertx
+            </a>
+          </div>
+        )}
+
         {!orderType && (
           <div className="space-y-4">
             <p className="text-zinc-300 font-bold mb-4">What would you like to order?</p>

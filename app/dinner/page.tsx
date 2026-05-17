@@ -13,6 +13,7 @@ type DinnerMenu = {
   quantity_remaining: number;
   reveal_time: string;
   cutoff_time: string;
+  price?: number;
 };
 
 export default function DinnerPage() {
@@ -59,6 +60,7 @@ export default function DinnerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dinnerLabel,
+          price: dinner.price || 85,
           metadata: {
             menu_id: dinner.id,
             customer_name: form.name,
