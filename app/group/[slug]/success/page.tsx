@@ -49,8 +49,9 @@ export default function GroupSuccessPage() {
         }
 
         const today = new Date().toISOString().split("T")[0];
-        const { count } = await supabase.from("group_orders").select("*", { count: "exact", head: true }).eq("location_slug", data.location_slug).eq("delivery_date", today).eq("status", "paid");
-        setOrderCount(count || 0);
+        const { data: todayOrders } = await supabase.from("group_orders").select("total").eq("location_slug", data.location_slug).eq("delivery_date", today).eq("status", "paid");
+        const totalSoFar = (todayOrders || []).reduce((sum: number, o: { total: number }) => sum + (o.total || 0), 0);
+        setOrderCount(totalSoFar);
 
         if (!existing) {
           await fetch("/api/notify", {
@@ -75,7 +76,7 @@ export default function GroupSuccessPage() {
         <div className="text-6xl mb-6">🐓</div>
         <h1 className="text-4xl font-black mb-3">You're in{customerName ? `, ${customerName.split(" ")[0]}` : ""}!</h1>
         <p className="text-zinc-400 text-lg mb-2">Your order is confirmed and paid.</p>
-        {orderCount > 0 && <p className="text-teal-400 font-bold mb-2">{orderCount} order{orderCount !== 1 ? "s" : ""} placed so far today.</p>}
+        {orderCount > 0 && <p className="text-teal-400 font-bold mb-2">${orderCount.toFixed(0)} in orders placed today{orderCount >= 165 ? " — minimum met! 🎉" : ` of $165 minimum`}.</p>}
         <p className="text-zinc-500 text-sm mb-8">Fred's got it from here.</p>
         <a href="/" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-8 py-4 rounded-full text-lg transition-colors inline-block">Back to Home</a>
       </div>

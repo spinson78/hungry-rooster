@@ -84,7 +84,7 @@ export default function GroupOrdersPage() {
         <div className="grid md:grid-cols-3 gap-8">
           {[
             { step: "01", title: "Share the link", desc: "Your flock gets a dedicated ordering link. Share it with the crew — takes 10 seconds." },
-            { step: "02", title: "Everyone orders", desc: "Each person picks what they want from our group menu. Min. 10 orders per delivery." },
+            { step: "02", title: "Everyone orders", desc: "Each person picks what they want from our group menu. $165 minimum per delivery." },
             { step: "03", title: "We deliver flat", desc: "One delivery to your door, 2 hours after your cutoff. No Uber, no third-party fees." },
           ].map(item => (
             <div key={item.step} className="text-center">

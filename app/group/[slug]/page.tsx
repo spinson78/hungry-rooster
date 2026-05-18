@@ -213,18 +213,18 @@ export default function GroupOrderPage() {
         <div className={`rounded-2xl p-5 border mb-8 ${meetsMinimum ? "bg-teal-900/30 border-teal-500" : "bg-zinc-900 border-zinc-700"}`}>
           <div className="flex items-center justify-between mb-2">
             <p className="font-black text-lg">
-              {meetsMinimum ? "✅ Minimum met!" : `${orderCount} / ${MIN_ORDERS} orders placed today`}
+              {meetsMinimum ? "✅ Minimum met!" : `$${orderCount.toFixed(0)} of $${MIN_TOTAL} minimum`}
             </p>
-            <span className="text-2xl font-black text-teal-400">{orderCount}</span>
+            <span className="text-2xl font-black text-teal-400">${orderCount.toFixed(0)}</span>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-2">
             <div
               className="bg-teal-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (orderCount / MIN_ORDERS) * 100)}%` }}
+              style={{ width: `${Math.min(100, (orderCount / MIN_TOTAL) * 100)}%` }}
             />
           </div>
           {!meetsMinimum && (
-            <p className="text-zinc-400 text-xs mt-2">{MIN_ORDERS - orderCount} more orders needed to confirm today's delivery. Your card is only charged when the minimum is met.</p>
+            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - orderCount).toFixed(0)} more needed to confirm today&apos;s delivery. Your card is only charged when the minimum is met.</p>
           )}
           {meetsMinimum && (
             <p className="text-teal-400 text-xs mt-2 font-bold">Delivery confirmed for today. Order now!</p>
