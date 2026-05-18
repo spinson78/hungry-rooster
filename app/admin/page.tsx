@@ -56,12 +56,89 @@ export default function AdminPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Email blast state
+  const [blastTemplate, setBlastTemplate] = useState<"dinner" | "shabbat" | "announcement" | null>(null);
   const [blastSubject, setBlastSubject] = useState("");
   const [blastPreview, setBlastPreview] = useState("");
-  const [blastBody, setBlastBody] = useState("");
   const [blastSending, setBlastSending] = useState(false);
   const [blastResult, setBlastResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
   const [blastError, setBlastError] = useState("");
+
+  // Dinner Drop template fields
+  const [dd, setDd] = useState({ intro: "", mon: "", tue: "", thu: "", note: "", ctaUrl: "https://hungry-rooster.vercel.app/dinner" });
+  // Shabbat template fields
+  const [sh, setSh] = useState({ protein: "", side1: "", side2: "", dessert: "", cutoff: "", price: "$65–$225", ctaUrl: "https://hungry-rooster.vercel.app/shabbat" });
+  // Announcement template fields
+  const [an, setAn] = useState({ headline: "", subheadline: "", body: "", ctaText: "", ctaUrl: "", closing: "" });
+
+  const buildBlastHtml = (): string => {
+    const base = (content: string) => `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#ffffff;border-radius:12px;overflow:hidden;">
+        <div style="background:#111111;padding:24px 32px;border-bottom:1px solid #27272a;">
+          <img src="https://hungry-rooster.vercel.app/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height:44px;" />
+        </div>
+        <div style="padding:32px;">
+          ${content}
+        </div>
+        <div style="background:#111111;padding:20px 32px;border-top:1px solid #27272a;text-align:center;">
+          <p style="color:#52525b;font-size:12px;margin:0 0 4px;">The Hungry Rooster · 1499 Regal Row, Suite 206, Dallas TX</p>
+          <p style="color:#52525b;font-size:12px;margin:0;">Mon–Fri 9am–2pm CST · <a href="https://hungry-rooster.vercel.app" style="color:#2dd4bf;text-decoration:none;">hungry-rooster.vercel.app</a></p>
+        </div>
+      </div>`;
+
+    const ctaBtn = (text: string, url: string, color = "#2dd4bf", textColor = "#000000") =>
+      `<div style="text-align:center;margin:28px 0 0;">
+        <a href="${url}" style="display:inline-block;background:${color};color:${textColor};font-weight:900;font-size:16px;padding:14px 36px;border-radius:50px;text-decoration:none;">${text}</a>
+      </div>`;
+
+    const menuRow = (day: string, menu: string, color: string) =>
+      `<div style="background:#18181b;border-left:3px solid ${color};border-radius:8px;padding:14px 18px;margin-bottom:10px;">
+        <p style="color:${color};font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">${day}</p>
+        <p style="color:#ffffff;font-size:14px;margin:0;">${menu}</p>
+      </div>`;
+
+    if (blastTemplate === "dinner") {
+      const days = [
+        dd.mon ? menuRow("Monday", dd.mon, "#2dd4bf") : "",
+        dd.tue ? menuRow("Tuesday", dd.tue, "#2dd4bf") : "",
+        dd.thu ? menuRow("Thursday", dd.thu, "#e9c46a") : "",
+      ].filter(Boolean).join("");
+      return base(`
+        ${dd.intro ? `<p style="font-size:16px;line-height:1.7;color:#d4d4d8;margin:0 0 24px;">${dd.intro.replace(/\n/g, "<br/>")}</p>` : ""}
+        <h2 style="color:#2dd4bf;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;">This Week's Menu</h2>
+        ${days}
+        ${dd.note ? `<p style="font-size:14px;color:#a1a1aa;line-height:1.7;margin:20px 0 0;">${dd.note.replace(/\n/g, "<br/>")}</p>` : ""}
+        ${ctaBtn("Order Now — Spots Go Fast", dd.ctaUrl)}
+      `);
+    }
+
+    if (blastTemplate === "shabbat") {
+      return base(`
+        <h1 style="color:#e9c46a;font-size:28px;font-weight:900;margin:0 0 8px;">Shabbat Shalom! 🕯️</h1>
+        <p style="color:#a1a1aa;font-size:15px;margin:0 0 24px;">This week's Shabbat Box is live. Here's what Fred's cooking.</p>
+        <div style="background:#18181b;border-radius:10px;padding:20px;margin-bottom:20px;">
+          <h2 style="color:#e9c46a;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin:0 0 14px;">This Week's Box</h2>
+          ${sh.protein ? `<div style="border-bottom:1px solid #27272a;padding:8px 0;"><p style="color:#a1a1aa;font-size:11px;margin:0 0 2px;text-transform:uppercase;letter-spacing:1px;">Protein</p><p style="color:#fff;font-weight:700;margin:0;">${sh.protein}</p></div>` : ""}
+          ${sh.side1 ? `<div style="border-bottom:1px solid #27272a;padding:8px 0;"><p style="color:#a1a1aa;font-size:11px;margin:0 0 2px;text-transform:uppercase;letter-spacing:1px;">Side 1</p><p style="color:#fff;font-weight:700;margin:0;">${sh.side1}</p></div>` : ""}
+          ${sh.side2 ? `<div style="border-bottom:1px solid #27272a;padding:8px 0;"><p style="color:#a1a1aa;font-size:11px;margin:0 0 2px;text-transform:uppercase;letter-spacing:1px;">Side 2</p><p style="color:#fff;font-weight:700;margin:0;">${sh.side2}</p></div>` : ""}
+          ${sh.dessert ? `<div style="padding:8px 0;"><p style="color:#a1a1aa;font-size:11px;margin:0 0 2px;text-transform:uppercase;letter-spacing:1px;">Friday Night Dessert</p><p style="color:#e9c46a;font-weight:700;margin:0;">${sh.dessert} <span style="font-size:12px;color:#a1a1aa;font-weight:400;">(add-on)</span></p></div>` : ""}
+        </div>
+        ${sh.price ? `<p style="color:#a1a1aa;font-size:13px;margin:0 0 4px;">💰 ${sh.price} delivered</p>` : ""}
+        ${sh.cutoff ? `<p style="color:#a1a1aa;font-size:13px;margin:0 0 20px;">⏰ Order by ${sh.cutoff}</p>` : ""}
+        ${ctaBtn("Order Your Shabbat Box", sh.ctaUrl, "#e9c46a", "#000000")}
+      `);
+    }
+
+    if (blastTemplate === "announcement") {
+      return base(`
+        ${an.headline ? `<h1 style="color:#ffffff;font-size:28px;font-weight:900;line-height:1.2;margin:0 0 8px;">${an.headline}</h1>` : ""}
+        ${an.subheadline ? `<p style="color:#2dd4bf;font-size:15px;font-weight:700;margin:0 0 24px;">${an.subheadline}</p>` : ""}
+        ${an.body ? `<div style="color:#d4d4d8;font-size:15px;line-height:1.75;margin:0 0 24px;">${an.body.replace(/\n\n/g, '</p><p style="color:#d4d4d8;font-size:15px;line-height:1.75;margin:0 0 16px;">').replace(/\n/g, "<br/>")}</div>` : ""}
+        ${an.ctaText && an.ctaUrl ? ctaBtn(an.ctaText, an.ctaUrl) : ""}
+        ${an.closing ? `<p style="color:#71717a;font-size:14px;margin:28px 0 0;border-top:1px solid #27272a;padding-top:20px;">${an.closing.replace(/\n/g, "<br/>")}</p>` : ""}
+      `);
+    }
+    return "";
+  };
 
   const [dinners, setDinners] = useState<DinnerEntry[]>(
     dinnerDays.map((d) => ({
@@ -347,116 +424,240 @@ export default function AdminPage() {
           <div>
             <div className="mb-6">
               <h2 className="text-xl font-black mb-1">Email Blast</h2>
-              <p className="text-zinc-500 text-sm">Send to your full subscriber list. Double-check everything before sending — there&apos;s no undo.</p>
+              <p className="text-zinc-500 text-sm">Send to your full subscriber list. No HTML needed — pick a template, fill in the fields, send.</p>
             </div>
 
-            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-yellow-400/20 border border-yellow-400/30 rounded-xl px-4 py-2">
-                  <p className="text-yellow-400 font-black text-sm">1,638 subscribers</p>
-                </div>
-                <p className="text-zinc-500 text-xs">owner.com + site signups</p>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-yellow-400/20 border border-yellow-400/30 rounded-xl px-4 py-2">
+                <p className="text-yellow-400 font-black text-sm">1,638 subscribers</p>
               </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Subject Line</label>
-                  <input
-                    type="text"
-                    value={blastSubject}
-                    onChange={(e) => setBlastSubject(e.target.value)}
-                    placeholder="e.g. This week's Dinner Drop is 🔥"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Preview Text <span className="text-zinc-600 normal-case">(shows under subject in inbox)</span></label>
-                  <input
-                    type="text"
-                    value={blastPreview}
-                    onChange={(e) => setBlastPreview(e.target.value)}
-                    placeholder="e.g. Fred's been in the kitchen since 5am..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Body <span className="text-zinc-600 normal-case">(HTML supported — or just type naturally)</span></label>
-                  <textarea
-                    value={blastBody}
-                    onChange={(e) => setBlastBody(e.target.value)}
-                    rows={10}
-                    placeholder={`Hey! Just wanted to let you know...\n\nThis week's dinner drop is live. Here's what Fred's cooking:\n\n• Monday: Brisket, roasted potatoes, house salad\n• Tuesday: Salmon, rice pilaf, roasted veggies\n\nOrder before noon — spots go fast.\n\nhungry-rooster.vercel.app/dinner\n\n— Fred & the crew`}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm font-mono leading-relaxed resize-y"
-                  />
-                  <p className="text-zinc-600 text-xs mt-1">Tip: Use &lt;b&gt;bold&lt;/b&gt;, &lt;br/&gt; for line breaks, or &lt;a href=&quot;...&quot;&gt;links&lt;/a&gt; for formatting.</p>
-                </div>
-              </div>
+              <p className="text-zinc-500 text-xs">owner.com + site signups</p>
             </div>
 
-            {/* Preview */}
-            {blastBody && (
-              <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-6">
-                <p className="text-xs text-zinc-400 uppercase tracking-wide mb-4">Preview</p>
-                <div className="bg-[#0a0a0a] rounded-xl p-6 border border-zinc-700">
-                  <p className="text-teal-400 font-black text-xs uppercase tracking-widest mb-1">Subject: {blastSubject || "(no subject)"}</p>
-                  {blastPreview && <p className="text-zinc-500 text-xs mb-4 italic">{blastPreview}</p>}
-                  <div className="text-white text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: blastBody }} />
+            {/* Template Picker */}
+            {!blastTemplate && (
+              <div>
+                <p className="text-xs text-zinc-400 uppercase tracking-wide mb-3">Choose a template</p>
+                <div className="grid gap-3">
+                  {[
+                    { id: "dinner", emoji: "🍽️", label: "Dinner Drop", desc: "Announce this week's Mon/Tue/Thu menus with a link to order.", accent: "teal" },
+                    { id: "shabbat", emoji: "🕯️", label: "Shabbat Box", desc: "Share this week's Shabbat menu and drive orders before Friday cutoff.", accent: "yellow" },
+                    { id: "announcement", emoji: "📣", label: "General Announcement", desc: "New menu item, special event, catering push — anything goes.", accent: "zinc" },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setBlastTemplate(t.id as typeof blastTemplate)}
+                      className="flex items-center gap-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-teal-500 rounded-2xl p-5 text-left transition-all"
+                    >
+                      <span className="text-3xl">{t.emoji}</span>
+                      <div>
+                        <p className="font-black text-white">{t.label}</p>
+                        <p className="text-zinc-500 text-sm">{t.desc}</p>
+                      </div>
+                      <span className="ml-auto text-zinc-600 text-xl">→</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
 
-            {blastError && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4">
-                <p className="text-red-400 text-sm font-bold">{blastError}</p>
+            {/* Template Forms */}
+            {blastTemplate && (
+              <div>
+                <button onClick={() => { setBlastTemplate(null); setBlastResult(null); setBlastError(""); }} className="text-zinc-500 hover:text-white text-sm font-bold mb-5 flex items-center gap-1 transition-colors">
+                  ← Change template
+                </button>
+
+                {/* Shared: Subject + Preview */}
+                <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-4 space-y-4">
+                  <div>
+                    <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Subject Line</label>
+                    <input type="text" value={blastSubject} onChange={(e) => setBlastSubject(e.target.value)}
+                      placeholder={blastTemplate === "dinner" ? "This week's Dinner Drop is live 🍽️" : blastTemplate === "shabbat" ? "Shabbat Shalom — this week's box is ready 🕯️" : "Big news from The Hungry Rooster 🐓"}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Preview Text <span className="text-zinc-600 normal-case">(shows under subject in inbox)</span></label>
+                    <input type="text" value={blastPreview} onChange={(e) => setBlastPreview(e.target.value)}
+                      placeholder="Fred's been in the kitchen since 5am..."
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                  </div>
+                </div>
+
+                {/* Dinner Drop Fields */}
+                {blastTemplate === "dinner" && (
+                  <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-4 space-y-4">
+                    <p className="text-teal-400 font-black text-xs uppercase tracking-widest">🍽️ Dinner Drop</p>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Opening Line</label>
+                      <textarea rows={2} value={dd.intro} onChange={(e) => setDd({...dd, intro: e.target.value})}
+                        placeholder="Hey! Fred's been in the kitchen and this week's lineup is no joke..."
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm resize-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Monday Menu</label>
+                      <input type="text" value={dd.mon} onChange={(e) => setDd({...dd, mon: e.target.value})}
+                        placeholder="Brisket · Roasted potatoes · House salad"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Tuesday Menu</label>
+                      <input type="text" value={dd.tue} onChange={(e) => setDd({...dd, tue: e.target.value})}
+                        placeholder="Salmon · Rice pilaf · Roasted veggies"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Thursday Menu</label>
+                      <input type="text" value={dd.thu} onChange={(e) => setDd({...dd, thu: e.target.value})}
+                        placeholder="Short rib · Mashed potatoes · Glazed carrots"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Closing Note <span className="text-zinc-600 normal-case">(optional)</span></label>
+                      <textarea rows={2} value={dd.note} onChange={(e) => setDd({...dd, note: e.target.value})}
+                        placeholder="Order before noon — spots sell out fast. See you at the coop. — Fred"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm resize-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Order Link</label>
+                      <input type="text" value={dd.ctaUrl} onChange={(e) => setDd({...dd, ctaUrl: e.target.value})}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 text-sm" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Shabbat Fields */}
+                {blastTemplate === "shabbat" && (
+                  <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-4 space-y-4">
+                    <p className="text-yellow-400 font-black text-xs uppercase tracking-widest">🕯️ Shabbat Box</p>
+                    {[
+                      { key: "protein", label: "Protein", placeholder: "Roasted chicken" },
+                      { key: "side1", label: "Side 1", placeholder: "Kugel" },
+                      { key: "side2", label: "Side 2", placeholder: "Roasted carrots" },
+                      { key: "dessert", label: "Friday Night Dessert (add-on)", placeholder: "Chocolate lava cake" },
+                      { key: "cutoff", label: "Order Cutoff", placeholder: "Friday 9am" },
+                      { key: "price", label: "Price Range", placeholder: "$65–$225" },
+                    ].map(({ key, label, placeholder }) => (
+                      <div key={key}>
+                        <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">{label}</label>
+                        <input type="text" value={sh[key as keyof typeof sh]} onChange={(e) => setSh({...sh, [key]: e.target.value})}
+                          placeholder={placeholder}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Order Link</label>
+                      <input type="text" value={sh.ctaUrl} onChange={(e) => setSh({...sh, ctaUrl: e.target.value})}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400 text-sm" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Announcement Fields */}
+                {blastTemplate === "announcement" && (
+                  <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-4 space-y-4">
+                    <p className="text-zinc-300 font-black text-xs uppercase tracking-widest">📣 Announcement</p>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Headline</label>
+                      <input type="text" value={an.headline} onChange={(e) => setAn({...an, headline: e.target.value})}
+                        placeholder="We're launching something new."
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Subheadline <span className="text-zinc-600 normal-case">(optional)</span></label>
+                      <input type="text" value={an.subheadline} onChange={(e) => setAn({...an, subheadline: e.target.value})}
+                        placeholder="And we think you're going to love it."
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Body</label>
+                      <textarea rows={6} value={an.body} onChange={(e) => setAn({...an, body: e.target.value})}
+                        placeholder={"Write your message here. Use double line breaks for new paragraphs.\n\nFred has been working on this for months and it's finally ready."}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm resize-y" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Button Text <span className="text-zinc-600 normal-case">(optional)</span></label>
+                        <input type="text" value={an.ctaText} onChange={(e) => setAn({...an, ctaText: e.target.value})}
+                          placeholder="Learn More"
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Button URL</label>
+                        <input type="text" value={an.ctaUrl} onChange={(e) => setAn({...an, ctaUrl: e.target.value})}
+                          placeholder="https://..."
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Sign-off <span className="text-zinc-600 normal-case">(optional)</span></label>
+                      <textarea rows={2} value={an.closing} onChange={(e) => setAn({...an, closing: e.target.value})}
+                        placeholder={"With love from the coop,\n— Scarlet & Fred"}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm resize-none" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Live Preview */}
+                {buildBlastHtml() && (
+                  <div className="mb-6">
+                    <p className="text-xs text-zinc-400 uppercase tracking-wide mb-3">Live Preview</p>
+                    <div className="rounded-2xl overflow-hidden border border-zinc-700">
+                      <div className="bg-zinc-800 px-4 py-2 flex items-center gap-2">
+                        <span className="text-zinc-400 text-xs font-bold">Subject:</span>
+                        <span className="text-white text-xs">{blastSubject || "(no subject yet)"}</span>
+                      </div>
+                      <div dangerouslySetInnerHTML={{ __html: buildBlastHtml() }} />
+                    </div>
+                  </div>
+                )}
+
+                {blastError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4">
+                    <p className="text-red-400 text-sm font-bold">{blastError}</p>
+                  </div>
+                )}
+
+                {blastResult && (
+                  <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl px-4 py-4 mb-4">
+                    <p className="text-teal-400 font-black text-lg mb-1">Blast sent! 🐓</p>
+                    <p className="text-zinc-300 text-sm">{blastResult.sent} emails sent successfully{blastResult.failed > 0 ? `, ${blastResult.failed} failed` : ""}.</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={async () => {
+                    const html = buildBlastHtml();
+                    if (!blastSubject.trim() || !html) { setBlastError("Fill in the subject and at least one content field."); return; }
+                    const confirmed = window.confirm(`Send to all 1,638 subscribers?\n\nSubject: ${blastSubject}\n\nThis cannot be undone.`);
+                    if (!confirmed) return;
+                    setBlastSending(true);
+                    setBlastError("");
+                    setBlastResult(null);
+                    try {
+                      const res = await fetch("/api/blast", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ subject: blastSubject, previewText: blastPreview, htmlBody: html, password: "fredapproves" }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setBlastResult(data);
+                        setBlastSubject(""); setBlastPreview("");
+                        setDd({ intro: "", mon: "", tue: "", thu: "", note: "", ctaUrl: "https://hungry-rooster.vercel.app/dinner" });
+                        setSh({ protein: "", side1: "", side2: "", dessert: "", cutoff: "", price: "$65–$225", ctaUrl: "https://hungry-rooster.vercel.app/shabbat" });
+                        setAn({ headline: "", subheadline: "", body: "", ctaText: "", ctaUrl: "", closing: "" });
+                      } else { setBlastError(data.error || "Something went wrong."); }
+                    } catch { setBlastError("Network error — try again."); }
+                    finally { setBlastSending(false); }
+                  }}
+                  disabled={blastSending || !blastSubject.trim() || !buildBlastHtml()}
+                  className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {blastSending ? "Sending... this may take a minute" : "Send to All Subscribers"}
+                </button>
               </div>
             )}
-
-            {blastResult && (
-              <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl px-4 py-4 mb-4">
-                <p className="text-teal-400 font-black text-lg mb-1">Blast sent! 🐓</p>
-                <p className="text-zinc-300 text-sm">{blastResult.sent} emails sent successfully{blastResult.failed > 0 ? `, ${blastResult.failed} failed` : ""}.</p>
-              </div>
-            )}
-
-            <button
-              onClick={async () => {
-                if (!blastSubject.trim() || !blastBody.trim()) {
-                  setBlastError("Subject and body are required.");
-                  return;
-                }
-                const confirmed = window.confirm(`Send to all 1,638 subscribers?\n\nSubject: ${blastSubject}\n\nThis cannot be undone.`);
-                if (!confirmed) return;
-                setBlastSending(true);
-                setBlastError("");
-                setBlastResult(null);
-                try {
-                  const res = await fetch("/api/blast", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ subject: blastSubject, previewText: blastPreview, htmlBody: blastBody.replace(/\n/g, "<br/>"), password: "fredapproves" }),
-                  });
-                  const data = await res.json();
-                  if (data.success) {
-                    setBlastResult(data);
-                    setBlastSubject("");
-                    setBlastPreview("");
-                    setBlastBody("");
-                  } else {
-                    setBlastError(data.error || "Something went wrong.");
-                  }
-                } catch {
-                  setBlastError("Network error — try again.");
-                } finally {
-                  setBlastSending(false);
-                }
-              }}
-              disabled={blastSending || !blastSubject.trim() || !blastBody.trim()}
-              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {blastSending ? "Sending... this may take a minute" : "Send to All Subscribers"}
-            </button>
           </div>
         )}
 
