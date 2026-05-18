@@ -85,6 +85,7 @@ Sent automatically by The Hungry Rooster ordering system.
     </div>
   `;
 
+  // Internal notification to THR team
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -104,6 +105,85 @@ Sent automatically by The Hungry Rooster ordering system.
     const err = await res.text();
     console.error("Resend error:", err);
     return NextResponse.json({ error: err }, { status: 500 });
+  }
+
+  // Customer confirmation email (only if we have their email)
+  if (customer_email) {
+    const isShabbat = order_type === "shabbat";
+    const isDinner = order_type === "dinner";
+
+    const confirmSubject = isShabbat
+      ? "Shabbat Shalom! Your order is confirmed 🕯️"
+      : isDinner
+      ? "Order confirmed — Fred's on it 🐓"
+      : "Your order is confirmed — The Hungry Rooster";
+
+    const confirmHeadline = isShabbat
+      ? "Shabbat Shalom!"
+      : `You're confirmed, ${customer_name.split(" ")[0]}!`;
+
+    const confirmSubline = isShabbat
+      ? "Your Shabbat box is locked in. Fred will have it ready for Friday delivery."
+      : isDinner
+      ? "Your Dinner Drop is confirmed. Fred's already thinking about it."
+      : "Your order is confirmed and paid. We'll be in touch with details.";
+
+    const confirmHtml = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #ffffff; padding: 32px; border-radius: 12px;">
+        <img src="https://hungry-rooster.vercel.app/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 48px; margin-bottom: 24px;" />
+        <h1 style="color: #2dd4bf; font-size: 28px; margin-bottom: 8px;">${confirmHeadline}</h1>
+        <p style="color: #a1a1aa; font-size: 16px; margin-bottom: 28px;">${confirmSubline}</p>
+
+        <div style="background: #18181b; border-radius: 8px; padding: 20px; margin-bottom: 16px;">
+          <h2 style="color: #e9c46a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px;">Your Order</h2>
+          ${Array.isArray(items) ? items.map((i: { name: string; protein?: string; side1?: string; side2?: string; extra?: string; description?: string; qty?: number }) => `
+            <div style="border-bottom: 1px solid #27272a; padding: 8px 0;">
+              <p style="margin: 0; font-weight: bold;">${i.qty ? `${i.qty}x ` : ""}${i.name}</p>
+              ${i.protein ? `<p style="margin: 2px 0; color: #a1a1aa; font-size: 13px;">Protein: ${i.protein}</p>` : ""}
+              ${i.side1 ? `<p style="margin: 2px 0; color: #a1a1aa; font-size: 13px;">Side 1: ${i.side1}</p>` : ""}
+              ${i.side2 ? `<p style="margin: 2px 0; color: #a1a1aa; font-size: 13px;">Side 2: ${i.side2}</p>` : ""}
+              ${i.extra ? `<p style="margin: 2px 0; color: #a1a1aa; font-size: 13px;">Side 3: ${i.extra}</p>` : ""}
+              ${i.description ? `<p style="margin: 2px 0; color: #a1a1aa; font-size: 13px;">${i.description}</p>` : ""}
+            </div>
+          `).join("") : ""}
+        </div>
+
+        ${customer_address ? `
+        <div style="background: #18181b; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+          <h2 style="color: #e9c46a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px;">Delivery Address</h2>
+          <p style="margin: 0; color: #d4d4d8;">${customer_address}</p>
+        </div>
+        ` : ""}
+
+        ${special_requests ? `
+        <div style="background: #18181b; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+          <h2 style="color: #e9c46a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px;">Special Requests</h2>
+          <p style="margin: 0; color: #d4d4d8;">${special_requests}</p>
+        </div>
+        ` : ""}
+
+        <div style="background: #2dd4bf; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px;">
+          <p style="margin: 0; color: #000000; font-weight: 900; font-size: 20px;">Total Paid: $${total}</p>
+        </div>
+
+        <p style="color: #71717a; font-size: 13px; margin-bottom: 4px;">Questions? Reply to this email or text us.</p>
+        <p style="color: #3f3f46; font-size: 12px; margin-top: 24px;">The Hungry Rooster · 1499 Regal Row, Suite 206, Dallas TX · Mon–Fri 9am–2pm CST</p>
+      </div>
+    `;
+
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "The Hungry Rooster <onboarding@resend.dev>",
+        to: [customer_email],
+        subject: confirmSubject,
+        html: confirmHtml,
+      }),
+    });
   }
 
   return NextResponse.json({ success: true });

@@ -52,74 +52,113 @@ export async function POST(req: NextRequest) {
       items = [];
     }
 
-    const { error: insertError } = await supabase.from("orders").insert({
-      order_type,
-      menu_id: meta.menu_id || null,
-      customer_name: meta.customer_name || "",
-      customer_email: meta.customer_email || "",
-      customer_phone: meta.customer_phone || "",
-      customer_address: meta.customer_address || "",
-      special_requests: meta.special_requests || "",
-      items,
-      total,
-      status: "paid",
-      stripe_session_id: session.id,
-    });
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
-    if (insertError) {
-      console.error("Supabase insert error:", insertError);
-      return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
-    }
+    if (order_type === "group_order") {
+      // Write to group_orders table
+      const { error: insertError } = await supabase.from("group_orders").insert({
+        location_id: meta.location_id || null,
+        location_slug: meta.location_slug || "",
+        person_name: meta.person_name || "",
+        items,
+        total,
+        special_requests: meta.special_requests || "",
+        delivery_date: meta.delivery_date || null,
+        status: "paid",
+        stripe_session_id: session.id,
+      });
+      if (insertError) {
+        console.error("Supabase group_orders insert error:", insertError);
+        return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
+      }
 
-    // Decrement quantity remaining for metered products
-    if (meta.menu_id) {
-      if (order_type === "dinner") {
-        const { data: menuData } = await supabase
-          .from("dinner_menus")
-          .select("quantity_remaining")
-          .eq("id", meta.menu_id)
-          .single();
-        if (menuData && menuData.quantity_remaining > 0) {
-          await supabase
+      try {
+        await fetch(`${baseUrl}/api/notify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_type: "group_order",
+            customer_name: meta.person_name || "",
+            customer_phone: "",
+            customer_email: "",
+            customer_address: meta.location_name || "",
+            special_requests: meta.special_requests || "",
+            items,
+            total,
+          }),
+        });
+      } catch (notifyErr) {
+        console.error("Notify call failed:", notifyErr);
+      }
+    } else {
+      // Write to orders table (dinner / shabbat)
+      const { error: insertError } = await supabase.from("orders").insert({
+        order_type,
+        menu_id: meta.menu_id || null,
+        customer_name: meta.customer_name || "",
+        customer_email: meta.customer_email || "",
+        customer_phone: meta.customer_phone || "",
+        customer_address: meta.customer_address || "",
+        special_requests: meta.special_requests || "",
+        items,
+        total,
+        status: "paid",
+        stripe_session_id: session.id,
+      });
+
+      if (insertError) {
+        console.error("Supabase insert error:", insertError);
+        return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
+      }
+
+      // Decrement quantity remaining
+      if (meta.menu_id) {
+        if (order_type === "dinner") {
+          const { data: menuData } = await supabase
             .from("dinner_menus")
-            .update({ quantity_remaining: menuData.quantity_remaining - 1 })
-            .eq("id", meta.menu_id);
-        }
-      } else if (order_type === "shabbat") {
-        const { data: menuData } = await supabase
-          .from("shabbat_menus")
-          .select("quantity_remaining")
-          .eq("id", meta.menu_id)
-          .single();
-        if (menuData && menuData.quantity_remaining > 0) {
-          await supabase
+            .select("quantity_remaining")
+            .eq("id", meta.menu_id)
+            .single();
+          if (menuData && menuData.quantity_remaining > 0) {
+            await supabase
+              .from("dinner_menus")
+              .update({ quantity_remaining: menuData.quantity_remaining - 1 })
+              .eq("id", meta.menu_id);
+          }
+        } else if (order_type === "shabbat") {
+          const { data: menuData } = await supabase
             .from("shabbat_menus")
-            .update({ quantity_remaining: menuData.quantity_remaining - 1 })
-            .eq("id", meta.menu_id);
+            .select("quantity_remaining")
+            .eq("id", meta.menu_id)
+            .single();
+          if (menuData && menuData.quantity_remaining > 0) {
+            await supabase
+              .from("shabbat_menus")
+              .update({ quantity_remaining: menuData.quantity_remaining - 1 })
+              .eq("id", meta.menu_id);
+          }
         }
       }
-    }
 
-    // Fire order notification
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
-    try {
-      await fetch(`${baseUrl}/api/notify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_type,
-          customer_name: meta.customer_name || "",
-          customer_phone: meta.customer_phone || "",
-          customer_email: meta.customer_email || "",
-          customer_address: meta.customer_address || "",
-          special_requests: meta.special_requests || "",
-          items,
-          total,
-        }),
-      });
-    } catch (notifyErr) {
-      // Don't fail the webhook if notify has issues — order is already recorded
-      console.error("Notify call failed:", notifyErr);
+      // Fire internal notification + customer confirmation
+      try {
+        await fetch(`${baseUrl}/api/notify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_type,
+            customer_name: meta.customer_name || "",
+            customer_phone: meta.customer_phone || "",
+            customer_email: meta.customer_email || "",
+            customer_address: meta.customer_address || "",
+            special_requests: meta.special_requests || "",
+            items,
+            total,
+          }),
+        });
+      } catch (notifyErr) {
+        console.error("Notify call failed:", notifyErr);
+      }
     }
   }
 

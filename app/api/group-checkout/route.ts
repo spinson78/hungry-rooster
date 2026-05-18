@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   }));
 
   const metadata = {
+    order_type: "group_order",
     person_name: personName,
     special_requests: specialRequests || "",
     location_id: locationId,

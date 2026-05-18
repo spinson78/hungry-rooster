@@ -27,27 +27,38 @@ export default function GroupSuccessPage() {
         if (!data.success) { setStatus("error"); return; }
         setCustomerName(data.person_name);
 
-        await supabase.from("group_orders").insert({
-          location_id: data.location_id,
-          location_slug: data.location_slug,
-          person_name: data.person_name,
-          items: data.items,
-          total: data.total,
-          special_requests: data.special_requests || "",
-          delivery_date: data.delivery_date,
-          status: "paid",
-          stripe_session_id: sessionId,
-        });
+        // Check if webhook already recorded this order (idempotency)
+        const { data: existing } = await supabase
+          .from("group_orders")
+          .select("id")
+          .eq("stripe_session_id", sessionId)
+          .maybeSingle();
+
+        if (!existing) {
+          await supabase.from("group_orders").insert({
+            location_id: data.location_id,
+            location_slug: data.location_slug,
+            person_name: data.person_name,
+            items: data.items,
+            total: data.total,
+            special_requests: data.special_requests || "",
+            delivery_date: data.delivery_date,
+            status: "paid",
+            stripe_session_id: sessionId,
+          });
+        }
 
         const today = new Date().toISOString().split("T")[0];
         const { count } = await supabase.from("group_orders").select("*", { count: "exact", head: true }).eq("location_slug", data.location_slug).eq("delivery_date", today).eq("status", "paid");
         setOrderCount(count || 0);
 
-        await fetch("/api/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_type: "group_order", customer_name: data.person_name, customer_phone: "", customer_email: "", customer_address: data.location_name, special_requests: data.special_requests, items: data.items, total: data.total }),
-        });
+        if (!existing) {
+          await fetch("/api/notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_type: "group_order", customer_name: data.person_name, customer_phone: "", customer_email: "", customer_address: data.location_name, special_requests: data.special_requests, items: data.items, total: data.total }),
+          });
+        }
 
         setStatus("success");
       } catch { setStatus("error"); }
