@@ -112,7 +112,7 @@ export default function Home() {
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Food cart, 3x a week. Mon + Thu: sandwiches and salads. Friday: pastry-heavy for Shabbat.
             </p>
-            <span className="text-yellow-400 text-sm font-bold">Find the cart</span>
+            <a href="/esther" className="text-yellow-400 text-sm font-bold hover:text-yellow-300 transition-colors">Find the cart →</a>
           </div>
           <div>
             <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36 mb-5" />

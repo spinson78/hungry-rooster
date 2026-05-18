@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Inter', sans-serif; }
+  .canvas { width: 1080px; height: 1080px; background: #000; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+  .header { background: #facc15; padding: 42px 60px 36px; position: relative; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .eyebrow { color: #000; font-size: 20px; font-weight: 900; letter-spacing: 5px; text-transform: uppercase; }
+  .brand { color: rgba(0,0,0,0.35); font-size: 17px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; text-align: right; }
+  .day-name { color: #000; font-size: 130px; font-weight: 900; line-height: 0.88; text-transform: uppercase; letter-spacing: -5px; }
+  .date-line { color: rgba(0,0,0,0.4); font-size: 24px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-top: 10px; }
+
+  .body { flex: 1; display: flex; overflow: hidden; }
+  .menu-col { flex: 1; padding: 40px 50px 40px 60px; display: flex; flex-direction: column; justify-content: center; }
+  .special-badge { background: #facc15; color: #000; font-size: 14px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; padding: 7px 22px; border-radius: 40px; display: inline-block; margin-bottom: 28px; align-self: flex-start; }
+  .menu-label { color: #3f3f46; font-size: 16px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 28px; }
+  .menu-item { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
+  .bar { width: 5px; height: 46px; background: #facc15; border-radius: 3px; flex-shrink: 0; margin-top: 4px; }
+  .item-text { color: #fff; font-size: 38px; font-weight: 700; line-height: 1.05; }
+
+  .fred-col { width: 420px; flex-shrink: 0; display: flex; align-items: flex-end; justify-content: center; }
+  .fred-img { width: 100%; height: auto; display: block; }
+
+  .footer { padding: 28px 60px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #18181b; }
+  .price-block { }
+  .price-label { color: #3f3f46; font-size: 16px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; }
+  .price { color: #facc15; font-size: 88px; font-weight: 900; line-height: 1; letter-spacing: -4px; }
+  .price-sub { color: #27272a; font-size: 18px; font-weight: 700; }
+  .order-block { text-align: right; }
+  .order-label { color: #3f3f46; font-size: 16px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .order-badge { background: #facc15; color: #000; font-size: 20px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; padding: 12px 32px; border-radius: 50px; display: inline-block; }
+  .cutoff { color: #3f3f46; font-size: 15px; font-weight: 700; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="header">
+    <div class="header-top">
+      <div class="eyebrow">The Dinner Drop</div>
+      <div class="brand">The Hungry Rooster</div>
+    </div>
+    <div class="day-name">Thursday</div>
+    <div class="date-line">May 21, 2026</div>
+  </div>
+
+  <div class="body">
+    <div class="menu-col">
+      <div class="special-badge">Special Menu Night</div>
+      <div class="menu-label">Tonight's Menu</div>
+      <div class="menu-item"><div class="bar"></div><div class="item-text">Beer Battered White Fish</div></div>
+      <div class="menu-item"><div class="bar"></div><div class="item-text">Homemade Steak Fries</div></div>
+      <div class="menu-item"><div class="bar"></div><div class="item-text">Garden Salad</div></div>
+      <div class="menu-item"><div class="bar"></div><div class="item-text">Pickled Cucumbers & Onions</div></div>
+    </div>
+    <div class="fred-col">
+      <img class="fred-img" src="../fred car png.png" alt="Fred delivering dinner" />
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="price-block">
+      <div class="price-label">Special night delivery</div>
+      <div class="price">$100</div>
+      <div class="price-sub">Kosher · Scratch-made</div>
+    </div>
+    <div class="order-block">
+      <div class="order-label">Orders close 12PM</div>
+      <div class="order-badge">Order Now</div>
+      <div class="cutoff">hungry-rooster.vercel.app</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
