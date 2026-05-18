@@ -55,7 +55,7 @@ const GROUP_MENU: MenuItem[] = [
 const CATEGORY_ORDER = ["Sandwiches", "Wraps", "Mains", "Salads", "Protein Add-ons", "Group Exclusive", "Desserts & Sides", "Drinks"];
 const DESSERT_IDS = ["cookie-sprinkle", "cookie-bullseye", "brownie", "boureka"];
 const DRINK_IDS = ["soda-coke", "soda-diet", "soda-drpepper", "soda-sprite", "soda-rootbeer"];
-const MIN_ORDERS = 10;
+const MIN_TOTAL = 165;
 
 export default function GroupOrderPage() {
   const params = useParams();
@@ -90,14 +90,15 @@ export default function GroupOrderPage() {
       if (!loc) { setNotFound(true); setLoading(false); return; }
       setLocation(loc);
 
-      const { count } = await supabase
+      const { data: orderData } = await supabase
         .from("group_orders")
-        .select("*", { count: "exact", head: true })
+        .select("total")
         .eq("location_slug", slug)
         .eq("delivery_date", today)
         .eq("status", "paid");
 
-      setOrderCount(count || 0);
+      const totalSoFar = (orderData || []).reduce((sum, o) => sum + (o.total || 0), 0);
+      setOrderCount(totalSoFar);
       setLoading(false);
     };
     fetchData();
@@ -191,7 +192,7 @@ export default function GroupOrderPage() {
   const cartItems = getCartItems();
   const total = getTotal();
   const totalItems = getTotalItems();
-  const meetsMinimum = orderCount >= MIN_ORDERS;
+  const meetsMinimum = orderCount >= MIN_TOTAL;
 
   return (
     <main className="bg-black text-white min-h-screen pb-32">

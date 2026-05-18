@@ -51,9 +51,17 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "orders">("menus");
+  const [tab, setTab] = useState<"menus" | "orders" | "blast">("menus");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // Email blast state
+  const [blastSubject, setBlastSubject] = useState("");
+  const [blastPreview, setBlastPreview] = useState("");
+  const [blastBody, setBlastBody] = useState("");
+  const [blastSending, setBlastSending] = useState(false);
+  const [blastResult, setBlastResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+  const [blastError, setBlastError] = useState("");
 
   const [dinners, setDinners] = useState<DinnerEntry[]>(
     dinnerDays.map((d) => ({
@@ -210,7 +218,7 @@ export default function AdminPage() {
         </div>
 
         {/* TABS */}
-        <div className="flex gap-2 mb-10">
+        <div className="flex gap-2 mb-10 flex-wrap">
           <button
             onClick={() => setTab("menus")}
             className={`px-6 py-3 rounded-full font-black text-sm transition-colors ${tab === "menus" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}
@@ -222,6 +230,12 @@ export default function AdminPage() {
             className={`px-6 py-3 rounded-full font-black text-sm transition-colors ${tab === "orders" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}
           >
             Incoming Orders
+          </button>
+          <button
+            onClick={() => { setTab("blast"); setBlastResult(null); setBlastError(""); }}
+            className={`px-6 py-3 rounded-full font-black text-sm transition-colors ${tab === "blast" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}
+          >
+            📣 Email Blast
           </button>
         </div>
 
@@ -326,6 +340,124 @@ export default function AdminPage() {
             </button>
             {saved && <p className="text-teal-400 text-center font-bold mt-4">Menus saved! Fred is ready for the week.</p>}
           </>
+        )}
+
+        {/* EMAIL BLAST TAB */}
+        {tab === "blast" && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl font-black mb-1">Email Blast</h2>
+              <p className="text-zinc-500 text-sm">Send to your full subscriber list. Double-check everything before sending — there&apos;s no undo.</p>
+            </div>
+
+            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-yellow-400/20 border border-yellow-400/30 rounded-xl px-4 py-2">
+                  <p className="text-yellow-400 font-black text-sm">1,638 subscribers</p>
+                </div>
+                <p className="text-zinc-500 text-xs">owner.com + site signups</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Subject Line</label>
+                  <input
+                    type="text"
+                    value={blastSubject}
+                    onChange={(e) => setBlastSubject(e.target.value)}
+                    placeholder="e.g. This week's Dinner Drop is 🔥"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Preview Text <span className="text-zinc-600 normal-case">(shows under subject in inbox)</span></label>
+                  <input
+                    type="text"
+                    value={blastPreview}
+                    onChange={(e) => setBlastPreview(e.target.value)}
+                    placeholder="e.g. Fred's been in the kitchen since 5am..."
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Body <span className="text-zinc-600 normal-case">(HTML supported — or just type naturally)</span></label>
+                  <textarea
+                    value={blastBody}
+                    onChange={(e) => setBlastBody(e.target.value)}
+                    rows={10}
+                    placeholder={`Hey! Just wanted to let you know...\n\nThis week's dinner drop is live. Here's what Fred's cooking:\n\n• Monday: Brisket, roasted potatoes, house salad\n• Tuesday: Salmon, rice pilaf, roasted veggies\n\nOrder before noon — spots go fast.\n\nhungry-rooster.vercel.app/dinner\n\n— Fred & the crew`}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm font-mono leading-relaxed resize-y"
+                  />
+                  <p className="text-zinc-600 text-xs mt-1">Tip: Use &lt;b&gt;bold&lt;/b&gt;, &lt;br/&gt; for line breaks, or &lt;a href=&quot;...&quot;&gt;links&lt;/a&gt; for formatting.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            {blastBody && (
+              <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-6">
+                <p className="text-xs text-zinc-400 uppercase tracking-wide mb-4">Preview</p>
+                <div className="bg-[#0a0a0a] rounded-xl p-6 border border-zinc-700">
+                  <p className="text-teal-400 font-black text-xs uppercase tracking-widest mb-1">Subject: {blastSubject || "(no subject)"}</p>
+                  {blastPreview && <p className="text-zinc-500 text-xs mb-4 italic">{blastPreview}</p>}
+                  <div className="text-white text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: blastBody }} />
+                </div>
+              </div>
+            )}
+
+            {blastError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4">
+                <p className="text-red-400 text-sm font-bold">{blastError}</p>
+              </div>
+            )}
+
+            {blastResult && (
+              <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl px-4 py-4 mb-4">
+                <p className="text-teal-400 font-black text-lg mb-1">Blast sent! 🐓</p>
+                <p className="text-zinc-300 text-sm">{blastResult.sent} emails sent successfully{blastResult.failed > 0 ? `, ${blastResult.failed} failed` : ""}.</p>
+              </div>
+            )}
+
+            <button
+              onClick={async () => {
+                if (!blastSubject.trim() || !blastBody.trim()) {
+                  setBlastError("Subject and body are required.");
+                  return;
+                }
+                const confirmed = window.confirm(`Send to all 1,638 subscribers?\n\nSubject: ${blastSubject}\n\nThis cannot be undone.`);
+                if (!confirmed) return;
+                setBlastSending(true);
+                setBlastError("");
+                setBlastResult(null);
+                try {
+                  const res = await fetch("/api/blast", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ subject: blastSubject, previewText: blastPreview, htmlBody: blastBody.replace(/\n/g, "<br/>"), password: "fredapproves" }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setBlastResult(data);
+                    setBlastSubject("");
+                    setBlastPreview("");
+                    setBlastBody("");
+                  } else {
+                    setBlastError(data.error || "Something went wrong.");
+                  }
+                } catch {
+                  setBlastError("Network error — try again.");
+                } finally {
+                  setBlastSending(false);
+                }
+              }}
+              disabled={blastSending || !blastSubject.trim() || !blastBody.trim()}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {blastSending ? "Sending... this may take a minute" : "Send to All Subscribers"}
+            </button>
+          </div>
         )}
 
         {/* ORDERS TAB */}
