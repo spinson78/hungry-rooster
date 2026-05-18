@@ -120,7 +120,7 @@ export default function Home() {
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Order kiosk with dirty sodas and serious flavor. Plus signature sauces to take home.
             </p>
-            <span className="text-teal-400 text-sm font-bold">Get saucy</span>
+            <a href="/rico" className="text-teal-400 text-sm font-bold hover:text-teal-300 transition-colors">Get saucy →</a>
           </div>
         </div>
       </section>

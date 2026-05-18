@@ -22,30 +22,40 @@ export default function DinnerSuccessPage() {
         const data = await res.json();
         if (!data.success) { setStatus("error"); return; }
         setCustomerName(data.customer_name);
-        await supabase.from("orders").insert({
-          order_type: "dinner",
-          menu_id: data.menu_id || null,
-          customer_name: data.customer_name,
-          customer_email: data.customer_email,
-          customer_phone: data.customer_phone,
-          customer_address: data.customer_address,
-          special_requests: data.special_requests,
-          items: data.items,
-          total: 85,
-          status: "paid",
-          stripe_session_id: sessionId,
-        });
-        if (data.menu_id) {
-          const { data: menuData } = await supabase.from("dinner_menus").select("quantity_remaining").eq("id", data.menu_id).single();
-          if (menuData && menuData.quantity_remaining > 0) {
-            await supabase.from("dinner_menus").update({ quantity_remaining: menuData.quantity_remaining - 1 }).eq("id", data.menu_id);
+
+        // Check if webhook already recorded this order (idempotency)
+        const { data: existing } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("stripe_session_id", sessionId)
+          .maybeSingle();
+
+        if (!existing) {
+          await supabase.from("orders").insert({
+            order_type: "dinner",
+            menu_id: data.menu_id || null,
+            customer_name: data.customer_name,
+            customer_email: data.customer_email,
+            customer_phone: data.customer_phone,
+            customer_address: data.customer_address,
+            special_requests: data.special_requests,
+            items: data.items,
+            total: data.total || 85,
+            status: "paid",
+            stripe_session_id: sessionId,
+          });
+          if (data.menu_id) {
+            const { data: menuData } = await supabase.from("dinner_menus").select("quantity_remaining").eq("id", data.menu_id).single();
+            if (menuData && menuData.quantity_remaining > 0) {
+              await supabase.from("dinner_menus").update({ quantity_remaining: menuData.quantity_remaining - 1 }).eq("id", data.menu_id);
+            }
           }
+          await fetch("/api/notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_type: "dinner", customer_name: data.customer_name, customer_phone: data.customer_phone, customer_email: data.customer_email, customer_address: data.customer_address, special_requests: data.special_requests, items: data.items, total: data.total || 85 }),
+          });
         }
-        await fetch("/api/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_type: "dinner", customer_name: data.customer_name, customer_phone: data.customer_phone, customer_email: data.customer_email, customer_address: data.customer_address, special_requests: data.special_requests, items: data.items, total: 85 }),
-        });
         setStatus("success");
       } catch { setStatus("error"); }
     };

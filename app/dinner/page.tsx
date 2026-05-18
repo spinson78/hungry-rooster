@@ -62,6 +62,7 @@ export default function DinnerPage() {
           dinnerLabel,
           price: dinner.price || 85,
           metadata: {
+            order_type: "dinner",
             menu_id: dinner.id,
             customer_name: form.name,
             customer_phone: form.phone,

@@ -22,5 +22,6 @@ export async function GET(req: NextRequest) {
     customer_address: meta.customer_address,
     special_requests: meta.special_requests,
     items: JSON.parse(meta.items),
+    total: (session.amount_total || 0) / 100,
   });
 }
