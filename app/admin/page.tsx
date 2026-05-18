@@ -51,9 +51,12 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "orders" | "blast">("menus");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "blast">("menus");
+  const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
+  const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
+  const [cateringOrders, setCateringOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   // Email blast state
   const [blastTemplate, setBlastTemplate] = useState<"dinner" | "shabbat" | "announcement" | null>(null);
@@ -171,19 +174,54 @@ export default function AdminPage() {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchDinnerOrders = async () => {
     setOrdersLoading(true);
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (data) setOrders(data);
+    const { data } = await supabase.from("orders").select("*").eq("order_type", "dinner").order("created_at", { ascending: false }).limit(100);
+    if (data) setDinnerOrders(data);
     setOrdersLoading(false);
   };
 
+  const fetchShabbatOrders = async () => {
+    setOrdersLoading(true);
+    const { data } = await supabase.from("orders").select("*").eq("order_type", "shabbat").order("created_at", { ascending: false }).limit(100);
+    if (data) setShabbatOrders(data);
+    setOrdersLoading(false);
+  };
+
+  const fetchCateringOrders = async () => {
+    setOrdersLoading(true);
+    const { data } = await supabase.from("orders").select("*").in("order_type", ["catering", "catering_inquiry"]).order("created_at", { ascending: false }).limit(100);
+    if (data) setCateringOrders(data);
+    setOrdersLoading(false);
+  };
+
+  const clearCompleted = async (type: "dinner" | "shabbat" | "catering") => {
+    setClearing(true);
+    if (type === "dinner") {
+      await supabase.from("orders").delete().eq("order_type", "dinner").eq("status", "complete");
+      await fetchDinnerOrders();
+    } else if (type === "shabbat") {
+      await supabase.from("orders").delete().eq("order_type", "shabbat").eq("status", "complete");
+      await fetchShabbatOrders();
+    } else {
+      await supabase.from("orders").delete().in("order_type", ["catering", "catering_inquiry"]).eq("status", "complete");
+      await fetchCateringOrders();
+    }
+    setClearing(false);
+  };
+
+  const markOrderComplete = async (id: string, type: "dinner" | "shabbat" | "catering") => {
+    await supabase.from("orders").update({ status: "complete" }).eq("id", id);
+    if (type === "dinner") setDinnerOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
+    else if (type === "shabbat") setShabbatOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
+    else setCateringOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
+  };
+
   useEffect(() => {
-    if (authed && tab === "orders") fetchOrders();
+    if (!authed) return;
+    if (tab === "dinner-orders") fetchDinnerOrders();
+    if (tab === "shabbat-orders") fetchShabbatOrders();
+    if (tab === "catering-orders") fetchCateringOrders();
   }, [authed, tab]);
 
   const updateDinner = (index: number, field: keyof DinnerEntry, value: string | number) => {
@@ -296,22 +334,19 @@ export default function AdminPage() {
 
         {/* TABS */}
         <div className="flex gap-2 mb-10 flex-wrap">
-          <button
-            onClick={() => setTab("menus")}
-            className={`px-6 py-3 rounded-full font-black text-sm transition-colors ${tab === "menus" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}
-          >
+          <button onClick={() => setTab("menus")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "menus" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             Weekly Menus
           </button>
-          <button
-            onClick={() => setTab("orders")}
-            className={`px-6 py-3 rounded-full font-black text-sm transition-colors ${tab === "orders" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}
-          >
-            Incoming Orders
+          <button onClick={() => setTab("dinner-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "dinner-orders" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🍽️ Dinner Drop
           </button>
-          <button
-            onClick={() => { setTab("blast"); setBlastResult(null); setBlastError(""); }}
-            className={`px-6 py-3 rounded-full font-black text-sm transition-colors ${tab === "blast" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}
-          >
+          <button onClick={() => setTab("shabbat-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "shabbat-orders" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🕯️ Shabbat
+          </button>
+          <button onClick={() => setTab("catering-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-orders" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🍽️ Catering
+          </button>
+          <button onClick={() => { setTab("blast"); setBlastResult(null); setBlastError(""); }} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "blast" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📣 Email Blast
           </button>
         </div>
@@ -661,72 +696,103 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ORDERS TAB */}
-        {tab === "orders" && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black">Incoming Orders</h2>
-              <button onClick={fetchOrders} className="text-teal-400 font-bold text-sm hover:text-teal-300 transition-colors">↻ Refresh</button>
+        {/* ORDER TABS — shared render helper */}
+        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "catering-orders") && (() => {
+          const isDinner = tab === "dinner-orders";
+          const isShabbat = tab === "shabbat-orders";
+          const orderList = isDinner ? dinnerOrders : isShabbat ? shabbatOrders : cateringOrders;
+          const refreshFn = isDinner ? fetchDinnerOrders : isShabbat ? fetchShabbatOrders : fetchCateringOrders;
+          const clearType = isDinner ? "dinner" : isShabbat ? "shabbat" : "catering";
+          const accentColor = isDinner ? "teal" : isShabbat ? "yellow" : "purple";
+          const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : "🍽️ Catering Orders";
+          const completedCount = orderList.filter(o => o.status === "complete").length;
+
+          return (
+            <div>
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <h2 className="text-xl font-black">{label}</h2>
+                <div className="flex gap-2">
+                  {completedCount > 0 && (
+                    <button
+                      onClick={() => clearCompleted(clearType as "dinner" | "shabbat" | "catering")}
+                      disabled={clearing}
+                      className="text-red-400 hover:text-red-300 font-bold text-sm transition-colors border border-red-400/30 px-4 py-2 rounded-full"
+                    >
+                      {clearing ? "Clearing..." : `Clear ${completedCount} completed`}
+                    </button>
+                  )}
+                  <button onClick={refreshFn} className={`text-${accentColor}-400 font-bold text-sm hover:text-${accentColor}-300 transition-colors`}>↻ Refresh</button>
+                </div>
+              </div>
+
+              {ordersLoading ? (
+                <p className="text-zinc-400">Loading...</p>
+              ) : orderList.length === 0 ? (
+                <div className="bg-zinc-900 rounded-2xl p-10 border border-zinc-800 text-center">
+                  <p className="text-zinc-400">No orders yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orderList.map((order) => (
+                    <div key={order.id} className={`bg-zinc-900 rounded-2xl p-6 border transition-colors ${order.status === "complete" ? "border-zinc-800 opacity-50" : "border-zinc-700"}`}>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDinner ? "bg-teal-400/20 text-teal-400" : isShabbat ? "bg-yellow-400/20 text-yellow-400" : "bg-purple-400/20 text-purple-400"}`}>
+                            {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : "Catering"}
+                          </span>
+                          <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${order.status === "complete" ? "bg-green-400/20 text-green-400" : "bg-orange-400/20 text-orange-400"}`}>
+                            {order.status}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white font-black text-xl">${order.total}</p>
+                          <p className="text-zinc-500 text-xs">{new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-white font-bold">{order.customer_name}</p>
+                          <p className="text-teal-400 text-sm">📞 {order.customer_phone}</p>
+                          {order.customer_email && <p className="text-zinc-400 text-xs">✉️ {order.customer_email}</p>}
+                        </div>
+                        <div>
+                          <p className="text-zinc-400 text-sm">📍 {order.customer_address}</p>
+                        </div>
+                      </div>
+                      {order.items && order.items.length > 0 && (
+                        <div className="border-t border-zinc-700 pt-3 mb-3 space-y-1">
+                          {order.items.map((item, idx) => (
+                            <p key={idx} className="text-sm">
+                              <span className="text-white font-bold">{item.name}</span>
+                              {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
+                              {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
+                              {item.side2 && <span className="text-zinc-400">, {item.side2}</span>}
+                              {item.extra && <span className="text-zinc-400">, {item.extra}</span>}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {order.special_requests && (
+                        <div className="bg-zinc-800 rounded-xl px-4 py-2 text-sm mb-3">
+                          <span className="text-yellow-400 font-bold">Note: </span>
+                          <span className="text-zinc-300">{order.special_requests}</span>
+                        </div>
+                      )}
+                      {order.status !== "complete" && (
+                        <button
+                          onClick={() => markOrderComplete(order.id, clearType as "dinner" | "shabbat" | "catering")}
+                          className="text-green-400 hover:text-green-300 font-bold text-sm border border-green-400/30 px-4 py-2 rounded-full transition-colors"
+                        >
+                          ✓ Mark Complete
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {ordersLoading ? (
-              <p className="text-zinc-400">Loading orders...</p>
-            ) : orders.length === 0 ? (
-              <div className="bg-zinc-900 rounded-2xl p-10 border border-zinc-800 text-center">
-                <p className="text-zinc-400">No orders yet. Fred is waiting.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <div key={order.id} className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${order.order_type === "shabbat" ? "bg-yellow-400/20 text-yellow-400" : "bg-teal-400/20 text-teal-400"}`}>
-                          {order.order_type === "shabbat" ? "🕍 Shabbat" : "🍽️ Dinner Drop"}
-                        </span>
-                        <span className="text-xs font-bold uppercase px-2 py-1 rounded-full bg-orange-400/20 text-orange-400">
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white font-black text-xl">${order.total}</p>
-                        <p className="text-zinc-500 text-xs">{new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      <div>
-                        <p className="text-white font-bold">{order.customer_name}</p>
-                        <p className="text-teal-400 text-sm">📞 {order.customer_phone}</p>
-                        {order.customer_email && <p className="text-zinc-400 text-xs">✉️ {order.customer_email}</p>}
-                      </div>
-                      <div>
-                        <p className="text-zinc-400 text-sm">📍 {order.customer_address}</p>
-                      </div>
-                    </div>
-                    {order.items && order.items.length > 0 && (
-                      <div className="border-t border-zinc-700 pt-3 mb-3 space-y-1">
-                        {order.items.map((item, idx) => (
-                          <p key={idx} className="text-sm">
-                            <span className="text-white font-bold">{item.name}</span>
-                            {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
-                            {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
-                            {item.side2 && <span className="text-zinc-400">, {item.side2}</span>}
-                            {item.extra && <span className="text-zinc-400">, {item.extra}</span>}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                    {order.special_requests && (
-                      <div className="bg-zinc-800 rounded-xl px-4 py-2 text-sm">
-                        <span className="text-yellow-400 font-bold">Note: </span>
-                        <span className="text-zinc-300">{order.special_requests}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          );
+        })()}
       </div>
     </main>
   );
