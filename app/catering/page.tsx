@@ -108,6 +108,7 @@ const ALC_CATEGORIES: CateringCategory[] = [
     items: [
       { id: "fruit-bowl", name: "Fruit Salad", description: "Fresh seasonal fruit assortment.", sizes: [{ label: "Small", serving: "10–15 people", price: 65 }, { label: "Medium", serving: "20–25 people", price: 100 }, { label: "Large", serving: "25–30 people", price: 150 }] },
       { id: "tortilla-chips", name: "House-Fried Tortilla Chips", description: "Freshly fried in-house, perfectly seasoned.", sizes: [{ label: "Small", serving: "10–15 people", price: 55 }, { label: "Medium", serving: "20–25 people", price: 70 }, { label: "Large", serving: "25–30 people", price: 110 }] },
+      { id: "kettle-chips", name: "House Kettle Chips", description: "Kettle-cooked in-house, perfectly seasoned.", sizes: [{ label: "Small", serving: "10–15 people", price: 55 }, { label: "Medium", serving: "20–25 people", price: 70 }, { label: "Large", serving: "25–30 people", price: 110 }] },
     ],
   },
 ];
