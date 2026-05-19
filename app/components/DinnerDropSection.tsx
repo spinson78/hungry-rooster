@@ -139,7 +139,7 @@ export default function DinnerDropSection() {
 
         {/* RIGHT */}
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <img src="/fred%20car%20png.png" alt="Fred's Dinner Drop" className="w-full max-w-xs" style={{ mixBlendMode: "lighten" }} />
+          <img src="/fred%20car%20png.png" alt="Fred's Dinner Drop" className="w-full max-w-xs mix-blend-lighten" />
           <p className="text-yellow-400 font-black text-xl tracking-tight mt-1">Dinner, handled.</p>
           <p className="text-white font-black text-4xl mt-1">$85</p>
           <p className="text-zinc-500 text-sm mt-1">Includes delivery</p>
