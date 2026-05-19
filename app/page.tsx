@@ -63,10 +63,10 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { name: "Breakfast Tots", tag: "Fan Favorite" },
+            { name: "Cauliflower Salad", tag: "Fresh + Light" },
             { name: "Fish Sandwich", tag: "Fred Approved" },
             { name: "Caesar Salmon Wrap", tag: "Fresh Daily" },
-            { name: "Greek Salad", tag: "Light + Crisp" },
+            { name: "Chicken Strip Dinner", tag: "Fred Approved" },
           ].map((item) => (
             <div key={item.name} className="bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-teal-500 transition-colors group cursor-pointer">
               <div className="aspect-square bg-zinc-800 flex items-center justify-center text-5xl">

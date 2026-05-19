@@ -6,7 +6,7 @@ const menu = {
     {
       name: "Big Cluck Burrito",
       price: 16,
-      description: "Flour tortilla, peppers & onions, homestyle potatoes, jalapeño, charred green onion sauce. Served with homestyle potatoes & red salsa.",
+      description: "Flour tortilla, scrambled eggs, peppers & onions, crispy hashbrowns, jalapeño and charred green onion sauce. Served with homestyle potatoes & red salsa.",
       tag: "Fan Favorite",
       addons: [
         { label: "Add Vegan Cheese", price: 2 },
@@ -16,7 +16,7 @@ const menu = {
     {
       name: "Side Chick Sandwich",
       price: 13,
-      description: "Scrambled eggs, sautéed onion, spicy mayo. Served with homestyle potatoes.",
+      description: "Scrambled eggs, sautéed onion, spicy mayo on your choice of bread. Served with homestyle potatoes.",
       tag: "",
       sizes: [
         { label: "English Muffin", price: 0 },
@@ -31,14 +31,14 @@ const menu = {
     {
       name: "Chicken & Waffles",
       price: 18,
-      description: "Waffles, house-seasoned fried boneless chicken thighs, rooster hot sauce, and maple syrup.",
+      description: "Waffles, house-seasoned fried boneless chicken thighs, Fred's sauce, and maple syrup.",
       tag: "Fred Approved",
       addons: [],
     },
     {
       name: "Hangover Burrito",
       price: 17,
-      description: "Flour tortilla, beef bacon, scrambled eggs, vegan cheese, pepper, onion, pico de gallo, charred green onion sauce. Served with tots.",
+      description: "Flour tortilla, beef bacon, scrambled eggs, vegan cheese, pepper, onion, pico de gallo, charred green onion sauce. Served with homestyle potatoes.",
       tag: "",
       addons: [],
     },
@@ -54,7 +54,7 @@ const menu = {
     {
       name: "Caesar Salmon Wrap",
       price: 16.5,
-      description: "Tortilla, grilled salmon, garlic croutons, romaine lettuce, caesar dressing. Served with chips and a pickle.",
+      description: "Tortilla, grilled salmon, spiced chickpeas, romaine lettuce, caesar dressing. Served with chips and a pickle.",
       tag: "",
       addons: [],
     },
@@ -82,7 +82,7 @@ const menu = {
     {
       name: "Fish Sandwich",
       price: 18,
-      description: "Bread, beer battered white fish, lettuce, tomato, pickles, Fred's sauce. Served with chips.",
+      description: "Bread, beer battered white fish, lettuce, tomato, pickles, spicy aioli. Served with chips.",
       tag: "Fred Approved",
       addons: [],
     },

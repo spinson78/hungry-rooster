@@ -270,7 +270,7 @@ export default function CateringPage() {
 
       <div className="px-6 py-12 max-w-5xl mx-auto">
         <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-2">Catering</p>
-        <h1 className="text-4xl md:text-5xl font-black mb-3">We pull up and feed your people.</h1>
+        <h1 className="text-4xl md:text-5xl font-black mb-3">We pull up and feed your flock.</h1>
         <p className="text-zinc-400 mb-10 max-w-xl">Corporate. Schools. Weddings. Shiva. Whatever the occasion — scratch-made, chef-driven food that hits.</p>
 
         {/* ── FLOW CHOOSER ──────────────────────────────────────────────── */}
