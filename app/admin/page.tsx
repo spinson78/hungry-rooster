@@ -298,6 +298,103 @@ export default function AdminPage() {
     setSaved(true);
   };
 
+  const renderOrderTab = () => {
+    const isDinner = tab === "dinner-orders";
+    const isShabbat = tab === "shabbat-orders";
+    const orderList = isDinner ? dinnerOrders : isShabbat ? shabbatOrders : cateringOrders;
+    const refreshFn = isDinner ? fetchDinnerOrders : isShabbat ? fetchShabbatOrders : fetchCateringOrders;
+    const clearType: "dinner" | "shabbat" | "catering" = isDinner ? "dinner" : isShabbat ? "shabbat" : "catering";
+    const accentColor = isDinner ? "teal" : isShabbat ? "yellow" : "purple";
+    const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : "🍽️ Catering Orders";
+    const completedCount = orderList.filter(o => o.status === "complete").length;
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h2 className="text-xl font-black">{label}</h2>
+          <div className="flex gap-2">
+            {completedCount > 0 && (
+              <button
+                onClick={() => clearCompleted(clearType)}
+                disabled={clearing}
+                className="text-red-400 hover:text-red-300 font-bold text-sm transition-colors border border-red-400/30 px-4 py-2 rounded-full"
+              >
+                {clearing ? "Clearing..." : `Clear ${completedCount} completed`}
+              </button>
+            )}
+            <button onClick={refreshFn} className={`text-${accentColor}-400 font-bold text-sm hover:text-${accentColor}-300 transition-colors`}>↻ Refresh</button>
+          </div>
+        </div>
+
+        {ordersLoading ? (
+          <p className="text-zinc-400">Loading...</p>
+        ) : orderList.length === 0 ? (
+          <div className="bg-zinc-900 rounded-2xl p-10 border border-zinc-800 text-center">
+            <p className="text-zinc-400">No orders yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {orderList.map((order) => (
+              <div key={order.id} className={`bg-zinc-900 rounded-2xl p-6 border transition-colors ${order.status === "complete" ? "border-zinc-800 opacity-50" : "border-zinc-700"}`}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDinner ? "bg-teal-400/20 text-teal-400" : isShabbat ? "bg-yellow-400/20 text-yellow-400" : "bg-purple-400/20 text-purple-400"}`}>
+                      {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : "Catering"}
+                    </span>
+                    <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${order.status === "complete" ? "bg-green-400/20 text-green-400" : "bg-orange-400/20 text-orange-400"}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-black text-xl">${order.total}</p>
+                    <p className="text-zinc-500 text-xs">{new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <p className="text-white font-bold">{order.customer_name}</p>
+                    <p className="text-teal-400 text-sm">📞 {order.customer_phone}</p>
+                    {order.customer_email && <p className="text-zinc-400 text-xs">✉️ {order.customer_email}</p>}
+                  </div>
+                  <div>
+                    <p className="text-zinc-400 text-sm">📍 {order.customer_address}</p>
+                  </div>
+                </div>
+                {order.items && order.items.length > 0 && (
+                  <div className="border-t border-zinc-700 pt-3 mb-3 space-y-1">
+                    {order.items.map((item, idx) => (
+                      <p key={idx} className="text-sm">
+                        <span className="text-white font-bold">{item.name}</span>
+                        {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
+                        {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
+                        {item.side2 && <span className="text-zinc-400">, {item.side2}</span>}
+                        {item.extra && <span className="text-zinc-400">, {item.extra}</span>}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {order.special_requests && (
+                  <div className="bg-zinc-800 rounded-xl px-4 py-2 text-sm mb-3">
+                    <span className="text-yellow-400 font-bold">Note: </span>
+                    <span className="text-zinc-300">{order.special_requests}</span>
+                  </div>
+                )}
+                {order.status !== "complete" && (
+                  <button
+                    onClick={() => markOrderComplete(order.id, clearType)}
+                    className="text-green-400 hover:text-green-300 font-bold text-sm border border-green-400/30 px-4 py-2 rounded-full transition-colors"
+                  >
+                    ✓ Mark Complete
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (!authed) {
     return (
       <main className="bg-black text-white min-h-screen flex items-center justify-center">
@@ -481,7 +578,7 @@ export default function AdminPage() {
                   ].map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setBlastTemplate(t.id as typeof blastTemplate)}
+                      onClick={() => setBlastTemplate(t.id as "dinner" | "shabbat" | "announcement")}
                       className="flex items-center gap-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-teal-500 rounded-2xl p-5 text-left transition-all"
                     >
                       <span className="text-3xl">{t.emoji}</span>
@@ -696,103 +793,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ORDER TABS — shared render helper */}
-        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "catering-orders") && (() => {
-          const isDinner = tab === "dinner-orders";
-          const isShabbat = tab === "shabbat-orders";
-          const orderList = isDinner ? dinnerOrders : isShabbat ? shabbatOrders : cateringOrders;
-          const refreshFn = isDinner ? fetchDinnerOrders : isShabbat ? fetchShabbatOrders : fetchCateringOrders;
-          const clearType = isDinner ? "dinner" : isShabbat ? "shabbat" : "catering";
-          const accentColor = isDinner ? "teal" : isShabbat ? "yellow" : "purple";
-          const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : "🍽️ Catering Orders";
-          const completedCount = orderList.filter(o => o.status === "complete").length;
-
-          return (
-            <div>
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-                <h2 className="text-xl font-black">{label}</h2>
-                <div className="flex gap-2">
-                  {completedCount > 0 && (
-                    <button
-                      onClick={() => clearCompleted(clearType as "dinner" | "shabbat" | "catering")}
-                      disabled={clearing}
-                      className="text-red-400 hover:text-red-300 font-bold text-sm transition-colors border border-red-400/30 px-4 py-2 rounded-full"
-                    >
-                      {clearing ? "Clearing..." : `Clear ${completedCount} completed`}
-                    </button>
-                  )}
-                  <button onClick={refreshFn} className={`text-${accentColor}-400 font-bold text-sm hover:text-${accentColor}-300 transition-colors`}>↻ Refresh</button>
-                </div>
-              </div>
-
-              {ordersLoading ? (
-                <p className="text-zinc-400">Loading...</p>
-              ) : orderList.length === 0 ? (
-                <div className="bg-zinc-900 rounded-2xl p-10 border border-zinc-800 text-center">
-                  <p className="text-zinc-400">No orders yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {orderList.map((order) => (
-                    <div key={order.id} className={`bg-zinc-900 rounded-2xl p-6 border transition-colors ${order.status === "complete" ? "border-zinc-800 opacity-50" : "border-zinc-700"}`}>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDinner ? "bg-teal-400/20 text-teal-400" : isShabbat ? "bg-yellow-400/20 text-yellow-400" : "bg-purple-400/20 text-purple-400"}`}>
-                            {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : "Catering"}
-                          </span>
-                          <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${order.status === "complete" ? "bg-green-400/20 text-green-400" : "bg-orange-400/20 text-orange-400"}`}>
-                            {order.status}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white font-black text-xl">${order.total}</p>
-                          <p className="text-zinc-500 text-xs">{new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-white font-bold">{order.customer_name}</p>
-                          <p className="text-teal-400 text-sm">📞 {order.customer_phone}</p>
-                          {order.customer_email && <p className="text-zinc-400 text-xs">✉️ {order.customer_email}</p>}
-                        </div>
-                        <div>
-                          <p className="text-zinc-400 text-sm">📍 {order.customer_address}</p>
-                        </div>
-                      </div>
-                      {order.items && order.items.length > 0 && (
-                        <div className="border-t border-zinc-700 pt-3 mb-3 space-y-1">
-                          {order.items.map((item, idx) => (
-                            <p key={idx} className="text-sm">
-                              <span className="text-white font-bold">{item.name}</span>
-                              {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
-                              {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
-                              {item.side2 && <span className="text-zinc-400">, {item.side2}</span>}
-                              {item.extra && <span className="text-zinc-400">, {item.extra}</span>}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      {order.special_requests && (
-                        <div className="bg-zinc-800 rounded-xl px-4 py-2 text-sm mb-3">
-                          <span className="text-yellow-400 font-bold">Note: </span>
-                          <span className="text-zinc-300">{order.special_requests}</span>
-                        </div>
-                      )}
-                      {order.status !== "complete" && (
-                        <button
-                          onClick={() => markOrderComplete(order.id, clearType as "dinner" | "shabbat" | "catering")}
-                          className="text-green-400 hover:text-green-300 font-bold text-sm border border-green-400/30 px-4 py-2 rounded-full transition-colors"
-                        >
-                          ✓ Mark Complete
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
+        {/* ORDER TABS */}
+        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "catering-orders") && renderOrderTab()}
       </div>
     </main>
   );

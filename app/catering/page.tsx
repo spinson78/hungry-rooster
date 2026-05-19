@@ -24,7 +24,7 @@ const PACKAGES = [
 
 const PKG_CATEGORIES = ["All", "Parve Breakfast", "Meat Breakfast", "Meat Brunch", "Parve Dinner", "Meat Dinner"];
 
-// ── À LA CARTE MENU ($200 min, $50 delivery, 48hr notice) ────────────────────
+// ── À LA CARTE MENU ($100 min, $50 delivery, 48hr notice) ────────────────────
 
 type SizeOption = { label: string; serving: string; price: number };
 type ItemOption = { key: string; label: string; choices: string[] };
@@ -114,7 +114,7 @@ const ALC_CATEGORIES: CateringCategory[] = [
 ];
 
 const DELIVERY_FEE = 50;
-const ORDER_MIN = 200;
+const ORDER_MIN = 100;
 const WRAP_PRICE = 12;
 const WRAP_MIN = 5;
 
@@ -159,6 +159,8 @@ export default function CateringPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+
+  const isWeekend = (() => { const d = new Date().getDay(); return d === 0 || d === 6; })();
 
   const alcCategory = ALC_CATEGORIES.find(c => c.id === alcCat)!;
   const cartSubtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
@@ -285,7 +287,7 @@ export default function CateringPage() {
             <button onClick={() => setFlow("alacarte")} className="bg-zinc-900 border border-zinc-700 hover:border-yellow-400 rounded-2xl p-7 text-left transition-colors group">
               <p className="text-3xl mb-4">🍽️</p>
               <p className="font-black text-xl mb-2">Build Your Order</p>
-              <p className="text-zinc-400 text-sm mb-4">Choose from salads, sides, chicken, fish, platters, wraps, and more. $200 minimum · $50 delivery · 48-hour notice.</p>
+              <p className="text-zinc-400 text-sm mb-4">Choose from salads, sides, chicken, fish, platters, wraps, and more. $100 minimum · $50 delivery · 48-hour notice.</p>
               <span className="text-yellow-400 font-bold text-sm group-hover:text-yellow-300">Browse menu →</span>
             </button>
             <button onClick={() => setFlow("quote")} className="bg-zinc-900 border border-zinc-700 hover:border-zinc-400 rounded-2xl p-7 text-left transition-colors group">
@@ -399,8 +401,20 @@ export default function CateringPage() {
         {flow === "alacarte" && !showAlcForm && (
           <div>
             <button onClick={() => setFlow("choose")} className="text-zinc-400 hover:text-white text-sm mb-6 block">← Back</button>
+
+            {/* Weekend closed banner */}
+            {isWeekend && (
+              <div className="bg-red-950 border border-red-800 rounded-2xl px-6 py-5 mb-6 flex items-start gap-4">
+                <span className="text-2xl">🚫</span>
+                <div>
+                  <p className="text-red-400 font-black text-sm uppercase tracking-wide mb-1">We&apos;re closed on weekends</p>
+                  <p className="text-zinc-400 text-sm">Online orders are available Monday – Friday. Browse the menu and come back Monday to place your order.</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 mb-8 flex-wrap items-center">
-              <span className="bg-yellow-400/20 text-yellow-400 text-xs font-bold px-3 py-1 rounded-full">$200 order minimum</span>
+              <span className="bg-yellow-400/20 text-yellow-400 text-xs font-bold px-3 py-1 rounded-full">$100 order minimum</span>
               <span className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded-full">$50 delivery fee</span>
               <span className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded-full">48-hour notice</span>
             </div>
@@ -436,15 +450,16 @@ export default function CateringPage() {
             </div>
 
             {cart.length > 0 && (
-              <div className={`fixed bottom-0 left-0 right-0 p-4 bg-black border-t z-30 ${meetsMin ? "border-zinc-800" : "border-red-900/50"}`}>
+              <div className={`fixed bottom-0 left-0 right-0 p-4 bg-black border-t z-30 ${meetsMin && !isWeekend ? "border-zinc-800" : "border-red-900/50"}`}>
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
                   <div>
                     <p className="font-black text-lg">${cartSubtotal.toFixed(2)} <span className="text-zinc-400 font-normal text-sm">+ ${DELIVERY_FEE} delivery</span></p>
-                    {!meetsMin && <p className="text-red-400 text-xs font-bold">${(ORDER_MIN - cartSubtotal).toFixed(2)} more to reach the $200 minimum</p>}
+                    {!meetsMin && <p className="text-red-400 text-xs font-bold">${(ORDER_MIN - cartSubtotal).toFixed(2)} more to reach the $100 minimum</p>}
+                    {isWeekend && <p className="text-red-400 text-xs font-bold">Closed weekends — orders open Monday</p>}
                   </div>
                   <div className="flex gap-3">
                     <button onClick={() => setCartOpen(true)} className="border border-zinc-600 text-zinc-300 font-bold px-5 py-3 rounded-full text-sm hover:border-white transition-colors">Review ({cartCount})</button>
-                    <button onClick={() => { if (meetsMin) setShowAlcForm(true); }} disabled={!meetsMin}
+                    <button onClick={() => { if (meetsMin && !isWeekend) setShowAlcForm(true); }} disabled={!meetsMin || isWeekend}
                       className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-6 py-3 rounded-full text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       Continue
                     </button>
@@ -635,8 +650,9 @@ export default function CateringPage() {
                 <div className="flex justify-between text-sm"><span className="text-zinc-400">Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-400">Delivery</span><span>${DELIVERY_FEE.toFixed(2)}</span></div>
                 <div className="flex justify-between font-black text-lg"><span>Total</span><span className="text-yellow-400">${cartTotal.toFixed(2)}</span></div>
-                {!meetsMin && <p className="text-red-400 text-xs">${(ORDER_MIN - cartSubtotal).toFixed(2)} more to reach the $200 minimum</p>}
-                <button onClick={() => { setCartOpen(false); if (meetsMin) setShowAlcForm(true); }} disabled={!meetsMin}
+                {!meetsMin && <p className="text-red-400 text-xs">${(ORDER_MIN - cartSubtotal).toFixed(2)} more to reach the $100 minimum</p>}
+                {isWeekend && <p className="text-red-400 text-xs font-bold">Orders are closed on weekends — come back Monday!</p>}
+                <button onClick={() => { setCartOpen(false); if (meetsMin && !isWeekend) setShowAlcForm(true); }} disabled={!meetsMin || isWeekend}
                   className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 rounded-full transition-colors mt-2 disabled:opacity-40 disabled:cursor-not-allowed">
                   Continue to Details
                 </button>
