@@ -63,6 +63,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create checkout session. Please try again." }, { status: 500 });
   }
 }
- "Failed to create checkout session. Please try again." }, { status: 500 });
-  }
-}
