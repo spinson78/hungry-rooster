@@ -72,6 +72,8 @@ export default function GroupOrderPage() {
   const [specialRequests, setSpecialRequests] = useState("");
   const [error, setError] = useState("");
   const [checkingOut, setCheckingOut] = useState(false);
+  const [tipAmount, setTipAmount] = useState<number>(0);
+  const [customTip, setCustomTip] = useState("");
 
   // Drawer + upsell state
   const [showDrawer, setShowDrawer] = useState(false);
@@ -163,6 +165,7 @@ export default function GroupOrderPage() {
           locationSlug: slug,
           locationName: location!.name,
           deliveryDate: today,
+          tipAmount,
         }),
       });
 
@@ -353,6 +356,33 @@ export default function GroupOrderPage() {
               className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 resize-none h-16 text-sm mb-4"
             />
 
+            {/* TIP */}
+            <div className="mb-4">
+              <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Driver Tip</label>
+              <div className="flex gap-2 flex-wrap">
+                {[0, 5, 10, 15].map((amt) => (
+                  <button key={amt} type="button"
+                    onClick={() => { setTipAmount(amt); setCustomTip(""); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${tipAmount === amt && customTip === "" ? "bg-teal-500 text-black border-teal-500" : "border-zinc-600 text-zinc-300 hover:border-teal-500"}`}>
+                    {amt === 0 ? "No Tip" : `$${amt}`}
+                  </button>
+                ))}
+                <input type="number" min="0" placeholder="Custom $" value={customTip}
+                  onChange={(e) => { setCustomTip(e.target.value); setTipAmount(parseFloat(e.target.value) || 0); }}
+                  className="w-20 bg-zinc-800 border border-zinc-600 rounded-full px-3 py-1.5 text-white text-xs focus:outline-none focus:border-teal-500" />
+              </div>
+            </div>
+
+            {/* ORDER SUMMARY */}
+            <div className="bg-zinc-800 rounded-xl p-3 text-xs space-y-1 mb-4">
+              <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${total.toFixed(2)}</span></div>
+              <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>${(total * 0.0825).toFixed(2)}</span></div>
+              {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+              <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-1">
+                <span>Total</span><span>${(total * 1.0825 + tipAmount).toFixed(2)}</span>
+              </div>
+            </div>
+
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
 
             <button
@@ -360,7 +390,7 @@ export default function GroupOrderPage() {
               disabled={checkingOut}
               className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50"
             >
-              {checkingOut ? "Redirecting to payment..." : `Pay $${total.toFixed(2)} — Secure Checkout`}
+              {checkingOut ? "Redirecting to payment..." : `Pay $${(total * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
             </button>
             <p className="text-zinc-600 text-xs text-center mt-2">Only charged if minimum is met. Powered by Stripe.</p>
           </div>
@@ -417,48 +447,4 @@ export default function GroupOrderPage() {
                         <button onClick={() => setQty(item.id, 1)} className="w-7 h-7 rounded-full bg-yellow-400 text-black font-black text-base flex items-center justify-center">+</button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={doCheckout}
-              disabled={checkingOut}
-              className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-3 rounded-full text-base transition-colors disabled:opacity-50 mb-3"
-            >
-              {checkingOut ? "Redirecting..." : `Yes, add & pay $${getTotal().toFixed(2)}`}
-            </button>
-                        <p className="text-zinc-600 text-xs text-center mt-2">Only charged if minimum is met. Powered by Stripe.</p>
-          </div>
-        </div>
-      )}
-
-      {/* UPSELL POPUP */}
-      {showUpsell && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/80" onClick={() => setShowUpsell(false)} />
-          <div className="relative bg-zinc-900 border border-zinc-700 rounded-3xl p-7 max-w-sm w-full shadow-2xl">
-            <div className="text-center mb-5">
-              <p className="text-3xl mb-2">🍪</p>
-              <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
-              <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
-            <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
-              <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
-            </div>
-            <button
-              onClick={doCheckout}
-              disabled={checkingOut}
-              className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full transition-colors mb-3"
-            >
-              {checkingOut ? "Redirecting..." : `Proceed to checkout — $${getTotal().toFixed(2)}`}
-            </button>
-            <button onClick={() => setShowUpsell(false)} className="w-full text-zinc-400 hover:text-white text-sm py-2 transition-colors">
-              Go back and add more
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-}
+                

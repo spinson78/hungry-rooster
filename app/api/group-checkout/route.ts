@@ -8,19 +8,50 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const TAX_RATE = 0.0825;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { items, personName, customerEmail, specialRequests, locationId, locationSlug, locationName, deliveryDate } = body;
+    const { items, personName, customerEmail, specialRequests, locationId, locationSlug, locationName, deliveryDate, tipAmount } = body;
 
-    const lineItems = items.map((item: { name: string; price: number; qty: number; description: string }) => ({
+    const subtotalCents = items.reduce(
+      (s: number, i: { price: number; qty: number }) => s + Math.round(i.price * 100) * i.qty,
+      0
+    );
+    const taxCents = Math.round(subtotalCents * TAX_RATE);
+    const tipCents = tipAmount ? Math.round(tipAmount * 100) : 0;
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
+      (item: { name: string; price: number; qty: number; description: string }) => ({
+        price_data: {
+          currency: "usd",
+          product_data: { name: item.name, description: item.description },
+          unit_amount: Math.round(item.price * 100),
+        },
+        quantity: item.qty,
+      })
+    );
+
+    lineItems.push({
       price_data: {
         currency: "usd",
-        product_data: { name: item.name, description: item.description },
-        unit_amount: Math.round(item.price * 100),
+        product_data: { name: "Sales Tax (8.25%)", description: "Texas state & local sales tax" },
+        unit_amount: taxCents,
       },
-      quantity: item.qty,
-    }));
+      quantity: 1,
+    });
+
+    if (tipCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "usd",
+          product_data: { name: "Driver Tip", description: "Thank you! 100% goes to your driver." },
+          unit_amount: tipCents,
+        },
+        quantity: 1,
+      });
+    }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
@@ -38,28 +69,4 @@ export async function POST(req: NextRequest) {
         location_name: locationName,
         delivery_date: deliveryDate,
       },
-      custom_text: {
-        submit: { message: `Ordering for ${locationName} - Delivery ${deliveryDate}` },
-      },
-    });
-
-    // Store full order in Supabase as "pending" — avoids Stripe metadata size limits
-    await supabase.from("group_orders").insert({
-      location_id: locationId,
-      location_slug: locationSlug,
-      person_name: personName,
-      customer_email: customerEmail || "",
-      items,
-      total: items.reduce((s: number, i: { price: number; qty: number }) => s + i.price * i.qty, 0),
-      special_requests: specialRequests || "",
-      delivery_date: deliveryDate,
-      status: "pending",
-      stripe_session_id: session.id,
-    });
-
-    return NextResponse.json({ url: session.url });
-  } catch (err) {
-    console.error("Group checkout error:", err);
-    return NextResponse.json({ error: "Failed to create checkout session. Please try again." }, { status: 500 });
-  }
-}
+      custo

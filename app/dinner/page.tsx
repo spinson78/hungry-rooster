@@ -24,6 +24,8 @@ export default function DinnerPage() {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", special_requests: "" });
+  const [tipAmount, setTipAmount] = useState<number>(0);
+  const [customTip, setCustomTip] = useState("");
 
   useEffect(() => {
     const fetchDinner = async () => {
@@ -61,6 +63,7 @@ export default function DinnerPage() {
         body: JSON.stringify({
           dinnerLabel,
           price: dinner.price || 85,
+          tipAmount,
           metadata: {
             order_type: "dinner",
             menu_id: dinner.id,
@@ -138,15 +141,13 @@ export default function DinnerPage() {
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label><input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500" /></div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 resize-none h-20" /></div>
               </div>
-              {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
-              <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
-                {submitting ? "Redirecting to payment..." : "Pay $85 — Secure Checkout"}
-              </button>
-              <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </main>
-  );
-}
+              {/* TIP */}
+              <div className="mt-6">
+                <label className="text-xs text-zinc-400 uppercase tracking-wide mb-3 block">Driver Tip</label>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {[0, 5, 10, 15].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => { setTipAmount(amt); setCustomTip(""); }}
+                      className={`px

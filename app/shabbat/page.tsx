@@ -29,6 +29,8 @@ export default function ShabbatPage() {
   const [orderType, setOrderType] = useState<"box" | "snackpack" | null>(null);
   const [showUpsell, setShowUpsell] = useState(false);
   const [upsellShown, setUpsellShown] = useState(false);
+  const [tipAmount, setTipAmount] = useState<number>(0);
+  const [customTip, setCustomTip] = useState("");
 
   const [selectedSize, setSelectedSize] = useState(SIZES[1]);
   const [addons, setAddons] = useState({
@@ -124,6 +126,7 @@ export default function ShabbatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lineItems: buildLineItems(),
+          tipAmount,
           metadata: {
             order_type: orderType === "snackpack" ? "snackpack" : "shabbat",
             menu_id: menu?.id || "",
@@ -310,14 +313,37 @@ export default function ShabbatPage() {
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label><input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" /></div>
               </div>
-              {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
-              <div className="flex items-center justify-between mt-6 mb-3">
-                <span className="text-zinc-400 font-bold">Order total</span>
-                <span className="text-white font-black text-2xl">${getTotal()}</span>
+              {/* TIP */}
+              <div className="mt-6">
+                <label className="text-xs text-zinc-400 uppercase tracking-wide mb-3 block">Driver Tip</label>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {[0, 5, 10, 15].map((amt) => (
+                    <button key={amt} type="button"
+                      onClick={() => { setTipAmount(amt); setCustomTip(""); }}
+                      className={`px-4 py-2 rounded-full text-sm font-bold border transition-colors ${tipAmount === amt && customTip === "" ? "bg-teal-500 text-black border-teal-500" : "border-zinc-600 text-zinc-300 hover:border-teal-500"}`}>
+                      {amt === 0 ? "No Tip" : `$${amt}`}
+                    </button>
+                  ))}
+                  <input type="number" min="0" placeholder="Custom $" value={customTip}
+                    onChange={(e) => { setCustomTip(e.target.value); setTipAmount(parseFloat(e.target.value) || 0); }}
+                    className="w-24 bg-zinc-800 border border-zinc-600 rounded-full px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500" />
+                </div>
               </div>
-              {getTotal() < 100 && <p className="text-zinc-500 text-xs mb-4">Add more to reach $100 for free delivery.</p>}
-              <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50">
-                {submitting ? "Redirecting to payment..." : `Pay $${getTotal()} — Secure Checkout`}
+
+              {/* ORDER SUMMARY */}
+              <div className="mt-4 bg-zinc-800 rounded-xl p-4 text-sm space-y-1">
+                <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${getTotal().toFixed(2)}</span></div>
+                <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>${(getTotal() * 0.0825).toFixed(2)}</span></div>
+                {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+                <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">
+                  <span>Total</span><span>${(getTotal() * 1.0825 + tipAmount).toFixed(2)}</span>
+                </div>
+              </div>
+              {getTotal() < 100 && <p className="text-zinc-500 text-xs mt-2">Add more to reach $100 for free delivery.</p>}
+
+              {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+              <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
+                {submitting ? "Redirecting to payment..." : `Pay $${(getTotal() * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
               </button>
               <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
             </div>
@@ -349,46 +375,23 @@ export default function ShabbatPage() {
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label><input type="text" placeholder="1234 Main St, Dallas, TX 75201" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" /></div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" /></div>
               </div>
-              {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
-              <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
-                {submitting ? "Redirecting to payment..." : "Pay $100 — Secure Checkout"}
-              </button>
-              <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
-            </div>
-          </div>
-        )}
-      </div>
+              {/* TIP */}
+              <div className="mt-6">
+                <label className="text-xs text-zinc-400 uppercase tracking-wide mb-3 block">Driver Tip</label>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {[0, 5, 10, 15].map((amt) => (
+                    <button key={amt} type="button"
+                      onClick={() => { setTipAmount(amt); setCustomTip(""); }}
+                      className={`px-4 py-2 rounded-full text-sm font-bold border transition-colors ${tipAmount === amt && customTip === "" ? "bg-teal-500 text-black border-teal-500" : "border-zinc-600 text-zinc-300 hover:border-teal-500"}`}>
+                      {amt === 0 ? "No Tip" : `$${amt}`}
+                    </button>
+                  ))}
+                  <input type="number" min="0" placeholder="Custom $" value={customTip}
+                    onChange={(e) => { setCustomTip(e.target.value); setTipAmount(parseFloat(e.target.value) || 0); }}
+                    className="w-24 bg-zinc-800 border border-zinc-600 rounded-full px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500" />
+                </div>
+              </div>
 
-      {showUpsell && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
-            <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20 mx-auto mb-4" />
-            <h2 className="text-2xl font-black mb-2">Shabbat Shalom!</h2>
-            <p className="text-zinc-300 font-bold mb-1">Is your table complete?</p>
-            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Don't forget — you can add our Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.</p>
-            <div className="space-y-3 mb-6 text-left">
-              {!addons.greens.selected && (
-                <button onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
-                  <span className="font-bold text-sm">Add Certified Greens</span><span className="text-yellow-400 font-black text-sm">+$15</span>
-                </button>
-              )}
-              {!addons.babka.selected && (
-                <button onClick={() => { setAddons({ ...addons, babka: { ...addons.babka, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
-                  <span className="font-bold text-sm">Add Signature Babka</span><span className="text-yellow-400 font-black text-sm">+$18</span>
-                </button>
-              )}
-              {!addons.salmon.selected && (
-                <button onClick={() => { setAddons({ ...addons, salmon: { selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
-                  <span className="font-bold text-sm">Add Roasted Salmon (6 filets)</span><span className="text-yellow-400 font-black text-sm">+$48</span>
-                </button>
-              )}
-            </div>
-            <button onClick={() => { setShowUpsell(false); handleSubmit(); }} className="w-full border-2 border-zinc-600 hover:border-zinc-400 text-zinc-300 font-bold py-3 rounded-full text-sm transition-colors">
-              No thanks — proceed to payment
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-}
+              {/* ORDER SUMMARY */}
+              <div className="mt-4 bg-zinc-800 rounded-xl p-4 text-sm space-y-1">
+                <div className="flex justify-between text-zinc-400"><span>Subtotal<
