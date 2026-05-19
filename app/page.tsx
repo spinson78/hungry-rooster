@@ -131,7 +131,7 @@ export default function Home() {
       <section id="catering" className="px-6 py-20 max-w-6xl mx-auto text-center">
         <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-4">Catering</p>
         <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
-          We pull up, feed your people,<br />
+          We pull up, feed your flock,<br />
           and make you look like a rockstar.
         </h2>
         <p className="text-zinc-400 text-lg mb-8 max-w-xl mx-auto">

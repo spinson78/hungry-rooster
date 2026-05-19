@@ -68,6 +68,7 @@ export default function GroupOrderPage() {
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [personName, setPersonName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [error, setError] = useState("");
   const [checkingOut, setCheckingOut] = useState(false);
@@ -156,6 +157,7 @@ export default function GroupOrderPage() {
         body: JSON.stringify({
           items: cartItems,
           personName,
+          customerEmail,
           specialRequests,
           locationId: location!.id,
           locationSlug: slug,
@@ -245,6 +247,14 @@ export default function GroupOrderPage() {
             placeholder="First & last name"
             value={personName}
             onChange={e => { setPersonName(e.target.value); setError(""); }}
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm mb-3"
+          />
+          <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Email (for confirmation)</label>
+          <input
+            type="email"
+            placeholder="you@company.com"
+            value={customerEmail}
+            onChange={e => setCustomerEmail(e.target.value)}
             className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm"
           />
           {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
@@ -433,12 +443,15 @@ export default function GroupOrderPage() {
               <p className="text-3xl mb-2">🍪</p>
               <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
               <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
+            <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
+              <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
             </div>
             <button
               onClick={doCheckout}
+              disabled={checkingOut}
               className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full transition-colors mb-3"
             >
-              {checkingOut ? "Redirecting..." : `Yes, proceed — $${getTotal().toFixed(2)}`}
+              {checkingOut ? "Redirecting..." : `Proceed to checkout — $${getTotal().toFixed(2)}`}
             </button>
             <button onClick={() => setShowUpsell(false)} className="w-full text-zinc-400 hover:text-white text-sm py-2 transition-colors">
               Go back and add more
