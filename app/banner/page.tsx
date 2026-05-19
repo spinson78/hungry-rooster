@@ -167,7 +167,7 @@ export default function BannerBuilderPage() {
 
               {/* Fred */}
               <div style={{ position: "absolute", right: 0, top: 50, bottom: 36, width: 150, display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden" }}>
-                <img src="/white%20fred%20png.png" alt="Fred" style={{ height: "115%", objectFit: "contain", objectPosition: "bottom center", mixBlendMode: "screen" }} />
+                <img src="/white%20fred%20png.png" alt="Fred" style={{ height: "85%", objectFit: "contain", objectPosition: "bottom center", mixBlendMode: "screen" }} />
               </div>
 
               {/* Footer */}
