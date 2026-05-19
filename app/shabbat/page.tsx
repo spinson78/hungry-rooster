@@ -417,7 +417,7 @@ export default function ShabbatPage() {
             <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20 mx-auto mb-4" />
             <h2 className="text-2xl font-black mb-2">Shabbat Shalom!</h2>
             <p className="text-zinc-300 font-bold mb-1">Is your table complete?</p>
-            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Don't forget — you can add our Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.</p>
+            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Don&apos;t forget — you can add our Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.</p>
             <div className="space-y-3 mb-6 text-left">
               {!addons.greens.selected && (
                 <button onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">

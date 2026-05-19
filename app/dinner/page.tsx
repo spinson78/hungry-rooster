@@ -170,7 +170,7 @@ export default function DinnerPage() {
 
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
               <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
-                {submitting ? "Redirecting to payment..." : `Pay $${((dinner?.price || 85) * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
+                {submitting ? "Redirecting to payment..." : `Pay $${((dinner?.price || 85) * 1.0825 + tipAmount).toFixed(2)} \u2014 Secure Checkout`}
               </button>
               <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
             </div>

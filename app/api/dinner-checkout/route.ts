@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 const TAX_RATE = 0.0825;
 
 export async function POST(req: NextRequest) {
@@ -11,10 +10,9 @@ export async function POST(req: NextRequest) {
   const unitAmount = price ? Math.round(price * 100) : 8500;
   const taxAmount = Math.round(unitAmount * TAX_RATE);
   const tipCents = tipAmount ? Math.round(tipAmount * 100) : 0;
-
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+  const lineItems = [
     {
       price_data: {
         currency: "usd",

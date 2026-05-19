@@ -7,7 +7,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
 const TAX_RATE = 0.0825;
 
 export async function POST(req: NextRequest) {
@@ -16,31 +15,29 @@ export async function POST(req: NextRequest) {
     const { items, personName, customerEmail, specialRequests, locationId, locationSlug, locationName, deliveryDate, tipAmount } = body;
 
     const subtotalCents = items.reduce(
-      (s: number, i: { price: number; qty: number }) => s + Math.round(i.price * 100) * i.qty,
-      0
+      (s: number, i: { price: number; qty: number }) => s + Math.round(i.price * 100) * i.qty, 0
     );
     const taxCents = Math.round(subtotalCents * TAX_RATE);
     const tipCents = tipAmount ? Math.round(tipAmount * 100) : 0;
 
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
-      (item: { name: string; price: number; qty: number; description: string }) => ({
+    const lineItems = [
+      ...items.map((item: { name: string; price: number; qty: number; description: string }) => ({
         price_data: {
           currency: "usd",
           product_data: { name: item.name, description: item.description },
           unit_amount: Math.round(item.price * 100),
         },
         quantity: item.qty,
-      })
-    );
-
-    lineItems.push({
-      price_data: {
-        currency: "usd",
-        product_data: { name: "Sales Tax (8.25%)", description: "Texas state & local sales tax" },
-        unit_amount: taxCents,
+      })),
+      {
+        price_data: {
+          currency: "usd",
+          product_data: { name: "Sales Tax (8.25%)", description: "Texas state & local sales tax" },
+          unit_amount: taxCents,
+        },
+        quantity: 1,
       },
-      quantity: 1,
-    });
+    ];
 
     if (tipCents > 0) {
       lineItems.push({
@@ -75,17 +72,15 @@ export async function POST(req: NextRequest) {
     });
 
     const subtotal = items.reduce((s: number, i: { price: number; qty: number }) => s + i.price * i.qty, 0);
-    const tax = subtotal * TAX_RATE;
     const tip = tipAmount || 0;
 
-    // Store full order in Supabase as "pending"
     await supabase.from("group_orders").insert({
       location_id: locationId,
       location_slug: locationSlug,
       person_name: personName,
       customer_email: customerEmail || "",
       items,
-      total: subtotal + tax + tip,
+      total: subtotal + (subtotal * TAX_RATE) + tip,
       special_requests: specialRequests || "",
       delivery_date: deliveryDate,
       status: "pending",

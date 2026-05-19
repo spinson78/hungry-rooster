@@ -458,32 +458,11 @@ export default function GroupOrderPage() {
             >
               {checkingOut ? "Redirecting..." : `Yes, add & pay $${getTotal().toFixed(2)}`}
             </button>
-                        <p className="text-zinc-600 text-xs text-center mt-2">Only charged if minimum is met. Powered by Stripe.</p>
-          </div>
-        </div>
-      )}
-
-      {/* UPSELL POPUP */}
-      {showUpsell && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/80" onClick={() => setShowUpsell(false)} />
-          <div className="relative bg-zinc-900 border border-zinc-700 rounded-3xl p-7 max-w-sm w-full shadow-2xl">
-            <div className="text-center mb-5">
-              <p className="text-3xl mb-2">🍪</p>
-              <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
-              <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
-            <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
-              <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
-            </div>
             <button
-              onClick={doCheckout}
-              disabled={checkingOut}
-              className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full transition-colors mb-3"
+              onClick={() => setShowUpsell(false)}
+              className="w-full text-zinc-500 hover:text-zinc-300 text-sm py-2 transition-colors"
             >
-              {checkingOut ? "Redirecting..." : `Proceed to checkout — $${getTotal().toFixed(2)}`}
-            </button>
-            <button onClick={() => setShowUpsell(false)} className="w-full text-zinc-400 hover:text-white text-sm py-2 transition-colors">
-              Go back and add more
+              Skip — proceed to checkout
             </button>
           </div>
         </div>
