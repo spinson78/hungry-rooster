@@ -148,25 +148,30 @@ export default function GroupOrderPage() {
     setShowUpsell(false);
     setCheckingOut(true);
 
-    const cartItems = getCartItems();
-    const res = await fetch("/api/group-checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: cartItems,
-        personName,
-        specialRequests,
-        locationId: location!.id,
-        locationSlug: slug,
-        locationName: location!.name,
-        deliveryDate: today,
-      }),
-    });
+    try {
+      const cartItems = getCartItems();
+      const res = await fetch("/api/group-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cartItems,
+          personName,
+          specialRequests,
+          locationId: location!.id,
+          locationSlug: slug,
+          locationName: location!.name,
+          deliveryDate: today,
+        }),
+      });
 
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error || "Something went wrong. Please try again.");
+        setCheckingOut(false);
+      }
+    } catch {
       setError("Something went wrong. Please try again.");
       setCheckingOut(false);
     }
@@ -192,7 +197,8 @@ export default function GroupOrderPage() {
   const cartItems = getCartItems();
   const total = getTotal();
   const totalItems = getTotalItems();
-  const meetsMinimum = orderCount >= MIN_TOTAL;
+  const combinedTotal = orderCount + total;
+  const meetsMinimum = combinedTotal >= MIN_TOTAL;
 
   return (
     <main className="bg-black text-white min-h-screen pb-32">
@@ -213,18 +219,18 @@ export default function GroupOrderPage() {
         <div className={`rounded-2xl p-5 border mb-8 ${meetsMinimum ? "bg-teal-900/30 border-teal-500" : "bg-zinc-900 border-zinc-700"}`}>
           <div className="flex items-center justify-between mb-2">
             <p className="font-black text-lg">
-              {meetsMinimum ? "✅ Minimum met!" : `$${orderCount.toFixed(0)} of $${MIN_TOTAL} minimum`}
+              {meetsMinimum ? "✅ Minimum met!" : `$${combinedTotal.toFixed(0)} of $${MIN_TOTAL} minimum`}
             </p>
-            <span className="text-2xl font-black text-teal-400">${orderCount.toFixed(0)}</span>
+            <span className="text-2xl font-black text-teal-400">${combinedTotal.toFixed(0)}</span>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-2">
             <div
               className="bg-teal-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (orderCount / MIN_TOTAL) * 100)}%` }}
+              style={{ width: `${Math.min(100, (combinedTotal / MIN_TOTAL) * 100)}%` }}
             />
           </div>
           {!meetsMinimum && (
-            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - orderCount).toFixed(0)} more needed to confirm today&apos;s delivery. Your card is only charged when the minimum is met.</p>
+            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - combinedTotal).toFixed(0)} more needed to confirm today&apos;s delivery. Your card is only charged when the minimum is met.</p>
           )}
           {meetsMinimum && (
             <p className="text-teal-400 text-xs mt-2 font-bold">Delivery confirmed for today. Order now!</p>
@@ -413,11 +419,29 @@ export default function GroupOrderPage() {
             >
               {checkingOut ? "Redirecting..." : `Yes, add & pay $${getTotal().toFixed(2)}`}
             </button>
+                        <p className="text-zinc-600 text-xs text-center mt-2">Only charged if minimum is met. Powered by Stripe.</p>
+          </div>
+        </div>
+      )}
+
+      {/* UPSELL POPUP */}
+      {showUpsell && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setShowUpsell(false)} />
+          <div className="relative bg-zinc-900 border border-zinc-700 rounded-3xl p-7 max-w-sm w-full shadow-2xl">
+            <div className="text-center mb-5">
+              <p className="text-3xl mb-2">🍪</p>
+              <h3 className="text-xl font-black mb-1">Don&apos;t forget a treat!</h3>
+              <p className="text-zinc-400 text-sm">Add a dessert and/or drink to complete your order.</p>
+            </div>
             <button
               onClick={doCheckout}
-              className="w-full text-zinc-500 hover:text-zinc-300 text-sm py-2 transition-colors"
+              className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full transition-colors mb-3"
             >
-              No thanks — just take my money
+              {checkingOut ? "Redirecting..." : `Yes, proceed — $${getTotal().toFixed(2)}`}
+            </button>
+            <button onClick={() => setShowUpsell(false)} className="w-full text-zinc-400 hover:text-white text-sm py-2 transition-colors">
+              Go back and add more
             </button>
           </div>
         </div>
