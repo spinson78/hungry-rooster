@@ -69,4 +69,32 @@ export async function POST(req: NextRequest) {
         location_name: locationName,
         delivery_date: deliveryDate,
       },
-      custo
+      custom_text: {
+        submit: { message: `Ordering for ${locationName} - Delivery ${deliveryDate}` },
+      },
+    });
+
+    const subtotal = items.reduce((s: number, i: { price: number; qty: number }) => s + i.price * i.qty, 0);
+    const tax = subtotal * TAX_RATE;
+    const tip = tipAmount || 0;
+
+    // Store full order in Supabase as "pending"
+    await supabase.from("group_orders").insert({
+      location_id: locationId,
+      location_slug: locationSlug,
+      person_name: personName,
+      customer_email: customerEmail || "",
+      items,
+      total: subtotal + tax + tip,
+      special_requests: specialRequests || "",
+      delivery_date: deliveryDate,
+      status: "pending",
+      stripe_session_id: session.id,
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    console.error("Group checkout error:", err);
+    return NextResponse.json({ error: "Failed to create checkout session. Please try again." }, { status: 500 });
+  }
+}

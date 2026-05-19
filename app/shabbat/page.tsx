@@ -394,4 +394,54 @@ export default function ShabbatPage() {
 
               {/* ORDER SUMMARY */}
               <div className="mt-4 bg-zinc-800 rounded-xl p-4 text-sm space-y-1">
-                <div className="flex justify-between text-zinc-400"><span>Subtotal<
+                <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>$100.00</span></div>
+                <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>$8.25</span></div>
+                {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+                <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">
+                  <span>Total</span><span>${(108.25 + tipAmount).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+              <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
+                {submitting ? "Redirecting to payment..." : `Pay $${(108.25 + tipAmount).toFixed(2)} — Secure Checkout`}
+              </button>
+              <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showUpsell && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <img src="/THR%20round%20final.png" alt="The Hungry Rooster" className="w-20 mx-auto mb-4" />
+            <h2 className="text-2xl font-black mb-2">Shabbat Shalom!</h2>
+            <p className="text-zinc-300 font-bold mb-1">Is your table complete?</p>
+            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Don't forget — you can add our Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.</p>
+            <div className="space-y-3 mb-6 text-left">
+              {!addons.greens.selected && (
+                <button onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+                  <span className="font-bold text-sm">Add Certified Greens</span><span className="text-yellow-400 font-black text-sm">+$15</span>
+                </button>
+              )}
+              {!addons.babka.selected && (
+                <button onClick={() => { setAddons({ ...addons, babka: { ...addons.babka, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+                  <span className="font-bold text-sm">Add Signature Babka</span><span className="text-yellow-400 font-black text-sm">+$18</span>
+                </button>
+              )}
+              {!addons.salmon.selected && (
+                <button onClick={() => { setAddons({ ...addons, salmon: { selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+                  <span className="font-bold text-sm">Add Roasted Salmon (6 filets)</span><span className="text-yellow-400 font-black text-sm">+$48</span>
+                </button>
+              )}
+            </div>
+            <button onClick={() => { setShowUpsell(false); handleSubmit(); }} className="w-full border-2 border-zinc-600 hover:border-zinc-400 text-zinc-300 font-bold py-3 rounded-full text-sm transition-colors">
+              No thanks — proceed to payment
+            </button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

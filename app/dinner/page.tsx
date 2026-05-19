@@ -150,4 +150,42 @@ export default function DinnerPage() {
                       key={amt}
                       type="button"
                       onClick={() => { setTipAmount(amt); setCustomTip(""); }}
-                      className={`px
+                      className={`px-4 py-2 rounded-full text-sm font-bold border transition-colors ${tipAmount === amt && customTip === "" ? "bg-teal-500 text-black border-teal-500" : "border-zinc-600 text-zinc-300 hover:border-teal-500"}`}
+                    >
+                      {amt === 0 ? "No Tip" : `$${amt}`}
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Custom $"
+                    value={customTip}
+                    onChange={(e) => { setCustomTip(e.target.value); setTipAmount(parseFloat(e.target.value) || 0); }}
+                    className="w-24 bg-zinc-800 border border-zinc-600 rounded-full px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* ORDER SUMMARY */}
+              <div className="mt-4 bg-zinc-800 rounded-xl p-4 text-sm space-y-1">
+                <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${(dinner?.price || 85).toFixed(2)}</span></div>
+                <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>${((dinner?.price || 85) * 0.0825).toFixed(2)}</span></div>
+                {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+                <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">
+                  <span>Total</span>
+                  <span>${((dinner?.price || 85) * 1.0825 + tipAmount).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+              <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
+                {submitting ? "Redirecting to payment..." : `Pay $${((dinner?.price || 85) * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
+              </button>
+              <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

@@ -21,4 +21,37 @@ export async function POST(req: NextRequest) {
     {
       price_data: {
         currency: "usd",
-        product_d
+        product_data: { name: "Sales Tax (8.25%)", description: "Texas state & local sales tax" },
+        unit_amount: taxCents,
+      },
+      quantity: 1,
+    },
+  ];
+
+  if (tipCents > 0) {
+    allLineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Driver Tip", description: "Thank you! 100% goes to your driver." },
+        unit_amount: tipCents,
+      },
+      quantity: 1,
+    });
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: allLineItems,
+    mode: "payment",
+    success_url: `${baseUrl}/shabbat/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/shabbat`,
+    metadata,
+    custom_text: {
+      submit: { message: "Your Shabbat Box will be delivered Friday. Shabbat Shalom!" },
+    },
+  });
+
+  return NextResponse.json({ url: session.url });
+}

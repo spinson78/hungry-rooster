@@ -34,4 +34,27 @@ export async function POST(req: NextRequest) {
   ];
 
   if (tipCents > 0) {
-    lineItem
+    lineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Driver Tip", description: "Thank you! 100% goes to your driver." },
+        unit_amount: tipCents,
+      },
+      quantity: 1,
+    });
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: lineItems,
+    mode: "payment",
+    success_url: `${baseUrl}/dinner/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/dinner`,
+    metadata,
+    custom_text: {
+      submit: { message: "Fred is on it. We'll confirm delivery by text." },
+    },
+  });
+
+  return NextResponse.json({ url: session.url });
+}
