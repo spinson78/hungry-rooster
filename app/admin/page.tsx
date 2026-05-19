@@ -52,10 +52,11 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "blast" | "invoices">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "group-orders" | "blast" | "invoices">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [cateringOrders, setCateringOrders] = useState<Order[]>([]);
+  const [groupOrders, setGroupOrders] = useState<{id: string; location_slug: string; person_name: string; items: {name: string; qty?: number}[]; total: number; special_requests: string; delivery_date: string | null; status: string; created_at: string}[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
 
@@ -196,6 +197,13 @@ export default function AdminPage() {
     setOrdersLoading(false);
   };
 
+  const fetchGroupOrders = async () => {
+    setOrdersLoading(true);
+    const { data } = await supabase.from("group_orders").select("*").order("created_at", { ascending: false }).limit(100);
+    if (data) setGroupOrders(data);
+    setOrdersLoading(false);
+  };
+
   const clearCompleted = async (type: "dinner" | "shabbat" | "catering") => {
     setClearing(true);
     if (type === "dinner") {
@@ -223,6 +231,7 @@ export default function AdminPage() {
     if (tab === "dinner-orders") fetchDinnerOrders();
     if (tab === "shabbat-orders") fetchShabbatOrders();
     if (tab === "catering-orders") fetchCateringOrders();
+    if (tab === "group-orders") fetchGroupOrders();
   }, [authed, tab]);
 
   const updateDinner = (index: number, field: keyof DinnerEntry, value: string | number) => {
@@ -443,6 +452,9 @@ export default function AdminPage() {
           </button>
           <button onClick={() => setTab("catering-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-orders" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🍽️ Catering
+          </button>
+          <button onClick={() => setTab("group-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "group-orders" ? "bg-orange-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🏢 Group Orders
           </button>
           <button onClick={() => setTab("invoices")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "invoices" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🧾 Invoices
@@ -792,6 +804,54 @@ export default function AdminPage() {
                 >
                   {blastSending ? "Sending... this may take a minute" : "Send to All Subscribers"}
                 </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GROUP ORDERS TAB */}
+        {tab === "group-orders" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-black">Group Orders</h2>
+              <button onClick={fetchGroupOrders} className="text-zinc-400 hover:text-white text-sm border border-zinc-700 px-4 py-2 rounded-full transition-colors">Refresh</button>
+            </div>
+            {ordersLoading ? <p className="text-zinc-500">Loading...</p> : groupOrders.length === 0 ? (
+              <p className="text-zinc-500 text-center py-16">No group orders yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {groupOrders.map(o => (
+                  <div key={o.id} className={`bg-zinc-900 border rounded-2xl p-5 ${o.status === "complete" ? "border-zinc-800 opacity-50" : "border-orange-500/30"}`}>
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div>
+                        <p className="font-black text-white text-lg">{o.person_name}</p>
+                        <p className="text-orange-400 text-xs font-bold uppercase tracking-widest">{o.location_slug.replace(/-/g, " ")}</p>
+                        {o.delivery_date && <p className="text-zinc-500 text-xs mt-1">Delivery: {new Date(o.delivery_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</p>}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-white font-black text-xl">${o.total.toFixed(2)}</p>
+                        <p className="text-zinc-500 text-xs">{new Date(o.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                      </div>
+                    </div>
+                    <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
+                      {(o.items as {name: string; qty?: number}[]).map((item, i) => (
+                        <p key={i} className="text-zinc-300 text-sm">{item.qty && item.qty > 1 ? `${item.qty}x ` : ""}{item.name}</p>
+                      ))}
+                    </div>
+                    {o.special_requests && <p className="text-yellow-400 text-xs mb-3">Note: {o.special_requests}</p>}
+                    {o.status !== "complete" && (
+                      <button
+                        onClick={async () => {
+                          await supabase.from("group_orders").update({ status: "complete" }).eq("id", o.id);
+                          setGroupOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: "complete" } : x));
+                        }}
+                        className="text-xs font-black text-zinc-400 hover:text-teal-400 border border-zinc-700 hover:border-teal-500 px-4 py-2 rounded-full transition-colors"
+                      >
+                        Mark Complete
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
