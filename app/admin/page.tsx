@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import InvoiceTab from "@/app/components/InvoiceTab";
 
 const ADMIN_PASSWORD = "fredapproves";
 
@@ -51,7 +52,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "blast">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "blast" | "invoices">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [cateringOrders, setCateringOrders] = useState<Order[]>([]);
@@ -443,6 +444,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("catering-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-orders" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🍽️ Catering
           </button>
+          <button onClick={() => setTab("invoices")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "invoices" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🧾 Invoices
+          </button>
           <button onClick={() => { setTab("blast"); setBlastResult(null); setBlastError(""); }} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "blast" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📣 Email Blast
           </button>
@@ -792,6 +796,9 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* INVOICES TAB */}
+        {tab === "invoices" && <InvoiceTab />}
 
         {/* ORDER TABS */}
         {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "catering-orders") && renderOrderTab()}
