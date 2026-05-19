@@ -25,7 +25,6 @@ export default function DinnerPage() {
 
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", special_requests: "" });
   const [tipAmount, setTipAmount] = useState<number>(0);
-  const [customTip, setCustomTip] = useState("");
 
   useEffect(() => {
     const fetchDinner = async () => {
@@ -143,25 +142,17 @@ export default function DinnerPage() {
               </div>
               {/* TIP */}
               <div className="mt-6">
-                <label className="text-xs text-zinc-400 uppercase tracking-wide mb-3 block">Driver Tip</label>
-                <div className="flex gap-2 flex-wrap mb-2">
-                  {[0, 5, 10, 15].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => { setTipAmount(amt); setCustomTip(""); }}
-                      className={`px-4 py-2 rounded-full text-sm font-bold border transition-colors ${tipAmount === amt && customTip === "" ? "bg-teal-500 text-black border-teal-500" : "border-zinc-600 text-zinc-300 hover:border-teal-500"}`}
-                    >
-                      {amt === 0 ? "No Tip" : `$${amt}`}
-                    </button>
-                  ))}
+                <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Driver Tip (optional)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">$</span>
                   <input
                     type="number"
                     min="0"
-                    placeholder="Custom $"
-                    value={customTip}
-                    onChange={(e) => { setCustomTip(e.target.value); setTipAmount(parseFloat(e.target.value) || 0); }}
-                    className="w-24 bg-zinc-800 border border-zinc-600 rounded-full px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={tipAmount || ""}
+                    onChange={(e) => setTipAmount(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
