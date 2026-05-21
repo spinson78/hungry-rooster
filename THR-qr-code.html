@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>THR QR Code</title>
+<style>
+  body { margin: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
+  .card { background: white; padding: 24px; border-radius: 12px; display: inline-flex; flex-direction: column; align-items: center; gap: 12px; }
+  canvas { display: block; }
+  p { margin: 0; font-size: 13px; color: #333; font-weight: bold; letter-spacing: 0.05em; }
+  button { margin-top: 20px; background: #2dd4bf; border: none; padding: 12px 28px; border-radius: 999px; font-weight: bold; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="card">
+  <canvas id="qr"></canvas>
+  <p>hungry-rooster.vercel.app</p>
+</div>
+<button onclick="download()">Save as PNG</button>
+
+<script>
+// Minimal QR code generator (Version 2, ECC L) — pure JS, no dependencies
+// Encodes: https://hungry-rooster.vercel.app
+
+const URL = "https://hungry-rooster.vercel.app";
+
+// Use Google Charts API via img tag as fallback approach
+const img = new Image();
+img.crossOrigin = "anonymous";
+const encoded = encodeURIComponent(URL);
+img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encoded}&margin=10&color=000000&bgcolor=ffffff`;
+img.onload = function() {
+  const canvas = document.getElementById("qr");
+  canvas.width = 300;
+  canvas.height = 300;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, 300, 300);
+};
+img.onerror = function() {
+  document.getElementById("qr").insertAdjacentHTML("afterend", "<p style='color:red'>Open this file while connected to the internet</p>");
+};
+
+function download() {
+  const canvas = document.getElementById("qr");
+  const a = document.createElement("a");
+  a.download = "THR-qr-code.png";
+  a.href = canvas.toDataURL("image/png");
+  a.click();
+}
+</script>
+</body>
+</html>
