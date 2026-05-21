@@ -1,7 +1,131 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import InvoiceTab from "@/app/components/InvoiceTab";
+
+function BannerTab() {
+  const [weekDate, setWeekDate] = useState("");
+  const [orderUrl, setOrderUrl] = useState("hungry-rooster.vercel.app");
+  const [monDate, setMonDate] = useState("");
+  const [monMenu, setMonMenu] = useState("");
+  const [tueDate, setTueDate] = useState("");
+  const [tueMenu, setTueMenu] = useState("");
+  const [thuDate, setThuDate] = useState("");
+  const [thuMenu, setThuMenu] = useState("");
+  const [shabDate, setShabDate] = useState("");
+  const [shabMenu, setShabMenu] = useState("");
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  const scalePreview = () => {
+    if (!wrapRef.current || !innerRef.current) return;
+    const scale = Math.min(1, wrapRef.current.offsetWidth / 820);
+    innerRef.current.style.transform = `scale(${scale})`;
+    innerRef.current.style.transformOrigin = "top left";
+    wrapRef.current.style.height = `${Math.round(312 * scale)}px`;
+  };
+
+  useEffect(() => {
+    scalePreview();
+    window.addEventListener("resize", scalePreview);
+    return () => window.removeEventListener("resize", scalePreview);
+  }, []);
+
+  const inputCls = "w-full text-sm text-white placeholder-zinc-600 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 outline-none focus:border-teal-500";
+  const textareaCls = `${inputCls} resize-y`;
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-xl font-black mb-1">FB Banner Builder</h2>
+        <p className="text-zinc-500 text-sm">Fill in this week&apos;s menus — the banner updates live. Screenshot the preview to post on Facebook.</p>
+      </div>
+
+      {/* Details */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4">
+        <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Banner Details</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Week of</label>
+            <input className={inputCls} type="text" placeholder="May 19 – 23, 2026" value={weekDate} onChange={e => setWeekDate(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Order link</label>
+            <input className={inputCls} type="text" value={orderUrl} onChange={e => setOrderUrl(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Menus */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-6">
+        <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">This Week&apos;s Menus</p>
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: "Monday", accent: "#2dd4bf", date: monDate, setDate: setMonDate, menu: monMenu, setMenu: setMonMenu, placeholder: "Mon, May 20" },
+            { label: "Tuesday", accent: "#2dd4bf", date: tueDate, setDate: setTueDate, menu: tueMenu, setMenu: setTueMenu, placeholder: "Tue, May 21" },
+            { label: "Thursday", accent: "#2dd4bf", date: thuDate, setDate: setThuDate, menu: thuMenu, setMenu: setThuMenu, placeholder: "Thu, May 22" },
+            { label: "✦ Shabbat", accent: "#e9c46a", date: shabDate, setDate: setShabDate, menu: shabMenu, setMenu: setShabMenu, placeholder: "Fri, May 23" },
+          ].map((col) => (
+            <div key={col.label}>
+              <p style={{ fontSize: 9, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2, color: col.accent, borderBottom: `2px solid ${col.accent}`, paddingBottom: 5, marginBottom: 10 }}>{col.label}</p>
+              <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Date</label>
+              <input className={inputCls} placeholder={col.placeholder} value={col.date} onChange={e => col.setDate(e.target.value)} style={{ marginBottom: 8 }} />
+              <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Menu</label>
+              <textarea className={textareaCls} rows={4} placeholder={"Protein\nSide 1\nSide 2\nSide 3"} value={col.menu} onChange={e => col.setMenu(e.target.value)} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-black uppercase tracking-widest text-zinc-500">Preview — 820 × 312 px Facebook Cover</p>
+        <p className="text-xs text-zinc-600">Win + Shift + S to snip the banner</p>
+      </div>
+
+      <div ref={wrapRef} style={{ width: "100%", overflow: "hidden", marginBottom: 20 }}>
+        <div ref={innerRef}>
+          <div style={{ width: 820, height: 312, background: "#0a0a0a", position: "relative", overflow: "hidden", borderRadius: 6, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 50, background: "#111", borderBottom: "1px solid #1c1c1c", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px" }}>
+              <img src="/THR%20hor%20logo%20final.png" alt="THR" style={{ height: 24 }} />
+              <span style={{ color: "#fff", fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Menu of the Week</span>
+              <span style={{ color: "#2dd4bf", fontSize: 11, fontWeight: 700 }}>{weekDate || "Week of ..."}</span>
+            </div>
+            <div style={{ position: "absolute", top: 50, bottom: 36, left: 0, right: 150, display: "flex" }}>
+              {[
+                { day: "Monday", accent: "#2dd4bf", date: monDate, menu: monMenu },
+                { day: "Tuesday", accent: "#2dd4bf", date: tueDate, menu: tueMenu },
+                { day: "Thursday", accent: "#2dd4bf", date: thuDate, menu: thuMenu },
+                { day: "Shabbat", accent: "#e9c46a", date: shabDate, menu: shabMenu },
+              ].map((col, i) => (
+                <div key={i} style={{ flex: 1, borderRight: i < 3 ? "1px solid #1c1c1c" : "none", padding: "11px 11px 8px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                  <div style={{ fontSize: 8, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2.5, color: col.accent, marginBottom: 2 }}>{col.day}</div>
+                  <div style={{ color: "#52525b", fontSize: 9, marginBottom: 6 }}>{col.date}</div>
+                  <div style={{ height: 2, borderRadius: 1, background: col.accent, marginBottom: 8, flexShrink: 0 }} />
+                  <div style={{ color: "#d4d4d8", fontSize: 11, lineHeight: 1.65, whiteSpace: "pre-wrap", overflow: "hidden" }}>{col.menu}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ position: "absolute", right: 0, top: 50, bottom: 36, width: 150, display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden" }}>
+              <img src="/white%20fred%20png.png" alt="Fred" style={{ height: "85%", objectFit: "contain", objectPosition: "bottom center", mixBlendMode: "screen" }} />
+            </div>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 36, background: "#2dd4bf", display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+              <span style={{ color: "#000", fontWeight: 900, fontSize: 13, letterSpacing: 0.5 }}>Order Now →</span>
+              <span style={{ color: "rgba(0,0,0,0.3)", fontSize: 11 }}>|</span>
+              <span style={{ color: "#000", fontSize: 13, fontWeight: 700, opacity: 0.65 }}>{orderUrl}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 border-l-4 border-teal-500 rounded-r-xl px-5 py-4 text-xs text-zinc-400 leading-7">
+        <strong className="text-zinc-200">To save as image:</strong> Open Chrome DevTools (F12) → Elements tab → find the banner div → right-click → <strong className="text-zinc-200">Capture node screenshot</strong>. Saves a perfect 820×312 PNG ready for Facebook.<br />
+        Or press <strong className="text-zinc-200">Win + Shift + S</strong> and snip just the banner area above.
+      </div>
+    </div>
+  );
+}
 
 const ADMIN_PASSWORD = "fredapproves";
 
@@ -52,7 +176,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "group-orders" | "blast" | "invoices">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "group-orders" | "blast" | "invoices" | "banner">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [cateringOrders, setCateringOrders] = useState<Order[]>([]);
@@ -462,6 +586,9 @@ export default function AdminPage() {
           <button onClick={() => { setTab("blast"); setBlastResult(null); setBlastError(""); }} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "blast" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📣 Email Blast
           </button>
+          <button onClick={() => setTab("banner")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "banner" ? "bg-blue-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🖼️ FB Banner
+          </button>
         </div>
 
         {/* MENUS TAB */}
@@ -727,7 +854,6 @@ export default function AdminPage() {
                       <div>
                         <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Button Text <span className="text-zinc-600 normal-case">(optional)</span></label>
                         <input type="text" value={an.ctaText} onChange={(e) => setAn({...an, ctaText: e.target.value})}
-                          placeholder="Learn More"
                           className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 text-sm" />
                       </div>
                       <div>
@@ -859,6 +985,9 @@ export default function AdminPage() {
 
         {/* INVOICES TAB */}
         {tab === "invoices" && <InvoiceTab />}
+
+        {/* BANNER TAB */}
+        {tab === "banner" && <BannerTab />}
 
         {/* ORDER TABS */}
         {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "catering-orders") && renderOrderTab()}
