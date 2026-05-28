@@ -162,7 +162,7 @@ type BakeryItem = {
   description: string;
 };
 
-const EMPTY_BAKERY_ITEMS = (): BakeryItem[] => Array.from({ length: 8 }, () => ({ name: "", price: "", description: "" }));
+const EMPTY_BAKERY_ITEMS = (): BakeryItem[] => Array.from({ length: 10 }, () => ({ name: "", price: "", description: "" }));
 
 type Order = {
   id: string;
