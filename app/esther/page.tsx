@@ -6,6 +6,7 @@ type BakeryItem = {
   name: string;
   price: number;
   description: string;
+  quantity?: number | null;
 };
 
 type BakeryMenu = {
@@ -185,26 +186,33 @@ export default function EstherPage() {
               <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">This Week's Bakery</p>
               <p className="text-zinc-500 text-xs mb-5">Select what you'd like — minimum ${MIN_ORDER} to order.</p>
               <div className="space-y-3">
-                {menu.items.map((item) => (
-                  <label
-                    key={item.name}
-                    className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${selected[item.name] ? "border-yellow-400 bg-zinc-800" : "border-zinc-700 hover:border-yellow-400/50"}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={!!selected[item.name]}
-                        onChange={(e) => setSelected({ ...selected, [item.name]: e.target.checked })}
-                        className="accent-yellow-400 w-4 h-4"
-                      />
-                      <div>
-                        <p className="font-bold text-sm">{item.name}</p>
-                        {item.description && <p className="text-zinc-500 text-xs">{item.description}</p>}
+                {menu.items.map((item) => {
+                  const soldOut = item.quantity != null && item.quantity === 0;
+                  return (
+                    <label
+                      key={item.name}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${soldOut ? "border-zinc-800 opacity-40 cursor-not-allowed" : selected[item.name] ? "border-yellow-400 bg-zinc-800 cursor-pointer" : "border-zinc-700 hover:border-yellow-400/50 cursor-pointer"}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          disabled={soldOut}
+                          checked={!!selected[item.name]}
+                          onChange={(e) => !soldOut && setSelected({ ...selected, [item.name]: e.target.checked })}
+                          className="accent-yellow-400 w-4 h-4"
+                        />
+                        <div>
+                          <p className="font-bold text-sm">{item.name}{soldOut && <span className="text-red-400 font-black text-xs ml-2">SOLD OUT</span>}</p>
+                          {item.description && <p className="text-zinc-500 text-xs">{item.description}</p>}
+                          {item.quantity != null && item.quantity > 0 && item.quantity <= 3 && (
+                            <p className="text-red-400 text-xs font-bold">Only {item.quantity} left</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-zinc-300 font-black text-sm ml-4 shrink-0">${item.price.toFixed(2)}</span>
-                  </label>
-                ))}
+                      <span className="text-zinc-300 font-black text-sm ml-4 shrink-0">${item.price.toFixed(2)}</span>
+                    </label>
+                  );
+                })}
               </div>
 
               {/* MINIMUM INDICATOR */}

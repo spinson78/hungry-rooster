@@ -160,9 +160,10 @@ type BakeryItem = {
   name: string;
   price: string;
   description: string;
+  quantity: string;
 };
 
-const EMPTY_BAKERY_ITEMS = (): BakeryItem[] => Array.from({ length: 10 }, () => ({ name: "", price: "", description: "" }));
+const EMPTY_BAKERY_ITEMS = (): BakeryItem[] => Array.from({ length: 10 }, () => ({ name: "", price: "", description: "", quantity: "" }));
 
 type Order = {
   id: string;
@@ -302,7 +303,7 @@ export default function AdminPage() {
   });
 
   const [bakeryItems, setBakeryItems] = useState<BakeryItem[]>(EMPTY_BAKERY_ITEMS());
-  const [bakeryQuantity, setBakeryQuantity] = useState(50);
+  const [bakeryWeekOf, setBakeryWeekOf] = useState("");
 
   const updateBakeryItem = (index: number, field: keyof BakeryItem, value: string) => {
     setBakeryItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
@@ -440,14 +441,12 @@ export default function AdminPage() {
       const friday = new Date(monday + "T14:00:00Z");
       friday.setUTCDate(friday.getUTCDate() + 4);
 
-      const extraFull = [shabbat.extra, shabbat.dessert].filter(Boolean).join(" · ");
-
       await supabase.from("shabbat_menus").upsert({
         week_of: monday,
         protein: shabbat.protein,
         side1: shabbat.side1,
         side2: shabbat.side2,
-        extra: extraFull,
+        extra: shabbat.extra,
         quantity_available: shabbat.quantity,
         quantity_remaining: shabbat.quantity,
         is_active: true,
@@ -456,11 +455,10 @@ export default function AdminPage() {
       }, { onConflict: "week_of" });
     }
 
-    // Save bakery menu (uses same week_of and timing as Shabbat)
+    // Save bakery menu — uses its own week_of date
     const validBakeryItems = bakeryItems.filter(i => i.name.trim() && i.price.trim());
-    const weekRef = shabbat.week_of;
-    if (weekRef && validBakeryItems.length > 0) {
-      const monday = getMondayOfWeek(weekRef);
+    if (bakeryWeekOf && validBakeryItems.length > 0) {
+      const monday = getMondayOfWeek(bakeryWeekOf);
       const revealDate = new Date(monday + "T02:00:00Z");
       const friday = new Date(monday + "T14:00:00Z");
       friday.setUTCDate(friday.getUTCDate() + 4);
@@ -469,13 +467,17 @@ export default function AdminPage() {
         name: i.name.trim(),
         price: parseFloat(i.price) || 0,
         description: i.description.trim(),
+        quantity: parseInt(i.quantity) || null,
       }));
+
+      // Overall quantity = sum of all item quantities (or 999 if none set)
+      const totalQty = itemsJson.every(i => i.quantity) ? itemsJson.reduce((s, i) => s + (i.quantity || 0), 0) : 999;
 
       await supabase.from("bakery_menus").upsert({
         week_of: monday,
         items: itemsJson,
-        quantity_available: bakeryQuantity,
-        quantity_remaining: bakeryQuantity,
+        quantity_available: totalQty,
+        quantity_remaining: totalQty,
         is_active: true,
         reveal_time: revealDate.toISOString(),
         cutoff_time: friday.toISOString(),
@@ -749,21 +751,20 @@ export default function AdminPage() {
               <h2 className="text-xl font-black mb-1">🥐 Esther&apos;s Friday Bakery</h2>
               <p className="text-zinc-500 text-sm mb-6">Weekly bakery menu — drops Monday at 9PM alongside Shabbat. Same Friday 9AM cutoff. Minimum order $50. Uses the same &ldquo;week of&rdquo; date as the Shabbat Box above.</p>
               <div className="bg-zinc-900 rounded-2xl p-6 border border-yellow-400/20">
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Quantity Available</label>
-                    <input type="number" value={bakeryQuantity} onChange={(e) => setBakeryQuantity(parseInt(e.target.value) || 50)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm" />
-                  </div>
-                  <div className="flex items-end">
-                    <p className="text-zinc-500 text-xs">Uses the week_of date from Shabbat Box above — fill that in first.</p>
-                  </div>
+                <div className="mb-5">
+                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Any date this week <span className="text-yellow-400 normal-case">(Monday is auto-calculated — same logic as Shabbat)</span></label>
+                  <input type="date" value={bakeryWeekOf} onChange={(e) => setBakeryWeekOf(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm" />
+                  {bakeryWeekOf && (
+                    <p className="text-teal-400 text-xs mt-1">↳ Monday: {getMondayOfWeek(bakeryWeekOf)} · Reveals Monday 9PM · Cutoff Friday 9AM</p>
+                  )}
                 </div>
-                <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">This Week&apos;s Items (fill in what&apos;s available — leave blank rows empty)</p>
+                <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">This Week&apos;s Items</p>
+                <p className="text-zinc-600 text-xs mb-4">Leave blank rows empty. Qty = how many available of that item (optional — leave blank for unlimited).</p>
                 <div className="space-y-3">
                   {bakeryItems.map((item, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-1 text-zinc-600 text-xs font-bold text-center">{i + 1}</div>
-                      <div className="col-span-4">
+                      <div className="col-span-3">
                         <input type="text" placeholder="Item name" value={item.name} onChange={(e) => updateBakeryItem(i, "name", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
                       </div>
                       <div className="col-span-2">
@@ -772,13 +773,16 @@ export default function AdminPage() {
                           <input type="text" placeholder="0.00" value={item.price} onChange={(e) => updateBakeryItem(i, "price", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-6 pr-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
                         </div>
                       </div>
+                      <div className="col-span-1">
+                        <input type="number" min="0" placeholder="Qty" value={item.quantity} onChange={(e) => updateBakeryItem(i, "quantity", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm text-center" />
+                      </div>
                       <div className="col-span-5">
                         <input type="text" placeholder="Short description (optional)" value={item.description} onChange={(e) => updateBakeryItem(i, "description", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
                       </div>
                     </div>
                   ))}
                 </div>
-                <p className="text-zinc-600 text-xs mt-4">Empty rows are ignored on save. Prices are per-item — customer selects what they want (min $50 to order).</p>
+                <p className="text-zinc-600 text-xs mt-4">Min $50 order. Customers pick individual items — each item is priced separately.</p>
               </div>
             </div>
 
