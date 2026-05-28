@@ -156,6 +156,14 @@ type ShabbatEntry = {
   quantity: number;
 };
 
+type BakeryItem = {
+  name: string;
+  price: string;
+  description: string;
+};
+
+const EMPTY_BAKERY_ITEMS = (): BakeryItem[] => Array.from({ length: 8 }, () => ({ name: "", price: "", description: "" }));
+
 type Order = {
   id: string;
   order_type: string;
@@ -176,9 +184,10 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "catering-orders" | "group-orders" | "blast" | "invoices" | "banner">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "invoices" | "banner">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
+  const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
   const [cateringOrders, setCateringOrders] = useState<Order[]>([]);
   const [groupOrders, setGroupOrders] = useState<{id: string; location_slug: string; person_name: string; items: {name: string; qty?: number}[]; total: number; special_requests: string; delivery_date: string | null; status: string; created_at: string}[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -292,6 +301,13 @@ export default function AdminPage() {
     quantity: 50,
   });
 
+  const [bakeryItems, setBakeryItems] = useState<BakeryItem[]>(EMPTY_BAKERY_ITEMS());
+  const [bakeryQuantity, setBakeryQuantity] = useState(50);
+
+  const updateBakeryItem = (index: number, field: keyof BakeryItem, value: string) => {
+    setBakeryItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
   const handleLogin = () => {
     if (password === ADMIN_PASSWORD) {
       setAuthed(true);
@@ -314,6 +330,13 @@ export default function AdminPage() {
     setOrdersLoading(false);
   };
 
+  const fetchBakeryOrders = async () => {
+    setOrdersLoading(true);
+    const { data } = await supabase.from("orders").select("*").eq("order_type", "bakery").order("created_at", { ascending: false }).limit(100);
+    if (data) setBakeryOrders(data);
+    setOrdersLoading(false);
+  };
+
   const fetchCateringOrders = async () => {
     setOrdersLoading(true);
     const { data } = await supabase.from("orders").select("*").in("order_type", ["catering", "catering_inquiry"]).order("created_at", { ascending: false }).limit(100);
@@ -328,7 +351,7 @@ export default function AdminPage() {
     setOrdersLoading(false);
   };
 
-  const clearCompleted = async (type: "dinner" | "shabbat" | "catering") => {
+  const clearCompleted = async (type: "dinner" | "shabbat" | "bakery" | "catering") => {
     setClearing(true);
     if (type === "dinner") {
       await supabase.from("orders").delete().eq("order_type", "dinner").eq("status", "complete");
@@ -336,6 +359,9 @@ export default function AdminPage() {
     } else if (type === "shabbat") {
       await supabase.from("orders").delete().eq("order_type", "shabbat").eq("status", "complete");
       await fetchShabbatOrders();
+    } else if (type === "bakery") {
+      await supabase.from("orders").delete().eq("order_type", "bakery").eq("status", "complete");
+      await fetchBakeryOrders();
     } else {
       await supabase.from("orders").delete().in("order_type", ["catering", "catering_inquiry"]).eq("status", "complete");
       await fetchCateringOrders();
@@ -343,10 +369,11 @@ export default function AdminPage() {
     setClearing(false);
   };
 
-  const markOrderComplete = async (id: string, type: "dinner" | "shabbat" | "catering") => {
+  const markOrderComplete = async (id: string, type: "dinner" | "shabbat" | "bakery" | "catering") => {
     await supabase.from("orders").update({ status: "complete" }).eq("id", id);
     if (type === "dinner") setDinnerOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
     else if (type === "shabbat") setShabbatOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
+    else if (type === "bakery") setBakeryOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
     else setCateringOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
   };
 
@@ -354,6 +381,7 @@ export default function AdminPage() {
     if (!authed) return;
     if (tab === "dinner-orders") fetchDinnerOrders();
     if (tab === "shabbat-orders") fetchShabbatOrders();
+    if (tab === "bakery-orders") fetchBakeryOrders();
     if (tab === "catering-orders") fetchCateringOrders();
     if (tab === "group-orders") fetchGroupOrders();
   }, [authed, tab]);
@@ -428,6 +456,32 @@ export default function AdminPage() {
       }, { onConflict: "week_of" });
     }
 
+    // Save bakery menu (uses same week_of and timing as Shabbat)
+    const validBakeryItems = bakeryItems.filter(i => i.name.trim() && i.price.trim());
+    const weekRef = shabbat.week_of;
+    if (weekRef && validBakeryItems.length > 0) {
+      const monday = getMondayOfWeek(weekRef);
+      const revealDate = new Date(monday + "T02:00:00Z");
+      const friday = new Date(monday + "T14:00:00Z");
+      friday.setUTCDate(friday.getUTCDate() + 4);
+
+      const itemsJson = validBakeryItems.map(i => ({
+        name: i.name.trim(),
+        price: parseFloat(i.price) || 0,
+        description: i.description.trim(),
+      }));
+
+      await supabase.from("bakery_menus").upsert({
+        week_of: monday,
+        items: itemsJson,
+        quantity_available: bakeryQuantity,
+        quantity_remaining: bakeryQuantity,
+        is_active: true,
+        reveal_time: revealDate.toISOString(),
+        cutoff_time: friday.toISOString(),
+      }, { onConflict: "week_of" });
+    }
+
     setSaving(false);
     setSaved(true);
   };
@@ -435,11 +489,12 @@ export default function AdminPage() {
   const renderOrderTab = () => {
     const isDinner = tab === "dinner-orders";
     const isShabbat = tab === "shabbat-orders";
-    const orderList = isDinner ? dinnerOrders : isShabbat ? shabbatOrders : cateringOrders;
-    const refreshFn = isDinner ? fetchDinnerOrders : isShabbat ? fetchShabbatOrders : fetchCateringOrders;
-    const clearType: "dinner" | "shabbat" | "catering" = isDinner ? "dinner" : isShabbat ? "shabbat" : "catering";
-    const accentColor = isDinner ? "teal" : isShabbat ? "yellow" : "purple";
-    const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : "🍽️ Catering Orders";
+    const isBakery = tab === "bakery-orders";
+    const orderList = isDinner ? dinnerOrders : isShabbat ? shabbatOrders : isBakery ? bakeryOrders : cateringOrders;
+    const refreshFn = isDinner ? fetchDinnerOrders : isShabbat ? fetchShabbatOrders : isBakery ? fetchBakeryOrders : fetchCateringOrders;
+    const clearType: "dinner" | "shabbat" | "bakery" | "catering" = isDinner ? "dinner" : isShabbat ? "shabbat" : isBakery ? "bakery" : "catering";
+    const accentColor = isDinner ? "teal" : isShabbat ? "yellow" : isBakery ? "yellow" : "purple";
+    const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : isBakery ? "🥐 Bakery Orders" : "🍽️ Catering Orders";
     const completedCount = orderList.filter(o => o.status === "complete").length;
 
     return (
@@ -472,8 +527,8 @@ export default function AdminPage() {
               <div key={order.id} className={`bg-zinc-900 rounded-2xl p-6 border transition-colors ${order.status === "complete" ? "border-zinc-800 opacity-50" : "border-zinc-700"}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDinner ? "bg-teal-400/20 text-teal-400" : isShabbat ? "bg-yellow-400/20 text-yellow-400" : "bg-purple-400/20 text-purple-400"}`}>
-                      {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : "Catering"}
+                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDinner ? "bg-teal-400/20 text-teal-400" : isShabbat ? "bg-yellow-400/20 text-yellow-400" : isBakery ? "bg-yellow-400/20 text-yellow-400" : "bg-purple-400/20 text-purple-400"}`}>
+                      {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : isBakery ? "🥐 Bakery" : "Catering"}
                     </span>
                     <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${order.status === "complete" ? "bg-green-400/20 text-green-400" : "bg-orange-400/20 text-orange-400"}`}>
                       {order.status}
@@ -573,6 +628,9 @@ export default function AdminPage() {
           </button>
           <button onClick={() => setTab("shabbat-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "shabbat-orders" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🕯️ Shabbat
+          </button>
+          <button onClick={() => setTab("bakery-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "bakery-orders" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🥐 Bakery
           </button>
           <button onClick={() => setTab("catering-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-orders" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🍽️ Catering
@@ -684,6 +742,43 @@ export default function AdminPage() {
                   <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Friday Night Dessert <span className="text-yellow-400 normal-case">(the $25 add-on — what is it this week?)</span></label>
                   <input type="text" placeholder="e.g. Chocolate lava cake" value={shabbat.dessert} onChange={(e) => setShabbat({ ...shabbat, dessert: e.target.value })} className="w-full bg-zinc-800 border border-yellow-400/40 rounded-xl px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
                 </div>
+              </div>
+            </div>
+
+            <div className="mb-10">
+              <h2 className="text-xl font-black mb-1">🥐 Esther&apos;s Friday Bakery</h2>
+              <p className="text-zinc-500 text-sm mb-6">Weekly bakery menu — drops Monday at 9PM alongside Shabbat. Same Friday 9AM cutoff. Minimum order $50. Uses the same &ldquo;week of&rdquo; date as the Shabbat Box above.</p>
+              <div className="bg-zinc-900 rounded-2xl p-6 border border-yellow-400/20">
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Quantity Available</label>
+                    <input type="number" value={bakeryQuantity} onChange={(e) => setBakeryQuantity(parseInt(e.target.value) || 50)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm" />
+                  </div>
+                  <div className="flex items-end">
+                    <p className="text-zinc-500 text-xs">Uses the week_of date from Shabbat Box above — fill that in first.</p>
+                  </div>
+                </div>
+                <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">This Week&apos;s Items (fill in what&apos;s available — leave blank rows empty)</p>
+                <div className="space-y-3">
+                  {bakeryItems.map((item, i) => (
+                    <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-1 text-zinc-600 text-xs font-bold text-center">{i + 1}</div>
+                      <div className="col-span-4">
+                        <input type="text" placeholder="Item name" value={item.name} onChange={(e) => updateBakeryItem(i, "name", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                      </div>
+                      <div className="col-span-2">
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
+                          <input type="text" placeholder="0.00" value={item.price} onChange={(e) => updateBakeryItem(i, "price", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-6 pr-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                        </div>
+                      </div>
+                      <div className="col-span-5">
+                        <input type="text" placeholder="Short description (optional)" value={item.description} onChange={(e) => updateBakeryItem(i, "description", e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-zinc-600 text-xs mt-4">Empty rows are ignored on save. Prices are per-item — customer selects what they want (min $50 to order).</p>
               </div>
             </div>
 
@@ -990,7 +1085,7 @@ export default function AdminPage() {
         {tab === "banner" && <BannerTab />}
 
         {/* ORDER TABS */}
-        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "catering-orders") && renderOrderTab()}
+        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}
       </div>
     </main>
   );

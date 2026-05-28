@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
               .update({ quantity_remaining: menuData.quantity_remaining - 1 })
               .eq("id", meta.menu_id);
           }
-        } else if (order_type === "shabbat") {
+        } else if (order_type === "shabbat" || order_type === "snackpack") {
           const { data: menuData } = await supabase
             .from("shabbat_menus")
             .select("quantity_remaining")
@@ -134,6 +134,18 @@ export async function POST(req: NextRequest) {
           if (menuData && menuData.quantity_remaining > 0) {
             await supabase
               .from("shabbat_menus")
+              .update({ quantity_remaining: menuData.quantity_remaining - 1 })
+              .eq("id", meta.menu_id);
+          }
+        } else if (order_type === "bakery") {
+          const { data: menuData } = await supabase
+            .from("bakery_menus")
+            .select("quantity_remaining")
+            .eq("id", meta.menu_id)
+            .single();
+          if (menuData && menuData.quantity_remaining > 0) {
+            await supabase
+              .from("bakery_menus")
               .update({ quantity_remaining: menuData.quantity_remaining - 1 })
               .eq("id", meta.menu_id);
           }

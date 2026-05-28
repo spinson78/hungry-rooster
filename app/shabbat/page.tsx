@@ -29,6 +29,10 @@ export default function ShabbatPage() {
   const [orderType, setOrderType] = useState<"box" | "snackpack" | null>(null);
   const [showUpsell, setShowUpsell] = useState(false);
   const [upsellShown, setUpsellShown] = useState(false);
+  const [showBakeryUpsell, setShowBakeryUpsell] = useState(false);
+  const [bakeryUpsellShown, setBakeryUpsellShown] = useState(false);
+  const [bakeryMenu, setBakeryMenu] = useState<{ id: string; items: { name: string; price: number; description: string }[] } | null>(null);
+  const [selectedBakery, setSelectedBakery] = useState<Record<string, boolean>>({});
   const [tipAmount, setTipAmount] = useState<number>(0);
 
   const [selectedSize, setSelectedSize] = useState(SIZES[1]);
@@ -65,6 +69,21 @@ export default function ShabbatPage() {
       setLoading(false);
     };
     fetchMenu();
+
+    // Fetch this week's bakery menu for the upsell
+    const fetchBakery = async () => {
+      const now = new Date();
+      const { data } = await supabase
+        .from("bakery_menus")
+        .select("*")
+        .gte("cutoff_time", now.toISOString())
+        .order("cutoff_time", { ascending: true })
+        .limit(1);
+      if (data && data.length > 0 && data[0].items?.length > 0) {
+        setBakeryMenu({ id: data[0].id, items: data[0].items });
+      }
+    };
+    fetchBakery();
   }, []);
 
   const getTotal = () => {
@@ -79,24 +98,37 @@ export default function ShabbatPage() {
 
   const buildLineItems = () => {
     if (orderType === "snackpack") {
-      return [{ price_data: { currency: "usd", product_data: { name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles & brownies" }, unit_amount: 10000 }, quantity: 1 }];
+      const snackItems = [{ price_data: { currency: "usd", product_data: { name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles & brownies" }, unit_amount: 10000 }, quantity: 1 }];
+      if (bakeryMenu) {
+        bakeryMenu.items.filter(i => selectedBakery[i.name]).forEach(i => {
+          snackItems.push({ price_data: { currency: "usd", product_data: { name: `🥐 ${i.name}`, description: i.description || "Esther's Friday Bakery" }, unit_amount: Math.round(i.price * 100) }, quantity: 1 });
+        });
+      }
+      return snackItems;
     }
     const items = [{ price_data: { currency: "usd", product_data: { name: `Shabbat Box — ${selectedSize.label}`, description: `${menu?.protein}, ${menu?.side1}, ${menu?.side2}, ${menu?.extra}` }, unit_amount: selectedSize.price * 100 }, quantity: 1 }];
     if (addons.greens.selected) items.push({ price_data: { currency: "usd", product_data: { name: `Certified Greens (${addons.greens.choice})`, description: "Choice of kale or romaine" }, unit_amount: 1500 }, quantity: 1 });
     if (addons.dessert.selected) items.push({ price_data: { currency: "usd", product_data: { name: "Friday Night Dessert Add On", description: "Check socials for this week" }, unit_amount: 2500 }, quantity: 1 });
     if (addons.babka.selected) items.push({ price_data: { currency: "usd", product_data: { name: `Signature Babka (${addons.babka.choice})`, description: "Chocolate or cinnamon" }, unit_amount: 1800 }, quantity: 1 });
     if (addons.salmon.selected) items.push({ price_data: { currency: "usd", product_data: { name: "Roasted Salmon Add On (6 filets)", description: "6 x 6oz filets" }, unit_amount: 4800 }, quantity: 1 });
+    if (bakeryMenu) {
+      bakeryMenu.items.filter(i => selectedBakery[i.name]).forEach(i => {
+        items.push({ price_data: { currency: "usd", product_data: { name: `🥐 ${i.name}`, description: i.description || "Esther's Friday Bakery" }, unit_amount: Math.round(i.price * 100) }, quantity: 1 });
+      });
+    }
     return items;
   };
 
   const buildItems = () => {
-    if (orderType === "snackpack") return [{ name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles, brownies" }];
+    const bakeryAddons = bakeryMenu ? bakeryMenu.items.filter(i => selectedBakery[i.name]).map(i => ({ name: `🥐 ${i.name}` })) : [];
+    if (orderType === "snackpack") return [{ name: "Shabbat Snack Pack", description: "Chicken nuggets, potato bourekas, sesame noodles, brownies" }, ...bakeryAddons];
     return [
       { name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra },
       ...(addons.greens.selected ? [{ name: `Certified Greens — ${addons.greens.choice}` }] : []),
       ...(addons.dessert.selected ? [{ name: "Friday Night Dessert Add On" }] : []),
       ...(addons.babka.selected ? [{ name: `Signature Babka — ${addons.babka.choice}` }] : []),
       ...(addons.salmon.selected ? [{ name: "Roasted Salmon Add On (6 filets)" }] : []),
+      ...bakeryAddons,
     ];
   };
 
@@ -114,6 +146,13 @@ export default function ShabbatPage() {
         setShowUpsell(true);
         return;
       }
+    }
+
+    // Bakery upsell — show once before checkout if bakery menu exists
+    if (!bakeryUpsellShown && bakeryMenu && bakeryMenu.items.length > 0) {
+      setBakeryUpsellShown(true);
+      setShowBakeryUpsell(true);
+      return;
     }
 
     setSubmitting(true);
@@ -410,6 +449,51 @@ export default function ShabbatPage() {
           </div>
         )}
       </div>
+
+      {showBakeryUpsell && bakeryMenu && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <div className="text-4xl mb-4">🥐</div>
+            <h2 className="text-2xl font-black mb-1">Is your Shabbat table complete?</h2>
+            <p className="text-zinc-300 font-bold mb-1">What about Kiddush?</p>
+            <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Add Esther&apos;s fresh-baked Friday Bakery items to your order — delivered alongside your Shabbat Box.</p>
+            <div className="space-y-3 mb-6 text-left">
+              {bakeryMenu.items.map((item) => (
+                <label
+                  key={item.name}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-colors ${selectedBakery[item.name] ? "border-yellow-400 bg-zinc-800" : "border-zinc-700 hover:border-yellow-400/50"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={!!selectedBakery[item.name]}
+                      onChange={(e) => setSelectedBakery({ ...selectedBakery, [item.name]: e.target.checked })}
+                      className="accent-yellow-400"
+                    />
+                    <div>
+                      <p className="font-bold text-sm">{item.name}</p>
+                      {item.description && <p className="text-zinc-500 text-xs">{item.description}</p>}
+                    </div>
+                  </div>
+                  <span className="text-yellow-400 font-black text-sm ml-4 shrink-0">+${item.price.toFixed(2)}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              onClick={() => { setShowBakeryUpsell(false); handleSubmit(); }}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 rounded-full text-sm transition-colors mb-3"
+            >
+              {Object.values(selectedBakery).some(Boolean) ? "Add to Order & Checkout" : "Proceed to Payment"}
+            </button>
+            <button
+              onClick={() => { setShowBakeryUpsell(false); handleSubmit(); }}
+              className="w-full border-2 border-zinc-600 hover:border-zinc-400 text-zinc-300 font-bold py-3 rounded-full text-sm transition-colors"
+            >
+              No thanks — just the Shabbat order
+            </button>
+          </div>
+        </div>
+      )}
 
       {showUpsell && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
