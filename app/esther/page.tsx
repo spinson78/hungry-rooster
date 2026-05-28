@@ -27,7 +27,7 @@ export default function EstherPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [tipAmount, setTipAmount] = useState<number>(0);
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   const [form, setForm] = useState({
     name: "",
@@ -57,11 +57,27 @@ export default function EstherPage() {
     fetchMenu();
   }, []);
 
+  const setQty = (itemName: string, delta: number, maxQty: number | null | undefined) => {
+    setQuantities((prev) => {
+      const current = prev[itemName] || 0;
+      const next = current + delta;
+      if (next < 0) return prev;
+      if (maxQty != null && next > maxQty) return prev;
+      if (next === 0) {
+        const updated = { ...prev };
+        delete updated[itemName];
+        return updated;
+      }
+      return { ...prev, [itemName]: next };
+    });
+  };
+
   const getSubtotal = () => {
     if (!menu) return 0;
-    return menu.items
-      .filter((item) => selected[item.name])
-      .reduce((sum, item) => sum + item.price, 0);
+    return menu.items.reduce((sum, item) => {
+      const qty = quantities[item.name] || 0;
+      return sum + item.price * qty;
+    }, 0);
   };
 
   const subtotal = getSubtotal();
@@ -70,22 +86,22 @@ export default function EstherPage() {
   const buildLineItems = () => {
     if (!menu) return [];
     return menu.items
-      .filter((item) => selected[item.name])
+      .filter((item) => (quantities[item.name] || 0) > 0)
       .map((item) => ({
         price_data: {
           currency: "usd",
           product_data: { name: item.name, description: item.description || "Esther's Friday Bakery" },
           unit_amount: Math.round(item.price * 100),
         },
-        quantity: 1,
+        quantity: quantities[item.name],
       }));
   };
 
   const buildItems = () => {
     if (!menu) return [];
     return menu.items
-      .filter((item) => selected[item.name])
-      .map((item) => ({ name: item.name, description: item.description }));
+      .filter((item) => (quantities[item.name] || 0) > 0)
+      .map((item) => ({ name: item.name, description: item.description, quantity: quantities[item.name] }));
   };
 
   const handleSubmit = async () => {
@@ -184,33 +200,58 @@ export default function EstherPage() {
             {/* THIS WEEK'S BAKERY ITEMS */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">This Week's Bakery</p>
-              <p className="text-zinc-500 text-xs mb-5">Select what you'd like — minimum ${MIN_ORDER} to order.</p>
+              <p className="text-zinc-500 text-xs mb-5">Add quantities — minimum ${MIN_ORDER} to order.</p>
               <div className="space-y-3">
                 {menu.items.map((item) => {
                   const soldOut = item.quantity != null && item.quantity === 0;
+                  const qty = quantities[item.name] || 0;
+                  const maxQty = item.quantity ?? null;
+                  const atMax = maxQty != null && qty >= maxQty;
                   return (
-                    <label
+                    <div
                       key={item.name}
-                      className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${soldOut ? "border-zinc-800 opacity-40 cursor-not-allowed" : selected[item.name] ? "border-yellow-400 bg-zinc-800 cursor-pointer" : "border-zinc-700 hover:border-yellow-400/50 cursor-pointer"}`}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
+                        soldOut
+                          ? "border-zinc-800 opacity-40"
+                          : qty > 0
+                          ? "border-yellow-400 bg-zinc-800"
+                          : "border-zinc-700"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          disabled={soldOut}
-                          checked={!!selected[item.name]}
-                          onChange={(e) => !soldOut && setSelected({ ...selected, [item.name]: e.target.checked })}
-                          className="accent-yellow-400 w-4 h-4"
-                        />
-                        <div>
-                          <p className="font-bold text-sm">{item.name}{soldOut && <span className="text-red-400 font-black text-xs ml-2">SOLD OUT</span>}</p>
-                          {item.description && <p className="text-zinc-500 text-xs">{item.description}</p>}
-                          {item.quantity != null && item.quantity > 0 && item.quantity <= 3 && (
-                            <p className="text-red-400 text-xs font-bold">Only {item.quantity} left</p>
-                          )}
-                        </div>
+                      <div className="flex-1 min-w-0 pr-4">
+                        <p className="font-bold text-sm">
+                          {item.name}
+                          {soldOut && <span className="text-red-400 font-black text-xs ml-2">SOLD OUT</span>}
+                        </p>
+                        {item.description && <p className="text-zinc-500 text-xs">{item.description}</p>}
+                        {!soldOut && maxQty != null && maxQty > 0 && maxQty <= 3 && (
+                          <p className="text-red-400 text-xs font-bold">Only {maxQty} left</p>
+                        )}
                       </div>
-                      <span className="text-zinc-300 font-black text-sm ml-4 shrink-0">${item.price.toFixed(2)}</span>
-                    </label>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-zinc-300 font-black text-sm">${item.price.toFixed(2)}</span>
+                        {!soldOut && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setQty(item.name, -1, maxQty)}
+                              disabled={qty === 0}
+                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              −
+                            </button>
+                            <span className="w-5 text-center font-black text-sm text-white">{qty}</span>
+                            <button
+                              onClick={() => setQty(item.name, 1, maxQty)}
+                              disabled={atMax}
+                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -289,7 +330,7 @@ export default function EstherPage() {
                 {submitting
                   ? "Redirecting to payment..."
                   : subtotal === 0
-                  ? "Select items to continue"
+                  ? "Add items to continue"
                   : !meetsMinimum
                   ? `Add $${(MIN_ORDER - subtotal).toFixed(2)} more to checkout`
                   : `Pay $${(subtotal * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
