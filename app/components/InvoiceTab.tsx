@@ -502,22 +502,48 @@ export default function InvoiceTab() {
           </div>
         )}
 
+        {/* Invoice page link — shareable, printable */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-white font-bold text-sm">📄 Invoice Page</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const base = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+                  navigator.clipboard.writeText(`${base}/invoice/${selected.id}`);
+                  setActionMsg("Invoice link copied!");
+                }}
+                className="text-xs font-black bg-zinc-700 hover:bg-zinc-600 text-zinc-300 px-3 py-1 rounded-full transition-colors"
+              >
+                Copy Link
+              </button>
+              <a
+                href={`/invoice/${selected.id}`}
+                target="_blank"
+                className="text-xs font-black bg-yellow-400 hover:bg-yellow-300 text-black px-3 py-1 rounded-full transition-colors"
+              >
+                Open →
+              </a>
+            </div>
+          </div>
+          <p className="text-zinc-500 text-xs">Send to client — they can view, print, and pay from this page.</p>
+        </div>
+
         {selected.stripe_checkout_url && selected.status !== "paid" && (
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-blue-400 font-bold text-sm">Payment Link Active</p>
+              <p className="text-blue-400 font-bold text-sm">💳 Stripe Payment Link</p>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(selected.stripe_checkout_url);
-                  setActionMsg("Link copied to clipboard!");
+                  setActionMsg("Payment link copied!");
                 }}
                 className="text-xs font-black bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 px-3 py-1 rounded-full transition-colors"
               >
                 Copy Link
               </button>
             </div>
-            <a href={selected.stripe_checkout_url} target="_blank" className="text-zinc-400 text-xs underline break-all hover:text-white transition-colors">{selected.stripe_checkout_url}</a>
-            <p className="text-zinc-600 text-xs mt-2">Send this link via text, email, or any messaging app — client pays directly through Stripe.</p>
+            <p className="text-zinc-600 text-xs">Direct Stripe checkout — skips the invoice view.</p>
           </div>
         )}
 
