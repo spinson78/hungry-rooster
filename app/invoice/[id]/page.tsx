@@ -94,15 +94,21 @@ export default function InvoicePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invoice_id: invoice.id, gratuity }),
       });
+      if (!res.ok) {
+        const text = await res.text();
+        setPayError(`Error ${res.status} — ${text.slice(0, 120)}`);
+        setPaying(false);
+        return;
+      }
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setPayError("Could not generate payment link. Please try again.");
+        setPayError(data.error || "Could not generate payment link. Please try again.");
         setPaying(false);
       }
-    } catch {
-      setPayError("Network error. Please try again.");
+    } catch (e) {
+      setPayError(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
       setPaying(false);
     }
   };
