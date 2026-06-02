@@ -14,6 +14,12 @@ type Invoice = {
   line_items: LineItem[];
   notes: string;
   total: number;
+  tax_amount: number;
+  delivery_fee: number;
+  service_fee: number;
+  gratuity: number;
+  delivery_type: string;
+  delivery_address: string;
   status: string;
   payment_method: string;
   stripe_checkout_url: string;
@@ -32,6 +38,8 @@ const REPS = [
   { value: "jordona", label: "Jordona Kohn", rate: 10 },
 ];
 
+const TAX_RATE = 0.0825;
+
 const STATUS_STYLE: Record<string, string> = {
   draft:   "text-zinc-400 bg-zinc-800 border border-zinc-700",
   sent:    "text-blue-400 bg-blue-500/10 border border-blue-500/30",
@@ -46,6 +54,8 @@ const emptyForm = {
   customer_name: "", customer_email: "", customer_phone: "", customer_company: "",
   line_items: [newItem()],
   notes: "", due_date: "", sales_rep: "house",
+  delivery_type: "pickup", delivery_address: "",
+  delivery_fee: 0, service_fee: 0, gratuity: 0,
 };
 
 export default function InvoiceTab() {
@@ -69,9 +79,14 @@ export default function InvoiceTab() {
 
   useEffect(() => { fetchInvoices(); }, []);
 
-  // Auto-calculate totals
+  // ── Calculations ──────────────────────────────────────────────
   const lineTotal = (item: LineItem) => item.qty * item.rate;
   const subtotal = form.line_items.reduce((s, i) => s + lineTotal(i), 0);
+  const tax = subtotal * TAX_RATE;
+  const deliveryFee = Number(form.delivery_fee) || 0;
+  const serviceFee = Number(form.service_fee) || 0;
+  const gratuity = Number(form.gratuity) || 0;
+  const grandTotal = subtotal + tax + deliveryFee + serviceFee + gratuity;
   const rep = REPS.find(r => r.value === form.sales_rep) || REPS[0];
   const commission = subtotal * (rep.rate / 100);
 
@@ -89,9 +104,6 @@ export default function InvoiceTab() {
     setSaving(true);
     setActionMsg("");
     const invoice_number = nextInvoiceNumber();
-    const total = subtotal;
-    const commission_amount = commission;
-    const commission_rate = rep.rate;
 
     const payload = {
       invoice_number,
@@ -102,16 +114,22 @@ export default function InvoiceTab() {
       line_items: form.line_items,
       notes: form.notes,
       due_date: form.due_date || null,
-      total,
+      delivery_type: form.delivery_type,
+      delivery_address: form.delivery_type === "delivery" ? form.delivery_address : "",
+      delivery_fee: deliveryFee,
+      service_fee: serviceFee,
+      gratuity,
+      tax_amount: tax,
+      total: grandTotal,
       sales_rep: form.sales_rep,
-      commission_rate,
-      commission_amount,
+      commission_rate: rep.rate,
+      commission_amount: commission,
       status: "draft",
     };
 
     const { data, error } = await supabase.from("invoices").insert(payload).select().single();
     setSaving(false);
-    if (error) { setActionMsg("Error saving invoice."); return; }
+    if (error) { setActionMsg("Error saving invoice."); console.error(error); return; }
 
     await fetchInvoices();
     setSelected(data as Invoice);
@@ -147,7 +165,6 @@ export default function InvoiceTab() {
           setActionMsg("Invoice sent! Customer will receive an email with payment link.");
         }
       } else {
-        // Even on error, refresh in case Stripe link was saved
         await fetchInvoices();
         const { data: updated } = await supabase.from("invoices").select("*").eq("id", target.id).single();
         if (updated) setSelected(updated as Invoice);
@@ -176,6 +193,7 @@ export default function InvoiceTab() {
 
   const inputCls = "w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm";
   const labelCls = "block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2";
+  const feeInput = "w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm";
 
   // ─── LIST VIEW ───────────────────────────────────────────────
   if (view === "list") return (
@@ -201,7 +219,6 @@ export default function InvoiceTab() {
         </div>
       ) : (
         <div className="space-y-2">
-          {/* Summary bar */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             {[
               { label: "Total Invoiced", val: fmt(invoices.reduce((s,i) => s + i.total, 0)), color: "text-white" },
@@ -214,8 +231,6 @@ export default function InvoiceTab() {
               </div>
             ))}
           </div>
-
-          {/* Invoice rows */}
           {invoices.map(inv => {
             const repInfo = REPS.find(r => r.value === inv.sales_rep);
             return (
@@ -235,6 +250,7 @@ export default function InvoiceTab() {
                   {repInfo && repInfo.value !== "house" && (
                     <span className="text-xs text-purple-400 font-bold">{repInfo.label.split(" ")[0]} · {repInfo.rate}%</span>
                   )}
+                  <span className="text-zinc-400 text-xs">{inv.delivery_type === "delivery" ? "🚗 Delivery" : "🏪 Pickup"}</span>
                   <span className="text-white font-black">{fmt(inv.total)}</span>
                   <span className={`text-xs font-black px-3 py-1 rounded-full ${STATUS_STYLE[inv.status] || STATUS_STYLE.draft}`}>
                     {inv.status.toUpperCase()}
@@ -269,6 +285,28 @@ export default function InvoiceTab() {
         </div>
       </div>
 
+      {/* Delivery / Pickup */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
+        <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-5">Fulfillment</p>
+        <div className="flex gap-3 mb-4">
+          {["pickup", "delivery"].map(type => (
+            <button
+              key={type}
+              onClick={() => setForm(f => ({ ...f, delivery_type: type }))}
+              className={`flex-1 py-3 rounded-full font-black text-sm border transition-colors ${form.delivery_type === type ? "bg-yellow-400 border-yellow-400 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white"}`}
+            >
+              {type === "pickup" ? "🏪 Pickup" : "🚗 Delivery"}
+            </button>
+          ))}
+        </div>
+        {form.delivery_type === "delivery" && (
+          <div>
+            <label className={labelCls}>Delivery Address</label>
+            <input className={inputCls} placeholder="1234 Main St, Dallas, TX 75201" value={form.delivery_address} onChange={e => setForm(f => ({ ...f, delivery_address: e.target.value }))} />
+          </div>
+        )}
+      </div>
+
       {/* Sales Rep */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
         <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-5">Sales Rep</p>
@@ -287,7 +325,8 @@ export default function InvoiceTab() {
 
       {/* Line Items */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
-        <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-5">Line Items</p>
+        <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">Line Items</p>
+        <p className="text-zinc-600 text-xs mb-5">Taxable items — 8.25% sales tax applied to these.</p>
         <div className="space-y-3 mb-4">
           <div className="grid grid-cols-12 gap-2 text-xs font-bold text-zinc-600 uppercase tracking-widest px-1">
             <span className="col-span-6">Description</span>
@@ -312,6 +351,35 @@ export default function InvoiceTab() {
         </button>
       </div>
 
+      {/* Fees & Gratuity */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
+        <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">Fees & Gratuity</p>
+        <p className="text-zinc-600 text-xs mb-5">Non-taxable — added after tax is calculated.</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className={labelCls}>Delivery Fee</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">$</span>
+              <input className={feeInput} type="number" min={0} step={0.01} placeholder="0.00" value={form.delivery_fee || ""} onChange={e => setForm(f => ({ ...f, delivery_fee: Number(e.target.value) }))} />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Service Fee</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">$</span>
+              <input className={feeInput} type="number" min={0} step={0.01} placeholder="0.00" value={form.service_fee || ""} onChange={e => setForm(f => ({ ...f, service_fee: Number(e.target.value) }))} />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Gratuity</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">$</span>
+              <input className={feeInput} type="number" min={0} step={0.01} placeholder="0.00" value={form.gratuity || ""} onChange={e => setForm(f => ({ ...f, gratuity: Number(e.target.value) }))} />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Notes */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
         <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-5">Notes</p>
@@ -320,19 +388,19 @@ export default function InvoiceTab() {
 
       {/* Totals */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-zinc-400 text-sm">Subtotal</span>
-          <span className="text-white font-bold">{fmt(subtotal)}</span>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between text-zinc-400"><span>Subtotal (taxable)</span><span>{fmt(subtotal)}</span></div>
+          <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>{fmt(tax)}</span></div>
+          {deliveryFee > 0 && <div className="flex justify-between text-zinc-400"><span>Delivery Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(deliveryFee)}</span></div>}
+          {serviceFee > 0 && <div className="flex justify-between text-zinc-400"><span>Service Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(serviceFee)}</span></div>}
+          {gratuity > 0 && <div className="flex justify-between text-teal-400"><span>Gratuity</span><span>{fmt(gratuity)}</span></div>}
+          {rep.rate > 0 && (
+            <div className="flex justify-between text-purple-400"><span>{rep.label} commission ({rep.rate}%) <span className="text-zinc-600 text-xs">(internal)</span></span><span>{fmt(commission)}</span></div>
+          )}
         </div>
-        {rep.rate > 0 && (
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-purple-400 text-sm">{rep.label} commission ({rep.rate}%)</span>
-            <span className="text-purple-400 font-bold">{fmt(commission)}</span>
-          </div>
-        )}
         <div className="border-t border-zinc-700 pt-3 mt-3 flex justify-between items-center">
           <span className="text-white font-black text-lg">Total</span>
-          <span className="text-white font-black text-2xl">{fmt(subtotal)}</span>
+          <span className="text-white font-black text-2xl">{fmt(grandTotal)}</span>
         </div>
       </div>
 
@@ -352,6 +420,11 @@ export default function InvoiceTab() {
   // ─── DETAIL VIEW ─────────────────────────────────────────────
   if (view === "detail" && selected) {
     const repInfo = REPS.find(r => r.value === selected.sales_rep);
+    const selSubtotal = (selected.line_items as LineItem[]).reduce((s, i) => s + i.qty * i.rate, 0);
+    const selTax = selected.tax_amount ?? selSubtotal * TAX_RATE;
+    const selDelivery = selected.delivery_fee ?? 0;
+    const selService = selected.service_fee ?? 0;
+    const selGratuity = selected.gratuity ?? 0;
     return (
       <div className="max-w-2xl">
         <button onClick={() => { setSelected(null); setView("list"); }} className="text-zinc-500 hover:text-white text-sm mb-6 flex items-center gap-2 transition-colors">
@@ -374,16 +447,20 @@ export default function InvoiceTab() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4 grid grid-cols-2 gap-3 text-sm">
           {selected.customer_email && <div><p className="text-zinc-500 text-xs mb-1">Email</p><p className="text-white">{selected.customer_email}</p></div>}
           {selected.customer_phone && <div><p className="text-zinc-500 text-xs mb-1">Phone</p><p className="text-white">{selected.customer_phone}</p></div>}
+          <div><p className="text-zinc-500 text-xs mb-1">Fulfillment</p><p className="text-white">{selected.delivery_type === "delivery" ? "🚗 Delivery" : "🏪 Pickup"}</p></div>
           {selected.due_date && <div><p className="text-zinc-500 text-xs mb-1">Due Date</p><p className="text-white">{new Date(selected.due_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p></div>}
-          {selected.paid_at && <div><p className="text-zinc-500 text-xs mb-1">Paid</p><p className="text-teal-400 font-bold">{new Date(selected.paid_at).toLocaleDateString("en-US", { month: "long", day: "numeric" })} · {selected.payment_method}</p></div>}
+          {selected.delivery_type === "delivery" && selected.delivery_address && (
+            <div className="col-span-2"><p className="text-zinc-500 text-xs mb-1">Delivery Address</p><p className="text-white">{selected.delivery_address}</p></div>
+          )}
+          {selected.paid_at && <div className="col-span-2"><p className="text-zinc-500 text-xs mb-1">Paid</p><p className="text-teal-400 font-bold">{new Date(selected.paid_at).toLocaleDateString("en-US", { month: "long", day: "numeric" })} · {selected.payment_method}</p></div>}
         </div>
 
-        {/* Sales rep */}
-        {repInfo && (
+        {/* Sales rep (internal only) */}
+        {repInfo && repInfo.value !== "house" && (
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4 mb-4 flex justify-between items-center">
             <div>
               <p className="text-purple-400 font-black text-sm">{repInfo.label}</p>
-              <p className="text-zinc-500 text-xs">{repInfo.rate}% commission</p>
+              <p className="text-zinc-500 text-xs">{repInfo.rate}% commission · internal</p>
             </div>
             <p className="text-purple-400 font-black text-lg">{fmt(selected.commission_amount)}</p>
           </div>
@@ -403,9 +480,18 @@ export default function InvoiceTab() {
               </div>
             ))}
           </div>
-          <div className="border-t border-zinc-700 mt-4 pt-4 flex justify-between">
-            <span className="text-white font-black">Total</span>
-            <span className="text-white font-black text-xl">{fmt(selected.total)}</span>
+
+          {/* Totals breakdown */}
+          <div className="border-t border-zinc-700 mt-4 pt-4 space-y-2 text-sm">
+            <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>{fmt(selSubtotal)}</span></div>
+            <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>{fmt(selTax)}</span></div>
+            {selDelivery > 0 && <div className="flex justify-between text-zinc-400"><span>Delivery Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(selDelivery)}</span></div>}
+            {selService > 0 && <div className="flex justify-between text-zinc-400"><span>Service Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(selService)}</span></div>}
+            {selGratuity > 0 && <div className="flex justify-between text-teal-400"><span>Gratuity</span><span>{fmt(selGratuity)}</span></div>}
+            <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">
+              <span>Total</span>
+              <span className="text-xl">{fmt(selected.total)}</span>
+            </div>
           </div>
         </div>
 
