@@ -189,6 +189,15 @@ export default function InvoiceTab() {
     setActionMsg(`Marked as paid via ${payMethod}.`);
   };
 
+  const handleDelete = async () => {
+    if (!selected) return;
+    if (!window.confirm(`Delete invoice ${selected.invoice_number}? This cannot be undone.`)) return;
+    await supabase.from("invoices").delete().eq("id", selected.id);
+    await fetchInvoices();
+    setSelected(null);
+    setView("list");
+  };
+
   const inputCls = "w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm";
   const labelCls = "block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2";
   const feeInput = "w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm";
@@ -564,6 +573,18 @@ export default function InvoiceTab() {
           <div className="bg-teal-500/10 border border-teal-500/30 rounded-2xl p-5 text-center">
             <p className="text-teal-400 font-black text-lg">✓ Paid</p>
             <p className="text-zinc-500 text-sm mt-1">via {selected.payment_method} · {selected.paid_at ? new Date(selected.paid_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""}</p>
+          </div>
+        )}
+
+        {/* Delete — unpaid invoices only */}
+        {selected.status !== "paid" && (
+          <div className="mt-6 pt-6 border-t border-zinc-800">
+            <button
+              onClick={handleDelete}
+              className="w-full text-red-500 hover:text-red-400 border border-red-500/30 hover:border-red-400/50 font-black py-3 rounded-full text-sm transition-colors"
+            >
+              Delete Invoice
+            </button>
           </div>
         )}
       </div>
