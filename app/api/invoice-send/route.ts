@@ -109,7 +109,8 @@ export async function POST(req: NextRequest) {
   if (!emailRes.ok) {
     const err = await emailRes.text();
     console.error("Resend error:", err);
-    return NextResponse.json({ error: "Email failed to send" }, { status: 500 });
+    // Email failed but Stripe link is saved — return partial success so UI can show the link
+    return NextResponse.json({ success: true, email_failed: true, checkout_url: session.url });
   }
 
   return NextResponse.json({ success: true, checkout_url: session.url });

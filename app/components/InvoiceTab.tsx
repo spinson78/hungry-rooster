@@ -138,11 +138,19 @@ export default function InvoiceTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setActionMsg("Invoice sent! Customer will receive an email with payment link.");
         await fetchInvoices();
         const { data: updated } = await supabase.from("invoices").select("*").eq("id", target.id).single();
         if (updated) setSelected(updated as Invoice);
+        if (data.email_failed) {
+          setActionMsg("Payment link generated! Email couldn't send (domain not verified yet) — copy the link below to send manually.");
+        } else {
+          setActionMsg("Invoice sent! Customer will receive an email with payment link.");
+        }
       } else {
+        // Even on error, refresh in case Stripe link was saved
+        await fetchInvoices();
+        const { data: updated } = await supabase.from("invoices").select("*").eq("id", target.id).single();
+        if (updated) setSelected(updated as Invoice);
         setActionMsg(`Error: ${data.error}`);
       }
     } catch {
@@ -410,8 +418,20 @@ export default function InvoiceTab() {
 
         {selected.stripe_checkout_url && selected.status !== "paid" && (
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 mb-4">
-            <p className="text-blue-400 font-bold text-sm mb-1">Payment Link Active</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-blue-400 font-bold text-sm">Payment Link Active</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selected.stripe_checkout_url);
+                  setActionMsg("Link copied to clipboard!");
+                }}
+                className="text-xs font-black bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 px-3 py-1 rounded-full transition-colors"
+              >
+                Copy Link
+              </button>
+            </div>
             <a href={selected.stripe_checkout_url} target="_blank" className="text-zinc-400 text-xs underline break-all hover:text-white transition-colors">{selected.stripe_checkout_url}</a>
+            <p className="text-zinc-600 text-xs mt-2">Send this link via text, email, or any messaging app — client pays directly through Stripe.</p>
           </div>
         )}
 
