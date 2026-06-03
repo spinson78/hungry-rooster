@@ -42,6 +42,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── Invoice payment ──────────────────────────────────────────
+    if (meta.invoice_id) {
+      const total = (session.amount_total || 0) / 100;
+      await supabase
+        .from("invoices")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          payment_method: "stripe",
+          stripe_session_id: session.id,
+          total, // update total in case gratuity was added
+        })
+        .eq("id", meta.invoice_id);
+      console.log(`Invoice ${meta.invoice_number} marked as paid via Stripe`);
+      return NextResponse.json({ received: true });
+    }
+
     const order_type = meta.order_type || "dinner";
     const total = (session.amount_total || 0) / 100;
 
