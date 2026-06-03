@@ -40,10 +40,10 @@ export async function POST(req: NextRequest) {
     });
   });
 
-  // Tax (8.25%)
+  // Tax (8.25%) — skipped if tax_exempt
   const subtotal = (inv.line_items as LineItem[]).reduce((s: number, i: LineItem) => s + i.qty * i.rate, 0);
   const tax = subtotal * 0.0825;
-  if (tax > 0) {
+  if (tax > 0 && !inv.tax_exempt) {
     lineItems.push({
       price_data: {
         currency: "usd",

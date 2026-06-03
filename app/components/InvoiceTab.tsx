@@ -15,6 +15,7 @@ type Invoice = {
   notes: string;
   total: number;
   tax_amount: number;
+  tax_exempt: boolean;
   delivery_fee: number;
   service_fee: number;
   gratuity: number;
@@ -47,7 +48,7 @@ const STATUS_STYLE: Record<string, string> = {
   overdue: "text-red-400 bg-red-500/10 border border-red-500/30",
 };
 
-const fmt = (n: number) => `$${n.toFixed(2)}`;
+const fmt = (n: number | string) => `$${Number(n).toFixed(2)}`;
 const newItem = (): LineItem => ({ id: Math.random().toString(36).slice(2), description: "", qty: 1, rate: 0 });
 
 const emptyForm = {
@@ -55,7 +56,7 @@ const emptyForm = {
   line_items: [newItem()],
   notes: "", due_date: "", sales_rep: "house",
   delivery_type: "pickup", delivery_address: "",
-  delivery_fee: 0, service_fee: 0,
+  delivery_fee: 0, service_fee: 0, tax_exempt: false,
 };
 
 export default function InvoiceTab() {
@@ -80,11 +81,13 @@ export default function InvoiceTab() {
   useEffect(() => { fetchInvoices(); }, []);
 
   // ── Calculations ──────────────────────────────────────────────
-  const lineTotal = (item: LineItem) => item.qty * item.rate;
-  const subtotal = form.line_items.reduce((s, i) => s + lineTotal(i), 0);
-  const tax = subtotal * TAX_RATE;
+  const lineTotal = (item: LineItem) => Number(item.qty) * Number(item.rate);
+  const subtotal = form.line_items.reduce((s, i) => s + lineTotal(i), 0);  // lineTotal uses Number() internally
+  const taxExempt = !!form.tax_exempt;
+  const tax = taxExempt ? 0 : subtotal * TAX_RATE;
   const deliveryFee = Number(form.delivery_fee) || 0;
   const serviceFee = Number(form.service_fee) || 0;
+  // commission base is subtotal only
   const grandTotal = subtotal + tax + deliveryFee + serviceFee;
   const rep = REPS.find(r => r.value === form.sales_rep) || REPS[0];
   const commission = subtotal * (rep.rate / 100);
@@ -117,6 +120,7 @@ export default function InvoiceTab() {
       delivery_address: form.delivery_type === "delivery" ? form.delivery_address : "",
       delivery_fee: deliveryFee,
       service_fee: serviceFee,
+      tax_exempt: taxExempt,
       tax_amount: tax,
       total: grandTotal,
       sales_rep: form.sales_rep,
@@ -314,6 +318,20 @@ export default function InvoiceTab() {
         )}
       </div>
 
+      {/* Tax Exempt Toggle */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-white font-black text-sm">Tax Exempt</p>
+          <p className="text-zinc-500 text-xs mt-0.5">Toggle on for non-profit, resale, or exempt clients</p>
+        </div>
+        <button
+          onClick={() => setForm(f => ({ ...f, tax_exempt: !f.tax_exempt }))}
+          className={`relative w-12 h-6 rounded-full transition-colors ${form.tax_exempt ? "bg-teal-500" : "bg-zinc-700"}`}
+        >
+          <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${form.tax_exempt ? "translate-x-7" : "translate-x-1"}`} />
+        </button>
+      </div>
+
       {/* Sales Rep */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
         <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-5">Sales Rep</p>
@@ -391,7 +409,9 @@ export default function InvoiceTab() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-zinc-400"><span>Subtotal (taxable)</span><span>{fmt(subtotal)}</span></div>
-          <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>{fmt(tax)}</span></div>
+          {taxExempt
+            ? <div className="flex justify-between"><span className="text-teal-400 text-xs font-black uppercase tracking-widest">Tax Exempt</span><span className="text-teal-400 font-bold">$0.00</span></div>
+            : <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>{fmt(tax)}</span></div>}
           {deliveryFee > 0 && <div className="flex justify-between text-zinc-400"><span>Delivery Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(deliveryFee)}</span></div>}
           {serviceFee > 0 && <div className="flex justify-between text-zinc-400"><span>Service Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(serviceFee)}</span></div>}
           {rep.rate > 0 && (
@@ -420,10 +440,12 @@ export default function InvoiceTab() {
   // ─── DETAIL VIEW ─────────────────────────────────────────────
   if (view === "detail" && selected) {
     const repInfo = REPS.find(r => r.value === selected.sales_rep);
-    const selSubtotal = (selected.line_items as LineItem[]).reduce((s, i) => s + i.qty * i.rate, 0);
-    const selTax = selected.tax_amount ?? selSubtotal * TAX_RATE;
-    const selDelivery = selected.delivery_fee ?? 0;
-    const selService = selected.service_fee ?? 0;
+    const selSubtotal = (selected.line_items as LineItem[]).reduce((s, i) => s + Number(i.qty) * Number(i.rate), 0);
+    const isTaxExempt = !!selected.tax_exempt;
+    const storedTax = Number(selected.tax_amount) || 0;
+    const selTax = isTaxExempt ? 0 : (storedTax > 0 ? storedTax : selSubtotal * TAX_RATE);
+    const selDelivery = Number(selected.delivery_fee) || 0;
+    const selService = Number(selected.service_fee) || 0;
   
     return (
       <div className="max-w-2xl">
@@ -484,7 +506,9 @@ export default function InvoiceTab() {
           {/* Totals breakdown */}
           <div className="border-t border-zinc-700 mt-4 pt-4 space-y-2 text-sm">
             <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>{fmt(selSubtotal)}</span></div>
-            <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>{fmt(selTax)}</span></div>
+            {isTaxExempt
+              ? <div className="flex justify-between"><span className="text-teal-400 text-xs font-black uppercase tracking-widest">Tax Exempt</span><span className="text-teal-400 font-bold">$0.00</span></div>
+              : <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>{fmt(selTax)}</span></div>}
             {selDelivery > 0 && <div className="flex justify-between text-zinc-400"><span>Delivery Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(selDelivery)}</span></div>}
             {selService > 0 && <div className="flex justify-between text-zinc-400"><span>Service Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(selService)}</span></div>}
             <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">

@@ -20,6 +20,7 @@ type Invoice = {
   service_fee: number;
   delivery_type: string;
   delivery_address: string;
+  tax_exempt: boolean;
   status: string;
   due_date: string | null;
   paid_at: string | null;
@@ -75,7 +76,9 @@ export default function InvoicePage() {
 
   const lineItems = invoice.line_items as LineItem[];
   const subtotal = lineItems.reduce((s, i) => s + i.qty * i.rate, 0);
-  const tax = invoice.tax_amount ?? subtotal * TAX_RATE;
+  const isTaxExempt = !!invoice.tax_exempt;
+  const storedTax = Number(invoice.tax_amount) || 0;
+  const tax = isTaxExempt ? 0 : (storedTax > 0 ? storedTax : subtotal * TAX_RATE);
   const deliveryFee = Number(invoice.delivery_fee) || 0;
   const serviceFee = Number(invoice.service_fee) || 0;
   const baseTotal = subtotal + tax + deliveryFee + serviceFee;
@@ -222,9 +225,9 @@ export default function InvoicePage() {
                 <div className="flex justify-between text-zinc-500">
                   <span>Subtotal</span><span>{fmt(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-zinc-500">
-                  <span>Sales Tax (8.25%)</span><span>{fmt(tax)}</span>
-                </div>
+                {isTaxExempt
+                  ? <div className="flex justify-between"><span className="text-teal-700 text-xs font-black uppercase tracking-widest">Tax Exempt</span><span className="text-teal-700 font-bold">$0.00</span></div>
+                  : <div className="flex justify-between text-zinc-500"><span>Sales Tax (8.25%)</span><span>{fmt(tax)}</span></div>}
                 {deliveryFee > 0 && (
                   <div className="flex justify-between text-zinc-500">
                     <span>Delivery Fee</span><span>{fmt(deliveryFee)}</span>
