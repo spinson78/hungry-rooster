@@ -107,7 +107,7 @@ export default function ShabbatSection() {
 
           {!menu ? (
             <>
-              <p className="text-white font-black text-lg mb-1">Chag Sameach! 🌸</p>
+              <p className="text-white font-black text-lg mb-1">Shabbat Shalom! 🕯️</p>
               <p className="text-zinc-400 text-sm mb-4 leading-relaxed">
                 No Shabbat Box this week. We&apos;ll be back next Friday.
               </p>
