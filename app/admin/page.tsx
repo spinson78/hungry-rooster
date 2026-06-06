@@ -172,7 +172,7 @@ type Order = {
   customer_phone: string;
   customer_email: string;
   customer_address: string;
-  items: { name: string; protein?: string; side1?: string; side2?: string; extra?: string }[];
+  items: { name: string; quantity?: number; protein?: string; side1?: string; side2?: string; extra?: string }[];
   total: number;
   special_requests: string;
   status: string;
@@ -555,6 +555,9 @@ export default function AdminPage() {
                   <div className="border-t border-zinc-700 pt-3 mb-3 space-y-1">
                     {order.items.map((item, idx) => (
                       <p key={idx} className="text-sm">
+                        {item.quantity && item.quantity > 1 && (
+                          <span className="text-yellow-400 font-black mr-1">{item.quantity}×</span>
+                        )}
                         <span className="text-white font-bold">{item.name}</span>
                         {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
                         {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
