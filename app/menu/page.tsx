@@ -220,6 +220,7 @@ export default function MenuPage() {
   const [addDessert, setAddDessert] = useState(false);
   const [qty, setQty] = useState(1);
   const [cartOpen, setCartOpen] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellShown, setUpsellShown] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -279,7 +280,11 @@ export default function MenuPage() {
       qty,
     };
     setCart((prev) => [...prev, newItem]);
-    setModal(null);
+    setJustAdded(true);
+    setTimeout(() => {
+      setModal(null);
+      setJustAdded(false);
+    }, 600);
   };
 
   const updateCartQty = (index: number, delta: number) => {
@@ -385,7 +390,7 @@ export default function MenuPage() {
         </div>
         <button
           onClick={() => setCartOpen(true)}
-          className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors relative"
+          className={`font-black px-5 py-2 rounded-full text-sm transition-all ${justAdded ? "bg-green-400 text-black scale-110" : "bg-teal-500 hover:bg-teal-400 text-black"}`}
         >
           Cart {cartCount > 0 && <span className="ml-1">({cartCount})</span>}
         </button>
@@ -541,9 +546,10 @@ export default function MenuPage() {
                 </div>
                 <button
                   onClick={addToCart}
-                  className="flex-1 bg-teal-500 hover:bg-teal-400 text-black font-black py-3 rounded-full transition-colors"
+                  disabled={justAdded}
+                  className={`flex-1 font-black py-3 rounded-full transition-all ${justAdded ? "bg-green-400 text-black scale-95" : "bg-teal-500 hover:bg-teal-400 text-black"}`}
                 >
-                  Add to order — ${getItemTotal().toFixed(2)}
+                  {justAdded ? "✓ Added!" : `Add to order — $${getItemTotal().toFixed(2)}`}
                 </button>
               </div>
             </div>
