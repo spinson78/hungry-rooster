@@ -193,7 +193,8 @@ const menu = {
 
 type CartItem = {
   name: string;
-  price: number;
+  unit_price: number;  // price for 1 item (no qty multiplier)
+  price: number;       // total = unit_price * qty
   mods: string;
   size?: string;
   addons: string[];
@@ -221,6 +222,15 @@ export default function MenuPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellShown, setUpsellShown] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutName, setCheckoutName] = useState("");
+  const [checkoutPhone, setCheckoutPhone] = useState("");
+  const [checkoutNote, setCheckoutNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmed, setConfirmed] = useState<{ order_number: string } | null>(null);
+  const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [tipAmount, setTipAmount] = useState<number>(0);
 
   const categories = Object.keys(menu);
 
@@ -257,9 +267,12 @@ export default function MenuPage() {
 
   const addToCart = () => {
     if (!modal) return;
+    const total = getItemTotal();
+    const unit_price = qty > 0 ? total / qty : total;
     const newItem: CartItem = {
       name: modal.name,
-      price: getItemTotal(),
+      unit_price,
+      price: total,
       mods,
       size: selectedSize,
       addons: addDessert ? [...selectedAddons, "Dessert of the day"] : selectedAddons,
@@ -269,7 +282,30 @@ export default function MenuPage() {
     setModal(null);
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const updateCartQty = (index: number, delta: number) => {
+    setCart(prev => {
+      const updated = [...prev];
+      const item = { ...updated[index] };
+      const newQty = item.qty + delta;
+      if (newQty <= 0) {
+        updated.splice(index, 1);
+      } else {
+        item.qty = newQty;
+        item.price = item.unit_price * newQty;
+        updated[index] = item;
+      }
+      return updated;
+    });
+  };
+
+  const removeFromCart = (index: number) => {
+    setCart(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const TAX_RATE = 0.0825;
+  const cartSubtotal = cart.reduce((sum, item) => sum + item.unit_price * item.qty, 0);
+  const cartTax = cartSubtotal * TAX_RATE;
+  const cartTotal = cartSubtotal + cartTax + (Number(tipAmount) || 0);
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const hasDrink = cart.some((item) => ["Coke","Diet Coke","Dr Pepper","Root Beer","Sprite","Sunkist","Sweet Tea","Water"].includes(item.name));
@@ -280,16 +316,58 @@ export default function MenuPage() {
       setUpsellOpen(true);
       setUpsellShown(true);
     } else {
-      alert("Order placed! (Payment coming soon)");
+      setUpsellOpen(false);
+      setCheckoutOpen(true);
+    }
+  };
+
+  const submitOrder = async () => {
+    if (!checkoutName.trim()) return;
+    if (fulfillment === "delivery" && !deliveryAddress.trim()) return;
+    setSubmitting(true);
+    const items = cart.map(item => ({
+      name: item.name,
+      qty: item.qty,
+      size: item.size || null,
+      addons: item.addons,
+      mods: item.mods || null,
+      price: item.unit_price * item.qty,
+    }));
+    const tip = Number(tipAmount) || 0;
+    const res = await fetch("/api/menu-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customer_name: checkoutName,
+        customer_phone: checkoutPhone,
+        customer_address: fulfillment === "delivery" ? deliveryAddress : "Pickup",
+        items,
+        subtotal: cartSubtotal,
+        tax: cartTax,
+        tip,
+        total: cartTotal,
+        special_requests: checkoutNote,
+        fulfillment_type: fulfillment,
+      }),
+    });
+    const data = await res.json();
+    setSubmitting(false);
+    if (data.success) {
+      setCart([]);
+      setCheckoutOpen(false);
+      setTipAmount(0);
+      setDeliveryAddress("");
+      setFulfillment("pickup");
+      setConfirmed({ order_number: data.order_number });
     }
   };
 
   const addQuickDrink = () => {
-    setCart((prev) => [...prev, { name: "Coke", price: 2, mods: "", size: "", addons: [], qty: 1 }]);
+    setCart((prev) => [...prev, { name: "Coke", unit_price: 2, price: 2, mods: "", size: "", addons: [], qty: 1 }]);
   };
 
   const addQuickDessert = () => {
-    setCart((prev) => [...prev, { name: "Dessert of the day", price: 4, mods: "", size: "", addons: [], qty: 1 }]);
+    setCart((prev) => [...prev, { name: "Dessert of the day", unit_price: 4, price: 4, mods: "", size: "", addons: [], qty: 1 }]);
   };
 
   return (
@@ -488,13 +566,22 @@ export default function MenuPage() {
                 <div className="space-y-4">
                   {cart.map((item, i) => (
                     <div key={i} className="border border-zinc-800 rounded-xl p-4">
-                      <div className="flex justify-between mb-1">
-                        <span className="font-bold text-sm">{item.qty}x {item.name}</span>
-                        <span className="font-bold text-sm">${item.price.toFixed(2)}</span>
+                      <div className="flex justify-between items-start mb-1 gap-2">
+                        <span className="font-bold text-sm flex-1">{item.name}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-bold text-sm text-white">${(item.unit_price * item.qty).toFixed(2)}</span>
+                          <button onClick={() => removeFromCart(i)} className="text-zinc-600 hover:text-red-400 text-lg leading-none transition-colors">×</button>
+                        </div>
                       </div>
-                      {item.size && <p className="text-zinc-400 text-xs">{item.size}</p>}
-                      {item.addons.length > 0 && <p className="text-zinc-400 text-xs">{item.addons.join(", ")}</p>}
-                      {item.mods && <p className="text-zinc-500 text-xs italic">Note: {item.mods}</p>}
+                      {item.size && <p className="text-zinc-400 text-xs mb-1">{item.size}</p>}
+                      {item.addons.length > 0 && <p className="text-zinc-400 text-xs mb-1">+ {item.addons.join(", ")}</p>}
+                      {item.mods && <p className="text-orange-300 text-xs italic mb-1">⚠ {item.mods}</p>}
+                      <div className="flex items-center gap-3 mt-2">
+                        <button onClick={() => updateCartQty(i, -1)} className="w-7 h-7 rounded-full border border-zinc-600 text-zinc-300 font-black flex items-center justify-center hover:border-teal-500 hover:text-teal-400 transition-colors text-base leading-none">−</button>
+                        <span className="font-black text-sm text-white w-4 text-center">{item.qty}</span>
+                        <button onClick={() => updateCartQty(i, 1)} className="w-7 h-7 rounded-full border border-zinc-600 text-zinc-300 font-black flex items-center justify-center hover:border-teal-500 hover:text-teal-400 transition-colors text-base leading-none">+</button>
+                        {item.unit_price > 0 && item.qty > 1 && <span className="text-zinc-600 text-xs">${item.unit_price.toFixed(2)} each</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -502,9 +589,13 @@ export default function MenuPage() {
             </div>
             {cart.length > 0 && (
               <div className="p-6 border-t border-zinc-800">
-                <div className="flex justify-between mb-4">
-                  <span className="font-bold">Total</span>
-                  <span className="font-black text-teal-400">${cartTotal.toFixed(2)}</span>
+                <div className="space-y-1 text-sm mb-3">
+                  <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-zinc-400"><span>Tax (8.25%)</span><span>${cartTax.toFixed(2)}</span></div>
+                </div>
+                <div className="flex justify-between mb-4 font-black text-white border-t border-zinc-700 pt-2">
+                  <span>Total</span>
+                  <span className="text-teal-400">${cartTotal.toFixed(2)}</span>
                 </div>
                 <button onClick={handlePlaceOrder} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors">
                   Place Order
@@ -553,10 +644,100 @@ export default function MenuPage() {
             </div>
 
             <button
-              onClick={() => { setUpsellOpen(false); alert("Order placed! (Payment coming soon)"); }}
+              onClick={() => { setUpsellOpen(false); setCheckoutOpen(true); }}
               className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 rounded-full transition-colors"
             >
               No thanks, place my order
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CHECKOUT MODAL */}
+      {checkoutOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-sm border border-zinc-700 p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-xl font-black">Checkout</h2>
+              <button onClick={() => setCheckoutOpen(false)} className="text-zinc-400 hover:text-white text-2xl">×</button>
+            </div>
+
+            {/* Pickup / Delivery */}
+            <div className="mb-5">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Fulfillment</label>
+              <div className="flex gap-2">
+                {(["pickup", "delivery"] as const).map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setFulfillment(type)}
+                    className={`flex-1 py-2.5 rounded-full font-black text-sm border transition-colors ${fulfillment === type ? "bg-yellow-400 border-yellow-400 text-black" : "border-zinc-700 text-zinc-400 hover:text-white"}`}
+                  >
+                    {type === "pickup" ? "🏪 Pickup" : "🚗 Delivery"}
+                  </button>
+                ))}
+              </div>
+              {fulfillment === "delivery" && (
+                <input type="text" placeholder="Delivery address" value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm mt-3" />
+              )}
+            </div>
+
+            {/* Name + Phone */}
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Your Name *</label>
+                <input type="text" placeholder="Jane Smith" value={checkoutName} onChange={e => setCheckoutName(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Phone Number</label>
+                <input type="tel" placeholder="(214) 555-0100" value={checkoutPhone} onChange={e => setCheckoutPhone(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Order Notes</label>
+                <textarea placeholder="Any notes for the kitchen..." value={checkoutNote} onChange={e => setCheckoutNote(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm resize-none h-16" />
+              </div>
+            </div>
+
+            {/* Driver Tip */}
+            <div className="mb-5">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Driver Tip (optional)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">$</span>
+                <input type="number" min="0" step="0.01" placeholder="0.00" value={tipAmount || ""} onChange={e => setTipAmount(parseFloat(e.target.value) || 0)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className="bg-zinc-800 rounded-xl p-4 mb-5 space-y-1.5 text-sm">
+              <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-zinc-400"><span>Tax (8.25%)</span><span>${cartTax.toFixed(2)}</span></div>
+              {(Number(tipAmount) || 0) > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${(Number(tipAmount)).toFixed(2)}</span></div>}
+              <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-1">
+                <span>Total</span>
+                <span>${cartTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={submitOrder}
+              disabled={submitting || !checkoutName.trim() || (fulfillment === "delivery" && !deliveryAddress.trim())}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50"
+            >
+              {submitting ? "Placing order..." : `Place Order — $${cartTotal.toFixed(2)}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ORDER CONFIRMED */}
+      {confirmed && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <p className="text-6xl mb-4">🐓</p>
+            <h2 className="text-3xl font-black mb-2">Order Placed!</h2>
+            <p className="text-teal-400 font-black text-xl mb-2">{confirmed.order_number}</p>
+            <p className="text-zinc-400 mb-8">Your order is in the kitchen. We&apos;ll have it ready shortly.</p>
+            <button onClick={() => { setConfirmed(null); setCartOpen(false); setUpsellShown(false); }} className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-10 py-4 rounded-full text-lg transition-colors">
+              Done
             </button>
           </div>
         </div>
