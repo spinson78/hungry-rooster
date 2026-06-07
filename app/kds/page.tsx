@@ -44,11 +44,19 @@ function elapsed(created: string) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
-function playAlarm() {
+let sharedCtx: AudioContext | null = null;
+
+function getAudioContext() {
+  if (!sharedCtx) sharedCtx = new AudioContext();
+  if (sharedCtx.state === "suspended") sharedCtx.resume();
+  return sharedCtx;
+}
+
+function playAlarm(muted: boolean) {
+  if (muted) return;
   try {
-    const ctx = new AudioContext();
-    // Three quick beeps
-    [0, 0.25, 0.5].forEach(offset => {
+    const ctx = getAudioContext();
+    [0, 0.22, 0.44].forEach(offset => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -56,12 +64,12 @@ function playAlarm() {
       osc.type = "square";
       osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
       gain.gain.setValueAtTime(0.4, ctx.currentTime + offset);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + offset + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.18);
       osc.start(ctx.currentTime + offset);
-      osc.stop(ctx.currentTime + offset + 0.18);
+      osc.stop(ctx.currentTime + offset + 0.2);
     });
   } catch {
-    // Audio not available in this context
+    // Audio not available
   }
 }
 
@@ -181,6 +189,7 @@ export default function KDSPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [showDone, setShowDone] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [muted, setMuted] = useState(false);
   const knownOrderIds = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
 
@@ -198,7 +207,7 @@ export default function KDSPage() {
         o => o.status === "pending" && !knownOrderIds.current.has(o.id)
       );
       if (newPending.length > 0) {
-        playAlarm();
+        playAlarm(muted);
       }
     }
 
@@ -238,8 +247,8 @@ export default function KDSPage() {
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header — tap anywhere to unlock audio */}
+      <div className="flex items-center justify-between mb-6" onClick={() => getAudioContext()}>
         <div className="flex items-center gap-4">
           <span className="text-white font-black text-2xl">🍳 Kitchen</span>
           {active.length > 0 && (
@@ -249,6 +258,12 @@ export default function KDSPage() {
           )}
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => setMuted(m => !m)}
+            className={`text-base font-black px-5 py-2.5 rounded-full border transition-colors ${muted ? "border-red-500 text-red-400" : "border-zinc-700 text-zinc-400 hover:text-white"}`}
+          >
+            {muted ? "🔇 Muted" : "🔔 Sound"}
+          </button>
           <button
             onClick={() => setShowDone(s => !s)}
             className={`text-base font-black px-5 py-2.5 rounded-full border transition-colors ${showDone ? "bg-zinc-700 border-zinc-600 text-white" : "border-zinc-700 text-zinc-500 hover:text-white"}`}

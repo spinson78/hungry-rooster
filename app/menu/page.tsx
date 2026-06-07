@@ -223,6 +223,9 @@ export default function MenuPage() {
   const [justAdded, setJustAdded] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellShown, setUpsellShown] = useState(false);
+  const [upsellDrink, setUpsellDrink] = useState("Coke");
+  const [drinkAdded, setDrinkAdded] = useState(false);
+  const [dessertAdded, setDessertAdded] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutName, setCheckoutName] = useState("");
   const [checkoutPhone, setCheckoutPhone] = useState("");
@@ -368,11 +371,13 @@ export default function MenuPage() {
   };
 
   const addQuickDrink = () => {
-    setCart((prev) => [...prev, { name: "Coke", unit_price: 2, price: 2, mods: "", size: "", addons: [], qty: 1 }]);
+    setCart((prev) => [...prev, { name: upsellDrink, unit_price: 2, price: 2, mods: "", size: "", addons: [], qty: 1 }]);
+    setDrinkAdded(true);
   };
 
   const addQuickDessert = () => {
     setCart((prev) => [...prev, { name: "Dessert of the day", unit_price: 4, price: 4, mods: "", size: "", addons: [], qty: 1 }]);
+    setDessertAdded(true);
   };
 
   return (
@@ -619,41 +624,68 @@ export default function MenuPage() {
             <p className="text-zinc-400 text-sm mb-6">Fred wants to make sure you have everything you need.</p>
 
             <div className="space-y-3 mb-6">
-              {!hasDrink && (
+              {/* DRINK */}
+              {!hasDrink && !drinkAdded && (
+                <div className="bg-zinc-800 rounded-xl p-4 border border-zinc-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="font-bold text-sm">Add a drink — $2</p>
+                    </div>
+                    <button
+                      onClick={addQuickDrink}
+                      className="bg-teal-500 hover:bg-teal-400 text-black font-black px-4 py-2 rounded-full text-sm transition-colors"
+                    >
+                      Add {upsellDrink}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {["Coke", "Diet Coke", "Dr Pepper", "Sprite", "Root Beer", "Sunkist", "Sweet Tea", "Water"].map(d => (
+                      <button
+                        key={d}
+                        onClick={() => setUpsellDrink(d)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${upsellDrink === d ? "bg-teal-500 border-teal-500 text-black" : "border-zinc-600 text-zinc-400 hover:border-teal-500 hover:text-white"}`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {drinkAdded && (
+                <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4 flex items-center gap-3">
+                  <span className="text-teal-400 text-xl">✓</span>
+                  <p className="text-teal-400 font-black text-sm">{upsellDrink} added to your order</p>
+                </div>
+              )}
+
+              {/* DESSERT */}
+              {!hasDessert && !dessertAdded && (
                 <div className="flex items-center justify-between bg-zinc-800 rounded-xl p-4 border border-zinc-700">
                   <div>
-                    <p className="font-bold text-sm">A drink</p>
-                    <p className="text-zinc-500 text-xs">Coke, Sprite, Sweet Tea & more — $2</p>
+                    <p className="font-bold text-sm">Dessert of the day — $4</p>
+                    <p className="text-zinc-500 text-xs">Check our socials for today&apos;s treat</p>
                   </div>
                   <button
-                    onClick={() => { addQuickDrink(); }}
+                    onClick={addQuickDessert}
                     className="bg-teal-500 hover:bg-teal-400 text-black font-black px-4 py-2 rounded-full text-sm transition-colors"
                   >
                     Add
                   </button>
                 </div>
               )}
-              {!hasDessert && (
-                <div className="flex items-center justify-between bg-zinc-800 rounded-xl p-4 border border-zinc-700">
-                  <div>
-                    <p className="font-bold text-sm">Dessert of the day</p>
-                    <p className="text-zinc-500 text-xs">Check our socials for today's treat — $4</p>
-                  </div>
-                  <button
-                    onClick={() => { addQuickDessert(); }}
-                    className="bg-teal-500 hover:bg-teal-400 text-black font-black px-4 py-2 rounded-full text-sm transition-colors"
-                  >
-                    Add
-                  </button>
+              {dessertAdded && (
+                <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4 flex items-center gap-3">
+                  <span className="text-teal-400 text-xl">✓</span>
+                  <p className="text-teal-400 font-black text-sm">Dessert of the day added to your order</p>
                 </div>
               )}
             </div>
 
             <button
-              onClick={() => { setUpsellOpen(false); setCheckoutOpen(true); }}
-              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-3 rounded-full transition-colors"
+              onClick={() => { setUpsellOpen(false); setDrinkAdded(false); setDessertAdded(false); setCheckoutOpen(true); }}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors"
             >
-              No thanks, place my order
+              Continue to Checkout →
             </button>
           </div>
         </div>
