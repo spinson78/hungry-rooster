@@ -11,7 +11,6 @@ type OrderItem = {
   addons?: string[];
   mods?: string | null;
   price: number;
-  // shabbat fields
   protein?: string;
   side1?: string;
   side2?: string;
@@ -41,8 +40,8 @@ const TYPE_COLOR: Record<string, string> = {
 function elapsed(created: string) {
   const mins = Math.floor((Date.now() - new Date(created).getTime()) / 60000);
   if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
 function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) {
@@ -60,66 +59,76 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) 
   };
 
   const handlePrint = () => {
-    window.open(`/kds/print/${order.id}`, "_blank", "width=400,height=600");
+    window.open(`/kds/print/${order.id}`, "_blank", "width=400,height=700");
   };
 
   return (
-    <div className={`rounded-2xl border-2 p-4 flex flex-col gap-3 transition-all ${
-      isNew ? (urgent ? "border-red-500 bg-red-500/5" : "border-yellow-400 bg-yellow-400/5") :
+    <div className={`rounded-3xl border-4 p-6 flex flex-col gap-4 transition-all ${
+      isNew ? (urgent ? "border-red-500 bg-red-500/10" : "border-yellow-400 bg-yellow-400/5") :
       isStarted ? "border-teal-500 bg-teal-500/5" :
-      "border-zinc-700 bg-zinc-900 opacity-60"
+      "border-zinc-700 bg-zinc-900 opacity-50"
     }`}>
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-white font-black text-lg leading-tight">{order.customer_name}</p>
-          {order.customer_phone && <p className="text-zinc-500 text-xs">{order.customer_phone}</p>}
+          <p className="text-white font-black text-3xl leading-tight">{order.customer_name}</p>
+          {order.customer_phone && <p className="text-zinc-400 text-base mt-1">{order.customer_phone}</p>}
         </div>
         <div className="text-right shrink-0">
-          {order.order_number && <p className="text-zinc-400 font-mono text-xs">{order.order_number}</p>}
-          <p className={`text-xs font-bold mt-0.5 ${urgent ? "text-red-400" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
+          {order.order_number && <p className="text-zinc-400 font-mono text-sm">{order.order_number}</p>}
+          <p className={`text-xl font-black mt-1 ${urgent ? "text-red-400" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
             {elapsed(order.created_at)}
           </p>
         </div>
       </div>
 
-      {/* Type badge */}
-      <div className="flex items-center gap-2">
-        <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
+      {/* Status badge */}
+      <div className="flex items-center gap-3">
+        <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
           {order.order_type === "menu" ? "Walk-in" : order.order_type}
         </span>
-        {isNew && <span className="text-xs font-black text-yellow-400 animate-pulse">● NEW</span>}
-        {isStarted && <span className="text-xs font-black text-teal-400">● IN PROGRESS</span>}
+        {isNew && <span className="text-base font-black text-yellow-400 animate-pulse">● NEW</span>}
+        {isStarted && <span className="text-base font-black text-teal-400">● IN PROGRESS</span>}
+        {urgent && <span className="text-base font-black text-red-400">⚠ URGENT</span>}
       </div>
 
       {/* Items */}
-      <div className="border-t border-zinc-700 pt-3 space-y-1.5">
+      <div className="border-t-2 border-zinc-700 pt-4 space-y-3">
         {order.items.map((item, i) => (
-          <div key={i} className="text-sm">
-            <span className="text-yellow-400 font-black">{item.qty > 1 ? `${item.qty}× ` : ""}</span>
-            <span className="text-white font-bold">{item.name}</span>
-            {item.size && <span className="text-zinc-400 text-xs"> ({item.size})</span>}
+          <div key={i}>
+            <p className="text-xl font-black">
+              {item.qty > 1 && <span className="text-yellow-400">{item.qty}× </span>}
+              <span className="text-white">{item.name}</span>
+              {item.size && <span className="text-zinc-400 text-base font-normal"> — {item.size}</span>}
+            </p>
             {item.addons && item.addons.length > 0 && (
-              <p className="text-zinc-400 text-xs ml-3">+ {item.addons.join(", ")}</p>
+              <p className="text-zinc-400 text-base mt-1 ml-4">+ {item.addons.join(", ")}</p>
             )}
-            {item.mods && <p className="text-orange-300 text-xs ml-3 italic">⚠ {item.mods}</p>}
-            {item.protein && <p className="text-zinc-400 text-xs ml-3">{item.protein}{item.side1 ? `, ${item.side1}` : ""}{item.side2 ? `, ${item.side2}` : ""}{item.extra ? `, ${item.extra}` : ""}</p>}
+            {item.mods && (
+              <p className="text-orange-300 text-base font-bold mt-1 ml-4">⚠ {item.mods}</p>
+            )}
+            {item.protein && (
+              <p className="text-zinc-400 text-base mt-1 ml-4">
+                {[item.protein, item.side1, item.side2, item.extra].filter(Boolean).join(" / ")}
+              </p>
+            )}
           </div>
         ))}
       </div>
 
       {/* Special requests */}
       {order.special_requests && (
-        <div className="bg-orange-400/10 border border-orange-400/30 rounded-xl px-3 py-2 text-xs text-orange-300">
-          <span className="font-black">NOTE: </span>{order.special_requests}
+        <div className="bg-orange-400/15 border-2 border-orange-400/40 rounded-2xl px-4 py-3">
+          <p className="text-orange-300 font-black text-base">⚠ NOTE: {order.special_requests}</p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 mt-auto">
+      <div className="flex gap-3 mt-auto pt-2">
         <button
           onClick={handlePrint}
-          className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-2 rounded-full transition-colors"
+          className="text-base font-black text-zinc-400 hover:text-white border-2 border-zinc-700 hover:border-zinc-500 px-4 py-3 rounded-full transition-colors"
         >
           🖨 Print
         </button>
@@ -127,18 +136,18 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) 
           <button
             onClick={() => updateStatus("in_progress")}
             disabled={updating}
-            className="flex-1 text-xs font-black bg-teal-500 hover:bg-teal-400 text-black py-2 rounded-full transition-colors disabled:opacity-50"
+            className="flex-1 text-xl font-black bg-teal-500 hover:bg-teal-400 text-black py-3 rounded-full transition-colors disabled:opacity-50"
           >
-            Start Order
+            Start ▶
           </button>
         )}
         {isStarted && (
           <button
             onClick={() => updateStatus("complete")}
             disabled={updating}
-            className="flex-1 text-xs font-black bg-yellow-400 hover:bg-yellow-300 text-black py-2 rounded-full transition-colors disabled:opacity-50"
+            className="flex-1 text-xl font-black bg-yellow-400 hover:bg-yellow-300 text-black py-3 rounded-full transition-colors disabled:opacity-50"
           >
-            Mark Done ✓
+            Done ✓
           </button>
         )}
       </div>
@@ -165,7 +174,6 @@ export default function KDSPage() {
     if (!authed) return;
     fetchOrders();
 
-    // Real-time subscription
     const channel = supabase
       .channel("kds-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
@@ -173,10 +181,7 @@ export default function KDSPage() {
       })
       .subscribe();
 
-    // Poll every 10 seconds as a reliable fallback (realtime needs enabling in Supabase)
     const poll = setInterval(fetchOrders, 10000);
-
-    // Clock tick for elapsed times
     const tick = setInterval(() => setNow(Date.now()), 30000);
 
     return () => {
@@ -186,36 +191,34 @@ export default function KDSPage() {
     };
   }, [authed, fetchOrders]);
 
-  // Suppress unused variable warning
   void now;
-
-
 
   const active = orders.filter(o => o.status === "pending" || o.status === "in_progress");
   const done = orders.filter(o => o.status === "complete");
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-4">
-      {/* KDS Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <span className="text-white font-black text-lg">🍳 Kitchen</span>
+    <div className="min-h-screen bg-zinc-950 p-6">
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <span className="text-white font-black text-2xl">🍳 Kitchen</span>
           {active.length > 0 && (
-            <span className="bg-yellow-400 text-black font-black text-sm px-3 py-1 rounded-full">
+            <span className="bg-yellow-400 text-black font-black text-lg px-4 py-1.5 rounded-full">
               {active.length} active
             </span>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={() => setShowDone(s => !s)}
-            className={`text-xs font-black px-4 py-2 rounded-full border transition-colors ${showDone ? "bg-zinc-700 border-zinc-600 text-white" : "border-zinc-700 text-zinc-500 hover:text-white"}`}
+            className={`text-base font-black px-5 py-2.5 rounded-full border transition-colors ${showDone ? "bg-zinc-700 border-zinc-600 text-white" : "border-zinc-700 text-zinc-500 hover:text-white"}`}
           >
             {showDone ? "Hide Done" : "Show Done"}
           </button>
           <button
             onClick={fetchOrders}
-            className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 px-4 py-2 rounded-full transition-colors"
+            className="text-base font-black text-zinc-400 hover:text-white border border-zinc-700 px-5 py-2.5 rounded-full transition-colors"
           >
             ↻ Refresh
           </button>
@@ -224,15 +227,15 @@ export default function KDSPage() {
 
       {/* Order Grid */}
       {orders.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-zinc-600">
+        <div className="flex items-center justify-center h-72 text-zinc-600">
           <div className="text-center">
-            <p className="text-5xl mb-3">🐓</p>
-            <p className="font-black text-lg">No active orders</p>
-            <p className="text-sm">New orders will appear here in real time</p>
+            <p className="text-7xl mb-4">🐓</p>
+            <p className="font-black text-2xl">No active orders</p>
+            <p className="text-lg mt-2">New orders will appear here automatically</p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {active.map(order => (
             <OrderCard key={order.id} order={order} onUpdate={fetchOrders} />
           ))}
