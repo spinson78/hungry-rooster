@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 const KDS_PASSWORD = "kitchen";
@@ -44,12 +44,33 @@ function elapsed(created: string) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
+function playAlarm() {
+  try {
+    const ctx = new AudioContext();
+    // Three quick beeps
+    [0, 0.25, 0.5].forEach(offset => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "square";
+      osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + offset + 0.18);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.18);
+    });
+  } catch {
+    // Audio not available in this context
+  }
+}
+
 function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) {
   const [updating, setUpdating] = useState(false);
   const isNew = order.status === "pending";
   const isStarted = order.status === "in_progress";
   const mins = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
-  const urgent = mins >= 15;
+  const urgent = mins >= 10;
 
   const updateStatus = async (status: string) => {
     setUpdating(true);
@@ -160,6 +181,8 @@ export default function KDSPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [showDone, setShowDone] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const knownOrderIds = useRef<Set<string>>(new Set());
+  const initialLoadDone = useRef(false);
 
   const fetchOrders = useCallback(async () => {
     const { data } = await supabase
@@ -167,7 +190,23 @@ export default function KDSPage() {
       .select("*")
       .in("status", showDone ? ["pending", "in_progress", "complete"] : ["pending", "in_progress"])
       .order("created_at", { ascending: true });
-    setOrders((data as Order[]) || []);
+    const fetched = (data as Order[]) || [];
+
+    // Detect brand-new pending orders and play alarm
+    if (initialLoadDone.current) {
+      const newPending = fetched.filter(
+        o => o.status === "pending" && !knownOrderIds.current.has(o.id)
+      );
+      if (newPending.length > 0) {
+        playAlarm();
+      }
+    }
+
+    // Track all seen order IDs
+    fetched.forEach(o => knownOrderIds.current.add(o.id));
+    initialLoadDone.current = true;
+
+    setOrders(fetched);
   }, [showDone]);
 
   useEffect(() => {
