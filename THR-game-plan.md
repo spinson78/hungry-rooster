@@ -1,5 +1,5 @@
 # The Hungry Rooster — Build Status & Game Plan
-_Last updated: May 28, 2026_
+_Last updated: June 1, 2026_
 
 ---
 
@@ -19,30 +19,28 @@ _Last updated: May 28, 2026_
 - Office drop flier — PDF with real menu, logo, Fred, group order callout. QR code separate.
 - Multiple build errors fixed — file truncation, duplicate route fragments, TypeScript issues
 - Standalone FB banner builder — `/banner` page with live preview, password protected
-- Esther Friday Bakery — full online ordering at `/esther`. Weekly menu (JSONB items in `bakery_menus` table), $50 min order, Monday 9PM drop / Friday 9AM cutoff (same as Shabbat). Bakery upsell modal injected into Shabbat checkout flow ("Is your Shabbat table complete? / What about Kiddush?"). Admin: Weekly Menus tab has bakery item editor (8 slots, name/price/description); new 🥐 Bakery tab in admin orders view. Webhook handles `order_type === "bakery"`. ⚠️ **MUST RUN** `supabase/bakery_menus_migration.sql` in Supabase SQL editor before feature goes live.
+- Esther Friday Bakery — full online ordering at `/esther`. Weekly menu (JSONB items in `bakery_menus` table), $50 min order, Monday 9PM drop / Friday 9AM cutoff (same as Shabbat). Per-item quantity steppers (not checkboxes), per-item stock limits. Bakery upsell modal injected into Shabbat checkout flow. Admin: Weekly Menus tab has bakery item editor (10 slots, name/price/description/qty); new 🥐 Bakery tab in admin orders view. Webhook handles `order_type === "bakery"`. Migration run ✅ (`supabase/bakery_menus_migration.sql`).
+- Bug fixes (June 1) — Shabbat dessert no longer concatenated into Side 3; bakery per-item quantity; bakery admin date field separate from Shabbat week_of.
+- Invoices — full invoicing system at admin Invoices tab. Create invoices with line items (taxable, 8.25% tax), delivery/pickup toggle + address, delivery fee + service fee (non-taxable). Printable invoice page at `/invoice/[id]` — professional layout, THR branding, client-side gratuity input, Pay Now button (on-demand Stripe session via `/api/invoice-checkout`), Print/Save PDF button. Stripe payment link saved back to DB after first Pay click. Delete button for unpaid invoices. Paid invoices locked. Migration run ✅ (`supabase/invoices_migration.sql` + ALTER TABLE for new columns). Emails use Resend — still failing due to unverified domain; use Copy Link workaround until domain is live.
 
 ---
 
 ## NEEDS VERIFICATION (do these first when you're back)
 
-- [ ] Push banner tab commit (HEAD.lock blocked it — run from terminal):
-  ```
-  del C:\Users\spins\hungry-rooster\.git\HEAD.lock
-  cd C:\Users\spins\hungry-rooster && git add app/admin/page.tsx && git commit -m "feat: add FB Banner Builder tab to admin panel" && git push
-  ```
-- [ ] Confirm Vercel build is green after push
-- [ ] Test tax + tip end-to-end on a live order (dinner or group)
+- [ ] Test Esther bakery end-to-end on a live order (bakery_menus migration is run)
 - [ ] Confirm group order emails are firing after the Supabase redesign
-- [ ] Fix Resend 403 errors — all emails failing (likely unverified domain as `from` address)
+- [ ] Fix Resend 403 errors — all emails failing (unverified domain). Fix: verify `thehungryroostertx.com` in Resend → Domains, then update `from` address in all API routes
 
 ---
 
 ## UP NEXT — PRIORITY ORDER
 
-### 1. Full Menu Ordering (Unlock Stripe) ← START HERE
-- Remove "Coming Soon" buttons on homepage and menu page
-- Wire menu page cart → Stripe checkout (route already exists, just needs connecting)
-- Add tax + tip to menu checkout same as other flows
+### 1. Full Menu Ordering (Wire Stripe + Go Live)
+- Menu ordering flow is live at `/menu` — no Stripe yet (test mode, orders go direct to Supabase/KDS)
+- KDS at `/kds` (passcode: kitchen), thermal print ticket at `/kds/print/[id]` — Star Micronics Bluetooth
+- Tax (8.25%), driver tip, pickup/delivery toggle all in checkout ✅
+- Still needed: wire to Stripe for payment, then remove "Coming Soon" buttons on homepage
+- **Do not go live until DoorDash Drive is integrated (see #9)**
 
 ### 2. Flier Finalization
 - Add QR code to the PDF flier (have QR code PNG already)
@@ -55,10 +53,11 @@ _Last updated: May 28, 2026_
 - Update Resend `from` to `orders@thehungryroostertx.com` once domain is verified
 - Add and verify domain in Resend → Domains (fixes all email 403 errors)
 
-### 4. KDS + Printer Integration
-- Come in pre/post shift to test without interrupting kitchen flow
-- Orders need to route from Supabase → KDS display
-- Printer: thermal receipt on new order webhook
+### 4. KDS + Printer Integration ✅ Built — needs live testing
+- KDS at `/kds` (passcode: kitchen) — real-time order grid, Start/Done buttons, elapsed timer
+- Print ticket at `/kds/print/[id]` — 80mm thermal format, auto-triggers print dialog
+- Printer: Star Micronics Bluetooth — pair to device, set as default printer, browser print routes to it
+- Still needed: test end-to-end in kitchen with real orders before market launch
 
 ### 5. Sales Rep Portal
 - `/rep/abigayle` and `/rep/jordona` — personal dashboards
@@ -78,9 +77,13 @@ _Last updated: May 28, 2026_
 - Clock in / clock out
 - Simple admin view of hours
 
-### 9. DoorDash Drive Integration
-- Waiting on DoorDash onboarding
-- Auto-dispatch driver on paid order
+### 9. DoorDash Drive Integration ⚠️ MUST COMPLETE BEFORE MARKET LAUNCH
+- Delivery system: mix of DoorDash Drive (on-demand drivers) + in-house drivers
+- Waiting on DoorDash Drive onboarding to get API credentials
+- On paid order → auto-dispatch via DoorDash Drive API if delivery type selected
+- Need to handle: in-house vs DoorDash toggle per order in admin, driver assignment, tracking link sent to customer
+- Delivery radius / fee calculator ties into this (see #6 below)
+- **Do not launch menu ordering to the public until this is in place**
 
 ---
 
