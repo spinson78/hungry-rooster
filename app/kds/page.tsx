@@ -173,11 +173,15 @@ export default function KDSPage() {
       })
       .subscribe();
 
+    // Poll every 10 seconds as a reliable fallback (realtime needs enabling in Supabase)
+    const poll = setInterval(fetchOrders, 10000);
+
     // Clock tick for elapsed times
     const tick = setInterval(() => setNow(Date.now()), 30000);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(poll);
       clearInterval(tick);
     };
   }, [authed, fetchOrders]);
