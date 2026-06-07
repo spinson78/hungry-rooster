@@ -1,284 +1,242 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
-const KDS_PASSWORD = "fredapproves";
+const KDS_PASSWORD = "kitchen";
 
-type Ticket = {
+type OrderItem = {
+  name: string;
+  qty: number;
+  size?: string | null;
+  addons?: string[];
+  mods?: string | null;
+  price: number;
+  // shabbat fields
+  protein?: string;
+  side1?: string;
+  side2?: string;
+  extra?: string;
+};
+
+type Order = {
   id: string;
-  source: "orders" | "group_orders";
-  order_type: string;
+  order_number?: string;
   customer_name: string;
-  items: { name: string; protein?: string; side1?: string; side2?: string; extra?: string; description?: string; qty?: number }[];
+  customer_phone: string;
+  items: OrderItem[];
+  total: number;
   special_requests: string;
-  created_at: string;
+  order_type: string;
   status: string;
+  created_at: string;
 };
 
-const TYPE_STYLE: Record<string, { label: string; color: string; border: string; bg: string }> = {
-  dinner:      { label: "DINNER DROP",   color: "#2dd4bf", border: "#2dd4bf", bg: "rgba(45,212,191,0.08)" },
-  shabbat:     { label: "SHABBAT BOX",   color: "#e9c46a", border: "#e9c46a", bg: "rgba(233,196,106,0.08)" },
-  group_order: { label: "GROUP ORDER",   color: "#fb923c", border: "#fb923c", bg: "rgba(251,146,60,0.08)" },
-  catering:    { label: "CATERING",      color: "#a78bfa", border: "#a78bfa", bg: "rgba(167,139,250,0.08)" },
+const TYPE_COLOR: Record<string, string> = {
+  menu:    "bg-teal-400/20 text-teal-400 border-teal-400/30",
+  dinner:  "bg-teal-400/20 text-teal-400 border-teal-400/30",
+  shabbat: "bg-yellow-400/20 text-yellow-400 border-yellow-400/30",
+  bakery:  "bg-orange-400/20 text-orange-400 border-orange-400/30",
 };
 
-const getStyle = (type: string) =>
-  TYPE_STYLE[type] || { label: type.toUpperCase(), color: "#a1a1aa", border: "#52525b", bg: "rgba(161,161,170,0.08)" };
+function elapsed(created: string) {
+  const mins = Math.floor((Date.now() - new Date(created).getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
+}
 
-const formatTime = (ts: string) => {
-  const d = new Date(ts);
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-};
+function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) {
+  const [updating, setUpdating] = useState(false);
+  const isNew = order.status === "pending";
+  const isStarted = order.status === "in_progress";
+  const mins = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
+  const urgent = mins >= 15;
 
-const minutesAgo = (ts: string) => {
-  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
-  if (diff < 1) return "just now";
-  if (diff === 1) return "1 min ago";
-  return `${diff} min ago`;
-};
+  const updateStatus = async (status: string) => {
+    setUpdating(true);
+    await supabase.from("orders").update({ status }).eq("id", order.id);
+    onUpdate();
+    setUpdating(false);
+  };
+
+  const handlePrint = () => {
+    window.open(`/kds/print/${order.id}`, "_blank", "width=400,height=600");
+  };
+
+  return (
+    <div className={`rounded-2xl border-2 p-4 flex flex-col gap-3 transition-all ${
+      isNew ? (urgent ? "border-red-500 bg-red-500/5" : "border-yellow-400 bg-yellow-400/5") :
+      isStarted ? "border-teal-500 bg-teal-500/5" :
+      "border-zinc-700 bg-zinc-900 opacity-60"
+    }`}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-white font-black text-lg leading-tight">{order.customer_name}</p>
+          {order.customer_phone && <p className="text-zinc-500 text-xs">{order.customer_phone}</p>}
+        </div>
+        <div className="text-right shrink-0">
+          {order.order_number && <p className="text-zinc-400 font-mono text-xs">{order.order_number}</p>}
+          <p className={`text-xs font-bold mt-0.5 ${urgent ? "text-red-400" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
+            {elapsed(order.created_at)}
+          </p>
+        </div>
+      </div>
+
+      {/* Type badge */}
+      <div className="flex items-center gap-2">
+        <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
+          {order.order_type === "menu" ? "Walk-in" : order.order_type}
+        </span>
+        {isNew && <span className="text-xs font-black text-yellow-400 animate-pulse">● NEW</span>}
+        {isStarted && <span className="text-xs font-black text-teal-400">● IN PROGRESS</span>}
+      </div>
+
+      {/* Items */}
+      <div className="border-t border-zinc-700 pt-3 space-y-1.5">
+        {order.items.map((item, i) => (
+          <div key={i} className="text-sm">
+            <span className="text-yellow-400 font-black">{item.qty > 1 ? `${item.qty}× ` : ""}</span>
+            <span className="text-white font-bold">{item.name}</span>
+            {item.size && <span className="text-zinc-400 text-xs"> ({item.size})</span>}
+            {item.addons && item.addons.length > 0 && (
+              <p className="text-zinc-400 text-xs ml-3">+ {item.addons.join(", ")}</p>
+            )}
+            {item.mods && <p className="text-orange-300 text-xs ml-3 italic">⚠ {item.mods}</p>}
+            {item.protein && <p className="text-zinc-400 text-xs ml-3">{item.protein}{item.side1 ? `, ${item.side1}` : ""}{item.side2 ? `, ${item.side2}` : ""}{item.extra ? `, ${item.extra}` : ""}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* Special requests */}
+      {order.special_requests && (
+        <div className="bg-orange-400/10 border border-orange-400/30 rounded-xl px-3 py-2 text-xs text-orange-300">
+          <span className="font-black">NOTE: </span>{order.special_requests}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2 mt-auto">
+        <button
+          onClick={handlePrint}
+          className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-2 rounded-full transition-colors"
+        >
+          🖨 Print
+        </button>
+        {isNew && (
+          <button
+            onClick={() => updateStatus("in_progress")}
+            disabled={updating}
+            className="flex-1 text-xs font-black bg-teal-500 hover:bg-teal-400 text-black py-2 rounded-full transition-colors disabled:opacity-50"
+          >
+            Start Order
+          </button>
+        )}
+        {isStarted && (
+          <button
+            onClick={() => updateStatus("complete")}
+            disabled={updating}
+            className="flex-1 text-xs font-black bg-yellow-400 hover:bg-yellow-300 text-black py-2 rounded-full transition-colors disabled:opacity-50"
+          >
+            Mark Done ✓
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function KDSPage() {
-  const [authed, setAuthed] = useState(false);
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [completing, setCompleting] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  const audioRef = useRef<AudioContext | null>(null);
+  const [authed, setAuthed] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [showDone, setShowDone] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
-  // Tick every 30s to refresh "X min ago" display
-  useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const playChime = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      audioRef.current = ctx;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.5);
-    } catch { /* silent fail */ }
-  };
-
-  const fetchTickets = async () => {
-    const cutoff = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(); // last 8 hours
-
-    const [{ data: groupOrders }] = await Promise.all([
-      supabase.from("group_orders").select("*").eq("status", "paid").gte("created_at", cutoff).order("created_at", { ascending: true }),
-    ]);
-
-    const all: Ticket[] = [
-      ...(groupOrders || []).map((o) => ({
-        id: o.id,
-        source: "group_orders" as const,
-        order_type: "group_order",
-        customer_name: o.person_name,
-        items: o.items,
-        special_requests: o.special_requests || "",
-        created_at: o.created_at,
-        status: o.status,
-      })),
-    ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    setTickets(all);
-  };
+  const fetchOrders = useCallback(async () => {
+    const { data } = await supabase
+      .from("orders")
+      .select("*")
+      .in("status", showDone ? ["pending", "in_progress", "complete"] : ["pending", "in_progress"])
+      .order("created_at", { ascending: true });
+    setOrders((data as Order[]) || []);
+  }, [showDone]);
 
   useEffect(() => {
     if (!authed) return;
-    fetchTickets();
+    fetchOrders();
 
-    // Real-time subscriptions — Group Orders only on KDS
-    const groupSub = supabase
-      .channel("kds-group-orders")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_orders" }, (payload) => {
-        const o = payload.new as { id: string; person_name: string; items: Ticket["items"]; special_requests: string; created_at: string; status: string };
-        if (o.status === "paid") {
-          const ticket: Ticket = {
-            id: o.id, source: "group_orders", order_type: "group_order",
-            customer_name: o.person_name, items: o.items,
-            special_requests: o.special_requests || "", created_at: o.created_at, status: o.status,
-          };
-          setTickets((prev) => [...prev, ticket].sort(
-            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          ));
-          playChime();
-        }
+    // Real-time subscription
+    const channel = supabase
+      .channel("kds-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        fetchOrders();
       })
       .subscribe();
 
+    // Clock tick for elapsed times
+    const tick = setInterval(() => setNow(Date.now()), 30000);
+
     return () => {
-      supabase.removeChannel(groupSub);
+      supabase.removeChannel(channel);
+      clearInterval(tick);
     };
-  }, [authed]);
+  }, [authed, fetchOrders]);
 
-  const markDone = async (ticket: Ticket) => {
-    setCompleting(ticket.id);
-    await supabase.from(ticket.source).update({ status: "complete" }).eq("id", ticket.id);
-    setTickets((prev) => prev.filter((t) => t.id !== ticket.id));
-    setCompleting(null);
-  };
+  // Suppress unused variable warning
+  void now;
 
-  if (!authed) {
-    return (
-      <main style={{ background: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: 16, padding: 40, width: 320, textAlign: "center" }}>
-          <img src="/THR%20hor%20logo%20final.png" alt="THR" style={{ height: 40, margin: "0 auto 24px" }} />
-          <p style={{ color: "#2dd4bf", fontWeight: 900, fontSize: 13, textTransform: "uppercase", letterSpacing: 2, marginBottom: 20 }}>Kitchen Display</p>
-          <input
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setPasswordError(false); }}
-            onKeyDown={(e) => e.key === "Enter" && (password === KDS_PASSWORD ? setAuthed(true) : setPasswordError(true))}
-            style={{ width: "100%", background: "#1c1c1c", border: "1px solid #3f3f46", borderRadius: 10, padding: "12px 16px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 8 }}
-          />
-          {passwordError && <p style={{ color: "#f87171", fontSize: 13, marginBottom: 8 }}>Incorrect password</p>}
-          <button
-            onClick={() => password === KDS_PASSWORD ? setAuthed(true) : setPasswordError(true)}
-            style={{ width: "100%", background: "#2dd4bf", color: "#000", fontWeight: 900, padding: "12px 0", borderRadius: 50, border: "none", fontSize: 15, cursor: "pointer", marginTop: 4 }}
-          >
-            Enter Kitchen
-          </button>
-        </div>
-      </main>
-    );
-  }
+
+
+  const active = orders.filter(o => o.status === "pending" || o.status === "in_progress");
+  const done = orders.filter(o => o.status === "complete");
 
   return (
-    <main style={{ background: "#0a0a0a", minHeight: "100vh", padding: "20px 16px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, borderBottom: "1px solid #1c1c1c", paddingBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/THR%20hor%20logo%20final.png" alt="THR" style={{ height: 32 }} />
-          <span style={{ color: "#3f3f46", fontSize: 13, fontWeight: 700 }}>Kitchen Display</span>
+    <div className="min-h-screen bg-zinc-950 p-4">
+      {/* KDS Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-white font-black text-lg">🍳 Kitchen</span>
+          {active.length > 0 && (
+            <span className="bg-yellow-400 text-black font-black text-sm px-3 py-1 rounded-full">
+              {active.length} active
+            </span>
+          )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ color: tickets.length > 0 ? "#2dd4bf" : "#3f3f46", fontWeight: 900, fontSize: 14 }}>
-            {tickets.length === 0 ? "No active orders" : `${tickets.length} active order${tickets.length !== 1 ? "s" : ""}`}
-          </span>
+        <div className="flex gap-2">
           <button
-            onClick={fetchTickets}
-            style={{ background: "#1c1c1c", border: "1px solid #27272a", color: "#a1a1aa", padding: "6px 14px", borderRadius: 50, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+            onClick={() => setShowDone(s => !s)}
+            className={`text-xs font-black px-4 py-2 rounded-full border transition-colors ${showDone ? "bg-zinc-700 border-zinc-600 text-white" : "border-zinc-700 text-zinc-500 hover:text-white"}`}
+          >
+            {showDone ? "Hide Done" : "Show Done"}
+          </button>
+          <button
+            onClick={fetchOrders}
+            className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 px-4 py-2 rounded-full transition-colors"
           >
             ↻ Refresh
           </button>
         </div>
       </div>
 
-      {/* Empty state */}
-      {tickets.length === 0 && (
-        <div style={{ textAlign: "center", marginTop: 80 }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>🐓</div>
-          <p style={{ color: "#3f3f46", fontWeight: 900, fontSize: 18 }}>All clear. Fred is waiting.</p>
-          <p style={{ color: "#27272a", fontSize: 13, marginTop: 8 }}>New orders will appear here automatically.</p>
+      {/* Order Grid */}
+      {orders.length === 0 ? (
+        <div className="flex items-center justify-center h-64 text-zinc-600">
+          <div className="text-center">
+            <p className="text-5xl mb-3">🐓</p>
+            <p className="font-black text-lg">No active orders</p>
+            <p className="text-sm">New orders will appear here in real time</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {active.map(order => (
+            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} />
+          ))}
+          {showDone && done.map(order => (
+            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} />
+          ))}
         </div>
       )}
-
-      {/* Ticket grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-        {tickets.map((ticket) => {
-          const style = getStyle(ticket.order_type);
-          const mins = Math.floor((Date.now() - new Date(ticket.created_at).getTime()) / 60000);
-          const urgent = mins >= 15;
-          return (
-            <div
-              key={ticket.id}
-              style={{
-                background: style.bg,
-                border: `2px solid ${urgent ? "#ef4444" : style.border}`,
-                borderRadius: 16,
-                padding: 20,
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                animation: "fadeIn 0.3s ease",
-              }}
-            >
-              {/* Order type badge */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{
-                  color: style.color,
-                  fontWeight: 900,
-                  fontSize: 13,
-                  textTransform: "uppercase",
-                  letterSpacing: 2,
-                }}>
-                  {style.label}
-                </span>
-                <span style={{ color: urgent ? "#ef4444" : "#71717a", fontSize: 12, fontWeight: 700 }}>
-                  {urgent && "⚠️ "}{minutesAgo(ticket.created_at)}
-                </span>
-              </div>
-
-              {/* Customer name */}
-              <div>
-                <p style={{ color: "#ffffff", fontWeight: 900, fontSize: 22, margin: 0, lineHeight: 1.1 }}>
-                  {ticket.customer_name}
-                </p>
-                <p style={{ color: "#52525b", fontSize: 12, margin: "4px 0 0" }}>{formatTime(ticket.created_at)}</p>
-              </div>
-
-              {/* Items */}
-              <div style={{ borderTop: "1px solid #27272a", paddingTop: 12 }}>
-                {(ticket.items || []).map((item, idx) => (
-                  <div key={idx} style={{ marginBottom: 8 }}>
-                    <p style={{ color: "#e4e4e7", fontWeight: 700, fontSize: 15, margin: 0 }}>
-                      {item.qty && item.qty > 1 ? `${item.qty}× ` : ""}{item.name}
-                    </p>
-                    {(item.protein || item.side1 || item.side2 || item.extra || item.description) && (
-                      <p style={{ color: "#71717a", fontSize: 13, margin: "2px 0 0" }}>
-                        {[item.protein, item.side1, item.side2, item.extra, item.description].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Special requests */}
-              {ticket.special_requests && (
-                <div style={{ background: "rgba(233,196,106,0.1)", border: "1px solid rgba(233,196,106,0.3)", borderRadius: 8, padding: "8px 12px" }}>
-                  <p style={{ color: "#e9c46a", fontWeight: 900, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 3px" }}>Special Request</p>
-                  <p style={{ color: "#d4d4d8", fontSize: 13, margin: 0 }}>{ticket.special_requests}</p>
-                </div>
-              )}
-
-              {/* Mark done */}
-              <button
-                onClick={() => markDone(ticket)}
-                disabled={completing === ticket.id}
-                style={{
-                  background: completing === ticket.id ? "#27272a" : "#22c55e",
-                  color: completing === ticket.id ? "#71717a" : "#000",
-                  fontWeight: 900,
-                  fontSize: 15,
-                  padding: "12px 0",
-                  borderRadius: 50,
-                  border: "none",
-                  cursor: completing === ticket.id ? "not-allowed" : "pointer",
-                  marginTop: 4,
-                  transition: "background 0.2s",
-                }}
-              >
-                {completing === ticket.id ? "Marking done..." : "✓ MARK DONE"}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        * { box-sizing: border-box; }
-      `}</style>
-    </main>
+    </div>
   );
 }
