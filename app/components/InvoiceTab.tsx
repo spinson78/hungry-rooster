@@ -98,8 +98,13 @@ export default function InvoiceTab() {
 
   const nextInvoiceNumber = () => {
     const year = new Date().getFullYear();
-    const count = invoices.filter(i => i.invoice_number.includes(String(year))).length + 1;
-    return `THR-${year}-${String(count).padStart(3, "0")}`;
+    const prefix = `THR-${year}-`;
+    const thisYear = invoices.filter(i => i.invoice_number.startsWith(prefix));
+    const maxNum = thisYear.reduce((max, inv) => {
+      const n = parseInt(inv.invoice_number.replace(prefix, ""), 10);
+      return isNaN(n) ? max : Math.max(max, n);
+    }, 0);
+    return `${prefix}${String(maxNum + 1).padStart(3, "0")}`;
   };
 
   const handleSave = async (sendAfter = false) => {
