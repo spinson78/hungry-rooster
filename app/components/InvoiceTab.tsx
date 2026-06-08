@@ -105,6 +105,7 @@ export default function InvoiceTab() {
   const handleSave = async (sendAfter = false) => {
     setSaving(true);
     setActionMsg("");
+    try {
     const invoice_number = nextInvoiceNumber();
 
     const payload = {
@@ -118,20 +119,21 @@ export default function InvoiceTab() {
       due_date: form.due_date || null,
       delivery_type: form.delivery_type,
       delivery_address: form.delivery_type === "delivery" ? form.delivery_address : "",
-      delivery_fee: deliveryFee,
-      service_fee: serviceFee,
+      delivery_fee: isNaN(deliveryFee) ? 0 : deliveryFee,
+      service_fee: isNaN(serviceFee) ? 0 : serviceFee,
       tax_exempt: taxExempt,
-      tax_amount: tax,
-      total: grandTotal,
+      tax_amount: isNaN(tax) ? 0 : tax,
+      total: isNaN(grandTotal) ? 0 : grandTotal,
       sales_rep: form.sales_rep,
-      commission_rate: rep.rate,
-      commission_amount: commission,
+      commission_rate: isNaN(rep.rate) ? 0 : rep.rate,
+      commission_amount: isNaN(commission) ? 0 : commission,
       status: "draft",
     };
 
+    console.log("Saving invoice payload:", JSON.stringify(payload, null, 2));
     const { data, error } = await supabase.from("invoices").insert(payload).select().single();
     setSaving(false);
-    if (error) { setActionMsg(`Error saving invoice: ${error.message}`); console.error(error); return; }
+    if (error) { setActionMsg(`Error: ${error.message} (code: ${error.code})`); console.error("Supabase error:", error); return; }
 
     await fetchInvoices();
     setSelected(data as Invoice);
@@ -142,6 +144,12 @@ export default function InvoiceTab() {
     } else {
       setView("detail");
       setActionMsg("Invoice saved as draft.");
+    }
+    } catch (err: unknown) {
+      setSaving(false);
+      const msg = err instanceof Error ? err.message : String(err);
+      setActionMsg(`Unexpected error: ${msg}`);
+      console.error("Caught error:", err);
     }
   };
 
