@@ -1100,4 +1100,44 @@ export default function AdminPage() {
                         <p className="text-orange-400 text-xs font-bold uppercase tracking-widest">{o.location_slug.replace(/-/g, " ")}</p>
                         {o.delivery_date && <p className="text-zinc-500 text-xs mt-1">Delivery: {new Date(o.delivery_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</p>}
                       </div>
-                      <div className=
+                      <div className="text-right shrink-0">
+                        <p className="text-white font-black text-xl">${o.total.toFixed(2)}</p>
+                        <p className="text-zinc-500 text-xs">{new Date(o.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                      </div>
+                    </div>
+                    <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
+                      {(o.items as {name: string; qty?: number}[]).map((item, i) => (
+                        <p key={i} className="text-zinc-300 text-sm">{item.qty && item.qty > 1 ? `${item.qty}x ` : ""}{item.name}</p>
+                      ))}
+                    </div>
+                    {o.special_requests && <p className="text-yellow-400 text-xs mb-3">Note: {o.special_requests}</p>}
+                    {o.status !== "complete" && (
+                      <button
+                        onClick={async () => {
+                          await supabase.from("group_orders").update({ status: "complete" }).eq("id", o.id);
+                          setGroupOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: "complete" } : x));
+                        }}
+                        className="text-xs font-black text-zinc-400 hover:text-teal-400 border border-zinc-700 hover:border-teal-500 px-4 py-2 rounded-full transition-colors"
+                      >
+                        Mark Complete
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* INVOICES TAB */}
+        {tab === "invoices" && <InvoiceTab />}
+
+        {/* BANNER TAB */}
+        {tab === "banner" && <BannerTab />}
+
+        {/* ORDER TABS */}
+        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}
+      </div>
+    </main>
+  );
+}
