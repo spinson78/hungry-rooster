@@ -198,6 +198,7 @@ export default function KDSPage() {
       .from("orders")
       .select("*")
       .in("status", showDone ? ["pending", "in_progress", "complete"] : ["pending", "in_progress"])
+      .not("order_type", "in", '("shabbat","bakery")')
       .order("created_at", { ascending: true });
     const fetched = (data as Order[]) || [];
 
