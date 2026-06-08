@@ -101,7 +101,7 @@ export default function DinnerPage() {
       <div className="px-6 py-12 max-w-2xl mx-auto">
         <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-2">Mon · Tue · Thu</p>
         <h1 className="text-4xl font-black mb-2">The Dinner Drop</h1>
-        <p className="text-zinc-400 mb-10">Delivered to your door. $85 flat.</p>
+        <p className="text-zinc-400 mb-10">Delivered to your door. ${dinner?.price || 85} flat.</p>
 
         {!dinner || !isOpen ? (
           <div className="bg-zinc-900 rounded-2xl p-10 border border-zinc-800 text-center">
@@ -127,7 +127,7 @@ export default function DinnerPage() {
               </div>
               <div className="flex items-center justify-between border-t border-zinc-700 pt-4">
                 <p className="text-teal-400 text-sm font-bold">{dinner.quantity_remaining} remaining · Closes at 12PM</p>
-                <p className="text-white font-black text-2xl">$85</p>
+                <p className="text-white font-black text-2xl">${dinner.price || 85}</p>
               </div>
             </div>
 
