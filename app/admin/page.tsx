@@ -144,6 +144,8 @@ type DinnerEntry = {
   extra: string;
   quantity: number;
   price: number;
+  quantity_remaining?: number; // preserved from DB when editing an existing record
+  existingRecord?: boolean;
 };
 
 type ShabbatEntry = {
@@ -391,6 +393,37 @@ export default function AdminPage() {
     setDinners((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
   };
 
+  const loadCurrentWeek = async () => {
+    const today = new Date();
+    const from = today.toISOString().split("T")[0];
+    const toDate = new Date(today);
+    toDate.setDate(toDate.getDate() + 14);
+    const to = toDate.toISOString().split("T")[0];
+    const { data } = await supabase
+      .from("dinner_menus")
+      .select("*")
+      .gte("date", from)
+      .lte("date", to)
+      .order("date", { ascending: true });
+    if (!data || data.length === 0) { alert("No upcoming dinners found in the database."); return; }
+    setDinners(prev => prev.map(d => {
+      const match = data.find((row: { day_of_week: string; date: string; protein: string; side1: string; side2: string; extra: string; quantity_available: number; quantity_remaining: number; price: number }) => row.day_of_week === d.day);
+      if (!match) return d;
+      return {
+        ...d,
+        date: match.date,
+        protein: match.protein || "",
+        side1: match.side1 || "",
+        side2: match.side2 || "",
+        extra: match.extra || "",
+        quantity: match.quantity_available,
+        quantity_remaining: match.quantity_remaining,
+        price: match.price ?? 85,
+        existingRecord: true,
+      };
+    }));
+  };
+
   const getMondayOfWeek = (dateStr: string): string => {
     if (!dateStr) return "";
     const d = new Date(dateStr + "T12:00:00");
@@ -419,7 +452,10 @@ export default function AdminPage() {
         side2: dinner.side2,
         extra: dinner.extra,
         quantity_available: dinner.quantity,
-        quantity_remaining: dinner.quantity,
+        // Preserve quantity_remaining when editing an existing record so orders already placed aren't lost
+        quantity_remaining: dinner.existingRecord && dinner.quantity_remaining !== undefined
+          ? dinner.quantity_remaining
+          : dinner.quantity,
         is_active: false,
         price: dinner.price,
         reveal_time: revealDate.toISOString(),
@@ -658,7 +694,15 @@ export default function AdminPage() {
         {tab === "menus" && (
           <>
             <div className="mb-12">
-              <h2 className="text-xl font-black mb-1">Dinner Drop</h2>
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-xl font-black">Dinner Drop</h2>
+                <button
+                  onClick={loadCurrentWeek}
+                  className="text-sm font-black text-teal-400 hover:text-teal-300 border border-teal-400/40 hover:border-teal-400 px-4 py-2 rounded-full transition-colors"
+                >
+                  📥 Load This Week
+                </button>
+              </div>
               <p className="text-zinc-500 text-sm mb-6">Mon, Tue, Thu — $85 delivered. Reveals at 9PM the night before. Orders close at 12PM day of.</p>
               <div className="space-y-6">
                 {dinners.map((dinner, i) => (
@@ -1056,44 +1100,4 @@ export default function AdminPage() {
                         <p className="text-orange-400 text-xs font-bold uppercase tracking-widest">{o.location_slug.replace(/-/g, " ")}</p>
                         {o.delivery_date && <p className="text-zinc-500 text-xs mt-1">Delivery: {new Date(o.delivery_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</p>}
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-white font-black text-xl">${o.total.toFixed(2)}</p>
-                        <p className="text-zinc-500 text-xs">{new Date(o.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
-                      </div>
-                    </div>
-                    <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
-                      {(o.items as {name: string; qty?: number}[]).map((item, i) => (
-                        <p key={i} className="text-zinc-300 text-sm">{item.qty && item.qty > 1 ? `${item.qty}x ` : ""}{item.name}</p>
-                      ))}
-                    </div>
-                    {o.special_requests && <p className="text-yellow-400 text-xs mb-3">Note: {o.special_requests}</p>}
-                    {o.status !== "complete" && (
-                      <button
-                        onClick={async () => {
-                          await supabase.from("group_orders").update({ status: "complete" }).eq("id", o.id);
-                          setGroupOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: "complete" } : x));
-                        }}
-                        className="text-xs font-black text-zinc-400 hover:text-teal-400 border border-zinc-700 hover:border-teal-500 px-4 py-2 rounded-full transition-colors"
-                      >
-                        Mark Complete
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* INVOICES TAB */}
-        {tab === "invoices" && <InvoiceTab />}
-
-        {/* BANNER TAB */}
-        {tab === "banner" && <BannerTab />}
-
-        {/* ORDER TABS */}
-        {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}
-      </div>
-    </main>
-  );
-}
+                      <div className=
