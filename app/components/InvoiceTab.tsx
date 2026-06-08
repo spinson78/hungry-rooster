@@ -131,7 +131,7 @@ export default function InvoiceTab() {
 
     const { data, error } = await supabase.from("invoices").insert(payload).select().single();
     setSaving(false);
-    if (error) { setActionMsg("Error saving invoice."); console.error(error); return; }
+    if (error) { setActionMsg(`Error saving invoice: ${error.message}`); console.error(error); return; }
 
     await fetchInvoices();
     setSelected(data as Invoice);
