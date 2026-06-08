@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import InvoiceTab from "@/app/components/InvoiceTab";
+import ReportsTab from "@/app/components/ReportsTab";
 
 function BannerTab() {
   const [weekDate, setWeekDate] = useState("");
@@ -187,7 +188,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "invoices" | "banner">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "invoices" | "banner" | "reports">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -688,6 +689,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("banner")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "banner" ? "bg-blue-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🖼️ FB Banner
           </button>
+          <button onClick={() => setTab("reports")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "reports" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            📊 Reports
+          </button>
         </div>
 
         {/* MENUS TAB */}
@@ -1134,6 +1138,8 @@ export default function AdminPage() {
 
         {/* BANNER TAB */}
         {tab === "banner" && <BannerTab />}
+
+        {tab === "reports" && <ReportsTab />}
 
         {/* ORDER TABS */}
         {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}
