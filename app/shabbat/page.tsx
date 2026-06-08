@@ -222,10 +222,10 @@ export default function ShabbatPage() {
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">This week&apos;s menu</p>
               <div className="space-y-1 text-base">
-                <p><span className="text-zinc-400">Protein:</span> <span className="font-bold">{menu.protein}</span></p>
-                <p><span className="text-zinc-400">Side 1:</span> <span className="font-bold">{menu.side1}</span></p>
-                <p><span className="text-zinc-400">Side 2:</span> <span className="font-bold">{menu.side2}</span></p>
-                <p><span className="text-zinc-400">Side 3:</span> <span className="font-bold">{menu.extra}</span></p>
+                <p><span className="text-zinc-400">Protein:</span> <span className="font-bold">{menu?.protein}</span></p>
+                <p><span className="text-zinc-400">Side 1:</span> <span className="font-bold">{menu?.side1}</span></p>
+                <p><span className="text-zinc-400">Side 2:</span> <span className="font-bold">{menu?.side2}</span></p>
+                <p><span className="text-zinc-400">Side 3:</span> <span className="font-bold">{menu?.extra}</span></p>
               </div>
             </div>
 
