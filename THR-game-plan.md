@@ -1,5 +1,5 @@
 # The Hungry Rooster — Build Status & Game Plan
-_Last updated: June 8, 2026_
+_Last updated: June 9, 2026_
 
 ---
 
@@ -23,7 +23,7 @@ _Last updated: June 8, 2026_
 - Bug fixes (June 1) — Shabbat dessert no longer concatenated into Side 3; bakery per-item quantity; bakery admin date field separate from Shabbat week_of.
 - Invoices — full invoicing system at admin Invoices tab. Create invoices with line items (taxable, 8.25% tax), delivery/pickup toggle + address, delivery fee + service fee (non-taxable). Printable invoice page at `/invoice/[id]` — professional layout, THR branding, client-side gratuity input, Pay Now button (on-demand Stripe session via `/api/invoice-checkout`), Print/Save PDF button. Stripe payment link saved back to DB after first Pay click. Delete button for unpaid invoices. Paid invoices locked. Migration run ✅ (`supabase/invoices_migration.sql` + ALTER TABLE for new columns). Emails use Resend — still failing due to unverified domain; use Copy Link workaround until domain is live.
 - Full menu ordering (no Stripe) — `/menu` page live for KDS testing. Cart with qty controls, upsell popup (drinks + dessert with visual "✓ Added" feedback), pickup/delivery toggle, 8.25% tax, driver tip, order confirmation screen. Submits to Supabase `orders` table as `order_type: "menu"`.
-- KDS screen — `/kds` live. Real-time order grid (Supabase Realtime + 10-second polling fallback). Start/Done buttons, elapsed timer, 10-min urgent threshold (red border). Large display mode (text-3xl cards). Alarm sound on new orders (Web Audio API, 3-beep pattern, mute toggle). Print button opens thermal ticket in popup.
+- KDS screen — `/kds` live. Real-time order grid (Supabase Realtime + 10-second polling fallback). Start/Done buttons, elapsed timer, 10-min urgent threshold (red border). Large display mode (text-3xl cards). Alarm sound on new orders (Web Audio API, 3-beep pattern, mute toggle). Print button triggers inline thermal ticket (no page navigation — window.print() on hidden DOM element, shown only via @media print).
 - Thermal print ticket — `/kds/print/[id]` — 80mm format, auto-prints on load.
 - Shabbat greeting — changed "Chag Sameach" to "Shabbat Shalom 🕯️"
 - Dinner Drop price — now reads from database (not hardcoded). Admin can set per-dinner price. Admin "📥 Load This Week" button pre-fills existing dinner entries for editing without resetting quantity remaining.
@@ -37,6 +37,7 @@ _Last updated: June 8, 2026_
 - [ ] Fix Resend 403 errors — all emails failing (unverified domain). Fix: verify `thehungryroostertx.com` in Resend → Domains, then update `from` address in all API routes
 - [ ] Enable Supabase Realtime for `orders` table (Dashboard → Database → Replication) — KDS has polling fallback but Realtime is faster
 - [ ] Run orders table migration if not done: add `order_number`, `subtotal`, `tax_amount`, `tip_amount`, `fulfillment_type` columns
+- [ ] Run in Supabase SQL editor: `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS tax_exempt BOOLEAN NOT NULL DEFAULT false;`
 
 ---
 
@@ -48,11 +49,13 @@ _Last updated: June 8, 2026_
 - Remove "Coming Soon" buttons on homepage once live
 - **Do not go live until DoorDash Drive is integrated (see #3)**
 
-### 2. Printer Integration — Epson TM-T20IIIL
-- Decision made: purchase Epson TM-T20IIIL (~$200, WiFi, ePOS JavaScript SDK)
-- Reason: ChromeOS KDS has no USB ports; Star Micronics Bluetooth not compatible with browser printing; Epson ePOS SDK enables direct browser-to-printer over WiFi
-- Once hardware arrives: build ePOS SDK integration for auto-printing from KDS without print dialog
-- Current workaround: manual Print button on each KDS card → browser print dialog
+### 2. Printer Integration — Raspberry Pi Zero 2 W Print Server ⚠️ HARDWARE ORDERED
+- Decision: Star TSP143IIIBi (Bluetooth/MFi) cannot be accessed from any web browser on iOS — it's an MFi accessory, not a standard printer
+- Solution: Raspberry Pi Zero 2 W acting as a WiFi→Bluetooth bridge. Web app sends print job over WiFi HTTP to the Pi; Pi relays ESC/POS to the Star via Bluetooth
+- Hardware ordered: Raspberry Pi Zero 2 W (~$15) + GeeekPi aluminum case ($9.49, kitchen-safe) + 16GB microSD — arriving soon
+- Setup plan: Node.js/Python HTTP print server on Pi. KDS posts order JSON to http://pi-ip:3001/print → Pi formats ESC/POS → sends to Star printer
+- No cables to KDS: Pi plugs into any nearby USB power source and communicates wirelessly
+- Current workaround: manual Print button on KDS card → browser print dialog
 
 ### 3. DoorDash Drive Integration ⚠️ MUST COMPLETE BEFORE MARKET LAUNCH
 - Delivery system: mix of DoorDash Drive (on-demand drivers) + in-house drivers
@@ -100,7 +103,7 @@ _Last updated: June 8, 2026_
 | Custom domain live | Owner transfers domain |
 | Resend from address | Domain verification |
 | DoorDash integration | DoorDash API credentials (onboarding) |
-| Epson printer | Purchase + delivery of TM-T20IIIL |
+| Pi Zero 2 W print server | Hardware delivery (ordered June 9) |
 
 ---
 
