@@ -73,7 +73,7 @@ function playAlarm(muted: boolean) {
   }
 }
 
-function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) {
+function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () => void; onPrint: (o: Order) => void }) {
   const [updating, setUpdating] = useState(false);
   const isNew = order.status === "pending";
   const isStarted = order.status === "in_progress";
@@ -87,9 +87,7 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) 
     setUpdating(false);
   };
 
-  const handlePrint = () => {
-    window.open(`/kds/print/${order.id}`, "_blank", "width=400,height=700");
-  };
+  const handlePrint = () => onPrint(order);
 
   return (
     <div className={`rounded-3xl border-4 p-6 flex flex-col gap-4 transition-all ${
@@ -186,6 +184,7 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: () => void }) 
 
 export default function KDSPage() {
   const [authed, setAuthed] = useState(true);
+  const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [showDone, setShowDone] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -292,13 +291,72 @@ export default function KDSPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {active.map(order => (
-            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} />
+            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={o => { setPrintOrder(o); setTimeout(() => window.print(), 100); }} />
           ))}
           {showDone && done.map(order => (
-            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} />
+            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={o => { setPrintOrder(o); setTimeout(() => window.print(), 100); }} />
           ))}
         </div>
       )}
+
+      {/* Hidden print ticket — rendered offscreen, shown only on print */}
+      {printOrder && (
+        <div id="kds-print-ticket">
+          <div style={{ textAlign: "center", paddingBottom: "6px" }}>
+            <p style={{ fontWeight: "bold", fontSize: "16px", letterSpacing: "1px" }}>THE HUNGRY ROOSTER</p>
+            <p style={{ fontSize: "10px", marginTop: "2px" }}>1499 Regal Row, Suite 206 · Dallas TX</p>
+          </div>
+          <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+            <span style={{ fontWeight: "bold", fontSize: "15px" }}>#{printOrder.order_number || printOrder.id.slice(-6).toUpperCase()}</span>
+            <span style={{ fontSize: "11px" }}>{new Date(printOrder.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"})} {new Date(printOrder.created_at).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true})}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+            <span style={{ fontWeight: "bold", fontSize: "13px" }}>{printOrder.customer_name}</span>
+            <span style={{ fontSize: "10px", textTransform: "uppercase" }}>{printOrder.order_type === "menu" ? "Walk-in" : printOrder.order_type}</span>
+          </div>
+          {printOrder.customer_phone && <p style={{ fontSize: "10px" }}>{printOrder.customer_phone}</p>}
+          <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
+          {printOrder.items.map((item, i) => (
+            <div key={i} style={{ marginBottom: "7px" }}>
+              <p style={{ fontWeight: "bold", fontSize: "13px" }}>{item.qty > 1 ? `${item.qty}x ` : ""}{item.name}{item.size ? ` (${item.size})` : ""}</p>
+              {item.addons && item.addons.length > 0 && <p style={{ fontSize: "11px", paddingLeft: "10px" }}>+ {item.addons.join(", ")}</p>}
+              {item.mods && <p style={{ fontSize: "11px", fontWeight: "bold", paddingLeft: "10px" }}>** MOD: {item.mods}</p>}
+              {item.protein && <p style={{ fontSize: "11px", paddingLeft: "10px" }}>{[item.protein, item.side1, item.side2, item.extra].filter(Boolean).join(" / ")}</p>}
+            </div>
+          ))}
+          {printOrder.special_requests && (
+            <>
+              <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
+              <p style={{ fontWeight: "bold", fontSize: "12px" }}>*** ORDER NOTE ***</p>
+              <p style={{ fontSize: "11px", fontStyle: "italic" }}>{printOrder.special_requests}</p>
+            </>
+          )}
+          <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "14px" }}>
+            <span>TOTAL</span><span>${Number(printOrder.total).toFixed(2)}</span>
+          </div>
+          <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
+          <p style={{ textAlign: "center", fontSize: "11px", paddingBottom: "8px" }}>Thank you! Fred Approved</p>
+        </div>
+      )}
+
+      <style>{`
+        #kds-print-ticket {
+          display: none;
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+          width: 80mm;
+          background: white;
+          color: black;
+          padding: 4mm;
+        }
+        @media print {
+          body > * { display: none !important; }
+          #kds-print-ticket { display: block !important; }
+          @page { margin: 2mm; size: 80mm auto; }
+        }
+      `}</style>
     </div>
   );
 }
