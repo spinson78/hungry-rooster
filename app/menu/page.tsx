@@ -244,6 +244,7 @@ export default function MenuPage() {
   const [checkoutName, setCheckoutName] = useState("");
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [checkoutNote, setCheckoutNote] = useState("");
+  const [smsOptIn, setSmsOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<{ order_number: string } | null>(null);
   const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("pickup");
@@ -369,6 +370,7 @@ export default function MenuPage() {
         tip,
         total: cartTotal,
         special_requests: checkoutNote,
+        sms_opted_in: smsOptIn,
         fulfillment_type: fulfillment,
       }),
     });
@@ -747,9 +749,13 @@ export default function MenuPage() {
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Order Notes</label>
                 <textarea placeholder="Any notes for the kitchen..." value={checkoutNote} onChange={e => setCheckoutNote(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm resize-none h-16" />
               </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={smsOptIn} onChange={e => setSmsOptIn(e.target.checked)} className="mt-1 w-4 h-4 accent-teal-500 cursor-pointer" />
+                <span className="text-sm text-zinc-400">Text me order updates and weekly specials</span>
+              </label>
             </div>
 
-            {/* Driver Tip */}
+            {/* Driver Tip */
             <div className="mb-5">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Driver Tip (optional)</label>
               <div className="relative">

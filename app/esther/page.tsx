@@ -35,6 +35,7 @@ export default function EstherPage() {
     email: "",
     address: "",
     special_requests: "",
+    sms_opted_in: false,
   });
 
   useEffect(() => {
@@ -133,6 +134,7 @@ export default function EstherPage() {
             customer_email: form.email,
             customer_address: form.address,
             special_requests: form.special_requests,
+            sms_opted_in: form.sms_opted_in,
             items: JSON.stringify(buildItems()),
           },
         }),
@@ -291,6 +293,10 @@ export default function EstherPage() {
                   <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label>
                   <textarea placeholder="Allergies, gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" />
                 </div>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={form.sms_opted_in} onChange={(e) => setForm({ ...form, sms_opted_in: e.target.checked })} className="mt-1 w-4 h-4 accent-yellow-400 cursor-pointer" />
+                  <span className="text-sm text-zinc-400">Text me order updates and weekly specials</span>
+                </label>
               </div>
 
               {/* TIP */}

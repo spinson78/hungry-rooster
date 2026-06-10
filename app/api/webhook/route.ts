@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
         customer_phone: meta.customer_phone || "",
         customer_address: meta.customer_address || "",
         special_requests: meta.special_requests || "",
+        sms_opted_in: meta.sms_opted_in === "true",
         items,
         total,
         status: "paid",
