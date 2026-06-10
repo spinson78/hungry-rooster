@@ -145,7 +145,7 @@ export default function DinnerPage() {
                   <span className="text-sm text-zinc-400">Text me order updates and weekly specials</span>
                 </label>
               </div>
-              {/* TIP */
+              {/* TIP */}
               <div className="mt-6">
                 <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Driver Tip (optional)</label>
                 <div className="relative">

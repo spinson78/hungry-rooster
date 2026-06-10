@@ -358,7 +358,7 @@ export default function ShabbatPage() {
                 </label>
               </div>
 
-              {/* Driver Tip */
+              {/* Driver Tip */}
               <div className="mt-6">
                 <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Driver Tip (optional)</label>
                 <div className="relative">

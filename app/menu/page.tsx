@@ -755,7 +755,7 @@ export default function MenuPage() {
               </label>
             </div>
 
-            {/* Driver Tip */
+            {/* Driver Tip */}
             <div className="mb-5">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Driver Tip (optional)</label>
               <div className="relative">
