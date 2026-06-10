@@ -129,6 +129,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
       }
 
+      // Add to SMS subscribers if opted in
+      if (meta.sms_opted_in === "true" && meta.customer_phone) {
+        // Normalize to E.164
+        const digits = meta.customer_phone.replace(/\D/g, "");
+        const e164 = "+" + (digits.length === 10 ? "1" + digits : digits);
+        await supabase.from("sms_subscribers").upsert(
+          { phone: e164, name: meta.customer_name || "", source: "order", opted_in_at: new Date().toISOString(), active: true },
+          { onConflict: "phone" }
+        );
+      }
+
       // Decrement quantity remaining
       if (meta.menu_id) {
         if (order_type === "dinner") {

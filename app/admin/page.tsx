@@ -188,7 +188,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "invoices" | "banner" | "reports">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -205,12 +205,25 @@ export default function AdminPage() {
   const [blastResult, setBlastResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
   const [blastError, setBlastError] = useState("");
 
+  // SMS blast state
+  const [smsMessage, setSmsMessage] = useState("");
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsResult, setSmsResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+  const [smsError, setSmsError] = useState("");
+  const [smsSubCount, setSmsSubCount] = useState<number | null>(null);
+
   // Dinner Drop template fields
   const [dd, setDd] = useState({ intro: "", mon: "", tue: "", thu: "", note: "", ctaUrl: "https://hungry-rooster.vercel.app/dinner" });
   // Shabbat template fields
   const [sh, setSh] = useState({ protein: "", side1: "", side2: "", dessert: "", cutoff: "", price: "$65–$225", ctaUrl: "https://hungry-rooster.vercel.app/shabbat" });
   // Announcement template fields
   const [an, setAn] = useState({ headline: "", subheadline: "", body: "", ctaText: "", ctaUrl: "", closing: "" });
+
+  useEffect(() => {
+    supabase.from("sms_subscribers").select("id", { count: "exact", head: true }).eq("active", true).then(({ count }) => {
+      if (count !== null) setSmsSubCount(count);
+    });
+  }, []);
 
   const buildBlastHtml = (): string => {
     const base = (content: string) => `
@@ -686,6 +699,9 @@ export default function AdminPage() {
           <button onClick={() => { setTab("blast"); setBlastResult(null); setBlastError(""); }} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "blast" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📣 Email Blast
           </button>
+          <button onClick={() => { setTab("sms"); setSmsResult(null); setSmsError(""); }} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "sms" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            📱 SMS Blast
+          </button>
           <button onClick={() => setTab("banner")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "banner" ? "bg-blue-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🖼️ FB Banner
           </button>
@@ -1135,6 +1151,127 @@ export default function AdminPage() {
 
         {/* INVOICES TAB */}
         {tab === "invoices" && <InvoiceTab />}
+
+        {/* SMS BLAST TAB */}
+        {tab === "sms" && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl font-black mb-1">SMS Blast</h2>
+              <p className="text-zinc-500 text-sm">Send a text to everyone who opted in. Keep it under 160 characters to avoid splitting into multiple messages.</p>
+            </div>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-green-400/20 border border-green-400/30 rounded-xl px-4 py-2">
+                <p className="text-green-400 font-black text-sm">{smsSubCount !== null ? smsSubCount : "..."} subscribers</p>
+              </div>
+              <p className="text-zinc-500 text-xs">SMS opt-ins from Owner + new orders</p>
+            </div>
+
+            {/* Quick templates */}
+            <div className="mb-4">
+              <p className="text-xs text-zinc-400 uppercase tracking-wide mb-3">Quick templates</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "🍽️ Dinner Drop", text: "The Hungry Rooster: Tonight's Dinner Drop is live! Order by noon → https://hungry-rooster.vercel.app/dinner" },
+                  { label: "🕯️ Shabbat Box", text: "The Hungry Rooster: This week's Shabbat Box is ready. Order by Friday 9am → https://hungry-rooster.vercel.app/shabbat" },
+                  { label: "🥐 Bakery", text: "The Hungry Rooster: Esther's Friday Bakery is open! Order now → https://hungry-rooster.vercel.app/esther" },
+                ].map((t) => (
+                  <button
+                    key={t.label}
+                    onClick={() => setSmsMessage(t.text)}
+                    className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-500 text-zinc-300 text-sm font-bold px-4 py-2 rounded-full transition-colors"
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Composer */}
+            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-zinc-400 uppercase tracking-wide">Message</label>
+                <span className={`text-xs font-bold ${smsMessage.length > 160 ? "text-red-400" : smsMessage.length > 140 ? "text-yellow-400" : "text-zinc-500"}`}>
+                  {smsMessage.length} / 160
+                </span>
+              </div>
+              <textarea
+                rows={4}
+                value={smsMessage}
+                onChange={(e) => setSmsMessage(e.target.value)}
+                placeholder={"The Hungry Rooster: Your message here. Keep it short and include a link.\n\nTip: Always start with 'The Hungry Rooster:' so people know who it's from."}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-green-400 text-sm resize-none"
+              />
+              {smsMessage.length > 160 && (
+                <p className="text-red-400 text-xs mt-2">⚠ Over 160 characters — this will send as {Math.ceil(smsMessage.length / 153)} messages per recipient and cost more.</p>
+              )}
+            </div>
+
+            {/* Preview */}
+            {smsMessage.trim() && (
+              <div className="mb-6">
+                <p className="text-xs text-zinc-400 uppercase tracking-wide mb-3">Preview</p>
+                <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 max-w-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-black font-black text-xs">THR</div>
+                    <div>
+                      <p className="text-white text-xs font-bold">The Hungry Rooster</p>
+                      <p className="text-zinc-500 text-xs">SMS</p>
+                    </div>
+                  </div>
+                  <div className="bg-zinc-800 rounded-2xl rounded-tl-sm px-4 py-3">
+                    <p className="text-white text-sm whitespace-pre-wrap">{smsMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {smsError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4">
+                <p className="text-red-400 text-sm font-bold">{smsError}</p>
+              </div>
+            )}
+
+            {smsResult && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-4 mb-4">
+                <p className="text-green-400 font-black text-lg mb-1">Texts sent! 🐓</p>
+                <p className="text-zinc-300 text-sm">{smsResult.sent} messages sent successfully{smsResult.failed > 0 ? `, ${smsResult.failed} failed` : ""}.</p>
+              </div>
+            )}
+
+            <button
+              onClick={async () => {
+                if (!smsMessage.trim()) { setSmsError("Write a message first."); return; }
+                const confirmed = window.confirm(`Send to all ${smsSubCount} SMS subscribers?
+
+"${smsMessage}"
+
+This cannot be undone.`);
+                if (!confirmed) return;
+                setSmsSending(true);
+                setSmsError("");
+                setSmsResult(null);
+                try {
+                  const res = await fetch("/api/sms-blast", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: smsMessage, password: "fredapproves" }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setSmsResult(data);
+                    setSmsMessage("");
+                  } else { setSmsError(data.error || "Something went wrong."); }
+                } catch { setSmsError("Network error — try again."); }
+                finally { setSmsSending(false); }
+              }}
+              disabled={smsSending || !smsMessage.trim()}
+              className="w-full bg-green-500 hover:bg-green-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {smsSending ? "Sending..." : `Send to ${smsSubCount ?? "..."} subscribers`}
+            </button>
+          </div>
+        )}
 
         {/* BANNER TAB */}
         {tab === "banner" && <BannerTab />}
