@@ -96,22 +96,24 @@ export default function InvoiceTab() {
     setForm(f => ({ ...f, line_items: f.line_items.map(i => i.id === id ? { ...i, [field]: val } : i) }));
   };
 
-  const nextInvoiceNumber = () => {
-    const year = new Date().getFullYear();
-    const prefix = `THR-${year}-`;
-    const thisYear = invoices.filter(i => i.invoice_number.startsWith(prefix));
-    const maxNum = thisYear.reduce((max, inv) => {
-      const n = parseInt(inv.invoice_number.replace(prefix, ""), 10);
-      return isNaN(n) ? max : Math.max(max, n);
-    }, 0);
-    return `${prefix}${String(maxNum + 1).padStart(3, "0")}`;
-  };
-
   const handleSave = async (sendAfter = false) => {
     setSaving(true);
     setActionMsg("");
     try {
-    const invoice_number = nextInvoiceNumber();
+    // Always fetch fresh from DB before generating number — avoids stale state after delete
+    const { data: freshData } = await supabase
+      .from("invoices")
+      .select("invoice_number")
+      .order("created_at", { ascending: false });
+    const freshInvoices = (freshData as { invoice_number: string }[]) || [];
+    const year = new Date().getFullYear();
+    const prefix = `THR-${year}-`;
+    const thisYear = freshInvoices.filter(i => i.invoice_number?.startsWith(prefix));
+    const maxNum = thisYear.reduce((max, inv) => {
+      const n = parseInt(inv.invoice_number.replace(prefix, ""), 10);
+      return isNaN(n) ? max : Math.max(max, n);
+    }, 0);
+    const invoice_number = `${prefix}${String(maxNum + 1).padStart(3, "0")}`;
 
     const payload = {
       invoice_number,
@@ -619,6 +621,18 @@ export default function InvoiceTab() {
             <button
               onClick={handleDelete}
               className="w-full text-red-500 hover:text-red-400 border border-red-500/30 hover:border-red-400/50 font-black py-3 rounded-full text-sm transition-colors"
+            >
+              Delete Invoice
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+ver:text-red-400 border border-red-500/30 hover:border-red-400/50 font-black py-3 rounded-full text-sm transition-colors"
             >
               Delete Invoice
             </button>

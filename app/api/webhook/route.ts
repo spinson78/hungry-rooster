@@ -108,30 +108,40 @@ export async function POST(req: NextRequest) {
         console.error("Notify call failed:", notifyErr);
       }
     } else {
-      // Write to orders table (dinner / shabbat)
+      // Write to orders table (dinner / shabbat / bakery)
+      const subtotal    = meta.subtotal   ? parseFloat(meta.subtotal)   : total;
+      const taxAmount   = meta.tax_amount ? parseFloat(meta.tax_amount) : 0;
+      const tipAmount   = meta.tip_amount ? parseFloat(meta.tip_amount) : 0;
+      const orderNum    = `THR-${Date.now().toString().slice(-6)}`;
+      const fulfillment = order_type === "dinner" ? "delivery" : "pickup";
+
       const { error: insertError } = await supabase.from("orders").insert({
+        order_number:      orderNum,
         order_type,
-        menu_id: meta.menu_id || null,
-        customer_name: meta.customer_name || "",
-        customer_email: meta.customer_email || "",
-        customer_phone: meta.customer_phone || "",
-        customer_address: meta.customer_address || "",
-        special_requests: meta.special_requests || "",
-        sms_opted_in: meta.sms_opted_in === "true",
+        menu_id:           meta.menu_id || null,
+        customer_name:     meta.customer_name || "",
+        customer_email:    meta.customer_email || "",
+        customer_phone:    meta.customer_phone || "",
+        customer_address:  meta.customer_address || "",
+        special_requests:  meta.special_requests || "",
+        sms_opted_in:      meta.sms_opted_in === "true",
         items,
+        subtotal,
+        tax_amount:        taxAmount,
+        tip_amount:        tipAmount,
         total,
-        status: "paid",
+        fulfillment_type:  fulfillment,
+        status:            "paid",
         stripe_session_id: session.id,
       });
 
       if (insertError) {
-        console.error("Supabase insert error:", insertError);
+        console.error("Supabase orders insert error:", JSON.stringify(insertError));
         return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
       }
 
       // Add to SMS subscribers if opted in
       if (meta.sms_opted_in === "true" && meta.customer_phone) {
-        // Normalize to E.164
         const digits = meta.customer_phone.replace(/\D/g, "");
         const e164 = "+" + (digits.length === 10 ? "1" + digits : digits);
         await supabase.from("sms_subscribers").upsert(

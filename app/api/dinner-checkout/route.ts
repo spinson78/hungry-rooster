@@ -48,9 +48,14 @@ export async function POST(req: NextRequest) {
     mode: "payment",
     success_url: `${baseUrl}/dinner/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/dinner`,
-    metadata,
+    metadata: {
+      ...metadata,
+      subtotal:   (unitAmount / 100).toFixed(2),
+      tax_amount: (taxAmount  / 100).toFixed(2),
+      tip_amount: (tipCents   / 100).toFixed(2),
+    },
     custom_text: {
-      submit: { message: "Fred is on it. We'll confirm delivery by text." },
+      submit: { message: "Fred is on it. We\'ll confirm delivery by text." },
     },
   });
 

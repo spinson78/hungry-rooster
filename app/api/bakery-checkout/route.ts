@@ -46,9 +46,14 @@ export async function POST(req: NextRequest) {
     mode: "payment",
     success_url: `${baseUrl}/esther/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/esther`,
-    metadata,
+    metadata: {
+      ...metadata,
+      subtotal:   (subtotalCents / 100).toFixed(2),
+      tax_amount: (taxCents      / 100).toFixed(2),
+      tip_amount: (tipCents      / 100).toFixed(2),
+    },
     custom_text: {
-      submit: { message: "Your Friday Bakery order will be delivered Friday. Shabbat Shalom! 🥐" },
+      submit: { message: "Your Friday Bakery order will be delivered Friday. Shabbat Shalom!" },
     },
   });
 

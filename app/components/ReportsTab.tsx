@@ -12,6 +12,13 @@ type OrderRow = {
   created_at: string;
 };
 
+type GroupOrderRow = {
+  id: string;
+  total: number;
+  status: string;
+  created_at: string;
+};
+
 type InvoiceRow = {
   id: string;
   total: number;
@@ -45,6 +52,8 @@ const TYPE_LABELS: Record<string, string> = {
   shabbat: "Shabbat Box",
   bakery:  "Esther's Bakery",
   invoice: "Catering / Invoices",
+  group_order: "Group Order",
+  catering: "Catering (Direct)",
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -53,6 +62,8 @@ const TYPE_COLOR: Record<string, string> = {
   shabbat: "text-yellow-400",
   bakery:  "text-orange-400",
   invoice: "text-purple-400",
+  group_order: "text-blue-400",
+  catering: "text-purple-400",
 };
 
 function getWeekStart(date: Date): string {
@@ -100,6 +111,7 @@ const fmt = (n: number) => `$${Number(n).toFixed(2)}`;
 
 export default function ReportsTab() {
   const [orders,   setOrders]   = useState<OrderRow[]>([]);
+  const [groupOrders, setGroupOrders] = useState<GroupOrderRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [range,    setRange]    = useState<Range>("month");
@@ -107,7 +119,7 @@ export default function ReportsTab() {
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
-      const [{ data: orderData }, { data: invoiceData }] = await Promise.all([
+      const [{ data: orderData }, { data: invoiceData }, { data: groupData }] = await Promise.all([
         supabase
           .from("orders")
           .select("id, order_type, total, tax_amount, tip_amount, status, created_at")
@@ -117,9 +129,14 @@ export default function ReportsTab() {
           .select("id, total, tax_amount, status, paid_at, created_at")
           .eq("status", "paid")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("group_orders")
+          .select("id, total, status, created_at")
+          .order("created_at", { ascending: false }),
       ]);
       setOrders((orderData as OrderRow[]) || []);
       setInvoices((invoiceData as InvoiceRow[]) || []);
+      setGroupOrders((groupData as GroupOrderRow[]) || []);
       setLoading(false);
     };
     fetchAll();
@@ -143,7 +160,15 @@ export default function ReportsTab() {
       tip:   0,
       date:  i.paid_at || i.created_at,
     })),
-  ], [orders, invoices]);
+    ...groupOrders.map(g => ({
+      id:    g.id,
+      type:  "group_order",
+      total: Number(g.total) || 0,
+      tax:   0,
+      tip:   0,
+      date:  g.created_at,
+    })),
+  ], [orders, invoices, groupOrders]);
 
   // Date-filtered rows
   const filtered = useMemo(() => {
