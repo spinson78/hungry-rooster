@@ -632,15 +632,3 @@ export default function InvoiceTab() {
 
   return null;
 }
-ver:text-red-400 border border-red-500/30 hover:border-red-400/50 font-black py-3 rounded-full text-sm transition-colors"
-            >
-              Delete Invoice
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return null;
-}
