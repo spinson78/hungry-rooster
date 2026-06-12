@@ -391,7 +391,7 @@ export default function ShabbatPage() {
       {/* Bakery Upsell Modal */}
       {showBakeryUpsell && bakeryMenu && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="text-4xl mb-4">🥐</div>
             <h2 className="text-2xl font-black mb-1">Is your Shabbat table complete?</h2>
             <p className="text-zinc-300 font-bold mb-1">What about Kiddush?</p>
