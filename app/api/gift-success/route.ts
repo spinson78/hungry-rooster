@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
@@ -269,6 +269,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unknown gift type" }, { status: 400 });
   } catch (err) {
     console.error("Gift success error:", err);
-    return NextResponse.json({ error: "Failed to process gift" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to process gift" }, { status: 500 });
   }
 }
