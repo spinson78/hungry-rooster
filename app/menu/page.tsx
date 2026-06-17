@@ -256,6 +256,11 @@ export default function MenuPage() {
   const [deliveryFeeMsg, setDeliveryFeeMsg] = useState("");
   const [deliveryFeeErr, setDeliveryFeeErr] = useState("");
   const [checkingDelivery, setCheckingDelivery] = useState(false);
+  const [giftCode, setGiftCode] = useState("");
+  const [giftDiscount, setGiftDiscount] = useState(0);
+  const [giftCodeMsg, setGiftCodeMsg] = useState("");
+  const [giftCodeErr, setGiftCodeErr] = useState("");
+  const [checkingGift, setCheckingGift] = useState(false);
 
   const categories = Object.keys(menu);
 
@@ -380,7 +385,30 @@ export default function MenuPage() {
   const cartSubtotal = cart.reduce((sum, item) => sum + item.unit_price * item.qty, 0);
   const cartTax = cartSubtotal * TAX_RATE;
   const deliveryFeeAmount = fulfillment === "delivery" ? (deliveryFee ?? 0) : 0;
-  const cartTotal = cartSubtotal + cartTax + deliveryFeeAmount + (Number(tipAmount) || 0);
+  const cartTotal = Math.max(0, cartSubtotal + cartTax + deliveryFeeAmount + (Number(tipAmount) || 0) - giftDiscount);
+
+  const applyGiftCard = async () => {
+    if (!giftCode.trim()) return;
+    setCheckingGift(true);
+    setGiftCodeMsg("");
+    setGiftCodeErr("");
+    try {
+      const res = await fetch(`/api/gift-validate?code=${encodeURIComponent(giftCode.trim().toUpperCase())}`);
+      const data = await res.json();
+      if (data.valid) {
+        const rawTotal = cartSubtotal + cartTax + deliveryFeeAmount + (Number(tipAmount) || 0);
+        const discount = Math.min(parseFloat(data.balance), rawTotal);
+        setGiftDiscount(discount);
+        setGiftCodeMsg(`✓ $${parseFloat(data.balance).toFixed(2)} available — $${discount.toFixed(2)} applied`);
+      } else {
+        setGiftCodeErr(data.message || "Invalid gift card");
+        setGiftDiscount(0);
+      }
+    } catch {
+      setGiftCodeErr("Could not validate gift card. Try again.");
+    }
+    setCheckingGift(false);
+  };
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const hasDrink = cart.some((item) => ["Coke","Diet Coke","Dr Pepper","Root Beer","Sprite","Sunkist","Sweet Tea","Water"].includes(item.name));
@@ -434,11 +462,24 @@ export default function MenuPage() {
     const data = await res.json();
     setSubmitting(false);
     if (data.success) {
+      // Redeem gift card if one was applied
+      if (giftDiscount > 0 && giftCode.trim()) {
+        try {
+          await fetch("/api/gift-validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: giftCode.trim().toUpperCase(), deductCents: Math.round(giftDiscount * 100) }),
+          });
+        } catch { /* non-fatal */ }
+      }
       setCart([]);
       setCheckoutOpen(false);
       setTipAmount(0);
       setDeliveryAddress("");
       setFulfillment("pickup");
+      setGiftCode("");
+      setGiftDiscount(0);
+      setGiftCodeMsg("");
       setConfirmed({ order_number: data.order_number });
     }
   };
@@ -872,6 +913,29 @@ export default function MenuPage() {
               </div>
             </div>
 
+            {/* Gift Card */}
+            <div className="mb-5">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Gift Card (optional)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="THR-XXXX-XXXX"
+                  value={giftCode}
+                  onChange={(e) => { setGiftCode(e.target.value.toUpperCase()); setGiftCodeMsg(""); setGiftCodeErr(""); setGiftDiscount(0); }}
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm font-mono"
+                />
+                <button
+                  onClick={applyGiftCard}
+                  disabled={checkingGift || !giftCode.trim()}
+                  className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black px-4 rounded-xl text-sm transition-colors"
+                >
+                  {checkingGift ? "..." : "Apply"}
+                </button>
+              </div>
+              {giftCodeMsg && <p className="text-yellow-400 text-xs mt-1">{giftCodeMsg}</p>}
+              {giftCodeErr && <p className="text-red-400 text-xs mt-1">{giftCodeErr}</p>}
+            </div>
+
             {/* Order Summary */}
             <div className="bg-zinc-800 rounded-xl p-4 mb-5 space-y-1.5 text-sm">
               <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
@@ -880,6 +944,9 @@ export default function MenuPage() {
                 <div className="flex justify-between text-zinc-400"><span>Delivery Fee</span><span>${deliveryFeeAmount.toFixed(2)}</span></div>
               )}
               {(Number(tipAmount) || 0) > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${(Number(tipAmount)).toFixed(2)}</span></div>}
+              {giftDiscount > 0 && (
+                <div className="flex justify-between text-yellow-400"><span>🎁 Gift Card</span><span>−${giftDiscount.toFixed(2)}</span></div>
+              )}
               <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-1">
                 <span>Total</span>
                 <span>${cartTotal.toFixed(2)}</span>

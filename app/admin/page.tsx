@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import InvoiceTab from "@/app/components/InvoiceTab";
 import ReportsTab from "@/app/components/ReportsTab";
 import OrdersLogTab from "@/app/components/OrdersLogTab";
+import GiftsTab from "@/app/components/GiftsTab";
 
 function BannerTab() {
   const [weekDate, setWeekDate] = useState("");
@@ -709,6 +710,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("reports")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "reports" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📊 Reports
           </button>
+          <button onClick={() => setTab("gifts")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "gifts" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🎁 Gifts
+          </button>
           <button onClick={() => setTab("orders-log")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "orders-log" ? "bg-white text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📋 Orders Log
           </button>
@@ -1281,6 +1285,9 @@ This cannot be undone.`);
         {tab === "banner" && <BannerTab />}
 
         {tab === "reports" && <ReportsTab />}
+
+        {/* GIFTS TAB */}
+        {tab === "gifts" && <GiftsTab />}
 
         {/* ORDERS LOG TAB */}
         {tab === "orders-log" && <OrdersLogTab />}
