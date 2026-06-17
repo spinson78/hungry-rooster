@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 // ── PACKAGES (24hr notice, no minimum) ───────────────────────────────────────
@@ -204,6 +204,32 @@ export default function CateringPage() {
     }
     setChecking(false);
   };
+
+  // Auto-calculate delivery fee for à la carte form (handles autofill & typing)
+  useEffect(() => {
+    if (!alcForm.address.trim() || !alcForm.address_city.trim()) {
+      setAlcDelivFee(null); setAlcDelivDist(null); setAlcDelivMsg(""); setAlcDelivErr("");
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkDeliveryFee(`${alcForm.address.trim()}, ${alcForm.address_city.trim()}`, "alc");
+    }, 800);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alcForm.address, alcForm.address_city]);
+
+  // Auto-calculate delivery fee for package form (handles autofill & typing)
+  useEffect(() => {
+    if (!pkgForm.address.trim() || !pkgForm.address_city.trim()) {
+      setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkDeliveryFee(`${pkgForm.address.trim()}, ${pkgForm.address_city.trim()}`, "pkg");
+    }, 800);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pkgForm.address, pkgForm.address_city]);
 
   const alcCategory = ALC_CATEGORIES.find(c => c.id === alcCat)!;
   const cartSubtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);

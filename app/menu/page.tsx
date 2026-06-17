@@ -358,6 +358,24 @@ export default function MenuPage() {
     setCheckingDelivery(false);
   };
 
+  // Auto-calculate delivery fee whenever both address fields are populated.
+  // Fires on typing, paste, AND browser autofill — no manual blur needed.
+  useEffect(() => {
+    if (fulfillment !== "delivery") return;
+    if (!deliveryAddress.trim() || !deliveryCityZip.trim()) {
+      setDeliveryFee(null);
+      setDeliveryDistance(null);
+      setDeliveryFeeMsg("");
+      setDeliveryFeeErr("");
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkDeliveryFee(`${deliveryAddress.trim()}, ${deliveryCityZip.trim()}`);
+    }, 800);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deliveryAddress, deliveryCityZip, fulfillment]);
+
   const TAX_RATE = 0.0825;
   const cartSubtotal = cart.reduce((sum, item) => sum + item.unit_price * item.qty, 0);
   const cartTax = cartSubtotal * TAX_RATE;
@@ -873,10 +891,16 @@ export default function MenuPage() {
             )}
             <button
               onClick={submitOrder}
-              disabled={submitting || !checkoutName.trim() || (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) || (fulfillment === "delivery" && !!deliveryFeeErr)}
+              disabled={
+                submitting ||
+                !checkoutName.trim() ||
+                (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) ||
+                (fulfillment === "delivery" && !!deliveryFeeErr) ||
+                (fulfillment === "delivery" && deliveryAddress.trim().length > 0 && deliveryCityZip.trim().length > 0 && deliveryFee === null)
+              }
               className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50"
             >
-              {submitting ? "Placing order..." : `Place Order — $${cartTotal.toFixed(2)}`}
+              {checkingDelivery ? "Checking delivery..." : submitting ? "Placing order..." : `Place Order — $${cartTotal.toFixed(2)}`}
             </button>
           </div>
         </div>
