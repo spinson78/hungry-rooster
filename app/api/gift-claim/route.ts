@@ -7,8 +7,6 @@ const supabase = createClient(
 );
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
-
 // GET /api/gift-claim?code=DINNER-XXXX — fetch gift details
 export async function GET(req: NextRequest) {
   const code = new URL(req.url).searchParams.get("code")?.toUpperCase().trim();
