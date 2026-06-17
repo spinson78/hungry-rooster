@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const tipCents = tipAmount ? Math.round(tipAmount * 100) : 0;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+  const lineItems = [
     {
       price_data: {
         currency: "usd",
