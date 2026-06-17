@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import InvoiceTab from "@/app/components/InvoiceTab";
 import ReportsTab from "@/app/components/ReportsTab";
+import OrdersLogTab from "@/app/components/OrdersLogTab";
 
 function BannerTab() {
   const [weekDate, setWeekDate] = useState("");
@@ -188,7 +189,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -707,6 +708,9 @@ export default function AdminPage() {
           </button>
           <button onClick={() => setTab("reports")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "reports" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📊 Reports
+          </button>
+          <button onClick={() => setTab("orders-log")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "orders-log" ? "bg-white text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            📋 Orders Log
           </button>
         </div>
 
@@ -1277,6 +1281,9 @@ This cannot be undone.`);
         {tab === "banner" && <BannerTab />}
 
         {tab === "reports" && <ReportsTab />}
+
+        {/* ORDERS LOG TAB */}
+        {tab === "orders-log" && <OrdersLogTab />}
 
         {/* ORDER TABS */}
         {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}

@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// The Hungry Rooster — 1499 Regal Row, Dallas TX 75060
-const THR_LAT = 32.8576;
-const THR_LNG = -96.9163;
+// The Hungry Rooster origin — used as the driving start point
+const THR_ORIGIN = "1499 Regal Row, Dallas, TX 75247";
 
 const BASE_FEE = 7.99;
 const BASE_MILES = 15;
 const OVERAGE_RATE = 0.5;
 const MAX_MILES = 30;
-
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3958.8; // Earth radius in miles
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 function calcDeliveryFee(miles: number): number {
   if (miles <= BASE_MILES) return BASE_FEE;
@@ -34,49 +21,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Address required" }, { status: 400 });
     }
 
-    const query = encodeURIComponent(address.trim());
-    const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=us`;
-
-    const geoRes = await fetch(nominatimUrl, {
-      headers: {
-        "User-Agent": "TheHungryRooster/1.0 (thehungryroostertx.com)",
-        "Accept-Language": "en-US",
-      },
-    });
-
-    if (!geoRes.ok) {
-      return NextResponse.json({ error: "Geocoding service unavailable" }, { status: 503 });
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "Delivery distance service not configured" }, { status: 500 });
     }
 
-    const geoData = await geoRes.json();
+    const origin = encodeURIComponent(THR_ORIGIN);
+    const destination = encodeURIComponent(address.trim());
+    const url =
+      `https://maps.googleapis.com/maps/api/distancematrix/json` +
+      `?origins=${origin}&destinations=${destination}` +
+      `&units=imperial&key=${apiKey}`;
 
-    if (!Array.isArray(geoData) || geoData.length === 0) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      return NextResponse.json({ error: "Routing service unavailable" }, { status: 503 });
+    }
+
+    const data = await res.json();
+
+    // Check top-level status
+    if (data.status !== "OK") {
+      return NextResponse.json(
+        { error: "Could not calculate distance. Check the address and try again." },
+        { status: 422 }
+      );
+    }
+
+    const element = data.rows?.[0]?.elements?.[0];
+
+    if (!element || element.status !== "OK") {
       return NextResponse.json(
         { error: "Address not found. Please enter a full street address including city and state." },
         { status: 422 }
       );
     }
 
-    const { lat, lon } = geoData[0];
-    const distance = haversineDistance(THR_LAT, THR_LNG, parseFloat(lat), parseFloat(lon));
-    const roundedDist = parseFloat(distance.toFixed(1));
+    // Google returns distance in meters
+    const distanceMeters = element.distance.value;
+    const distanceMiles = parseFloat((distanceMeters / 1609.34).toFixed(1));
 
-    if (distance > MAX_MILES) {
+    if (distanceMiles > MAX_MILES) {
       return NextResponse.json({
         inRange: false,
-        distance: roundedDist,
+        distance: distanceMiles,
         fee: null,
-        message: `Your address is ${roundedDist} miles away — outside our 30-mile delivery radius.`,
+        message: `Your address is ${distanceMiles} driving miles away — outside our 30-mile delivery area.`,
       });
     }
 
-    const fee = calcDeliveryFee(distance);
+    const fee = calcDeliveryFee(distanceMiles);
     const message =
-      distance <= BASE_MILES
-        ? `Delivery fee: $${fee.toFixed(2)}`
-        : `Delivery fee: $${fee.toFixed(2)} (${roundedDist} mi)`;
+      distanceMiles <= BASE_MILES
+        ? `Delivery fee: $${fee.toFixed(2)} (${distanceMiles} mi)`
+        : `Delivery fee: $${fee.toFixed(2)} (${distanceMiles} mi — $0.50/mi over 15)`;
 
-    return NextResponse.json({ inRange: true, distance: roundedDist, fee, message });
+    return NextResponse.json({ inRange: true, distance: distanceMiles, fee, message });
   } catch (err) {
     console.error("Delivery fee error:", err);
     return NextResponse.json({ error: "Failed to calculate delivery fee" }, { status: 500 });

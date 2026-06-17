@@ -122,12 +122,20 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
 
       {/* Status badge */}
       <div className="flex items-center gap-3 flex-wrap">
-        <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
-          {order.order_type === "menu" ? "Walk-in" : order.order_type}
-        </span>
-        {order.fulfillment_type === "delivery" && (
-          <span className="text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">
-            🚗 Delivery
+        {/* For menu orders, show Delivery or Pickup instead of "Walk-in" */}
+        {order.order_type === "menu" ? (
+          order.fulfillment_type === "delivery" ? (
+            <span className="text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">
+              🚗 Delivery
+            </span>
+          ) : (
+            <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR.menu}`}>
+              🥡 Pickup
+            </span>
+          )
+        ) : (
+          <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
+            {order.order_type}
           </span>
         )}
         {isNew && <span className="text-base font-black text-yellow-400 animate-pulse">● NEW</span>}
