@@ -22,6 +22,8 @@ type Order = {
   order_number?: string;
   customer_name: string;
   customer_phone: string;
+  customer_address?: string;
+  fulfillment_type?: string;
   items: OrderItem[];
   total: number;
   special_requests: string;
@@ -110,11 +112,24 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
         </div>
       </div>
 
+      {/* Delivery address — shown prominently for delivery orders */}
+      {order.fulfillment_type === "delivery" && order.customer_address && order.customer_address !== "Pickup" && (
+        <div className="bg-blue-500/20 border-2 border-blue-400/40 rounded-2xl px-4 py-3">
+          <p className="text-blue-300 font-black text-xs uppercase tracking-widest mb-1">🚗 Deliver to</p>
+          <p className="text-white font-black text-lg leading-snug">{order.customer_address}</p>
+        </div>
+      )}
+
       {/* Status badge */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
           {order.order_type === "menu" ? "Walk-in" : order.order_type}
         </span>
+        {order.fulfillment_type === "delivery" && (
+          <span className="text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">
+            🚗 Delivery
+          </span>
+        )}
         {isNew && <span className="text-base font-black text-yellow-400 animate-pulse">● NEW</span>}
         {isStarted && <span className="text-base font-black text-teal-400">● IN PROGRESS</span>}
         {urgent && <span className="text-base font-black text-red-400">⚠ URGENT</span>}
@@ -316,6 +331,12 @@ export default function KDSPage() {
             <span style={{ fontSize: "10px", textTransform: "uppercase" }}>{printOrder.order_type === "menu" ? "Walk-in" : printOrder.order_type}</span>
           </div>
           {printOrder.customer_phone && <p style={{ fontSize: "10px" }}>{printOrder.customer_phone}</p>}
+          {printOrder.fulfillment_type === "delivery" && printOrder.customer_address && printOrder.customer_address !== "Pickup" && (
+            <>
+              <p style={{ fontWeight: "bold", fontSize: "11px", marginTop: "3px" }}>🚗 DELIVER TO:</p>
+              <p style={{ fontSize: "11px" }}>{printOrder.customer_address}</p>
+            </>
+          )}
           <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
           {printOrder.items.map((item, i) => (
             <div key={i} style={{ marginBottom: "7px" }}>
