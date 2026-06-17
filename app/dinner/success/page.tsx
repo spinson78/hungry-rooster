@@ -22,6 +22,7 @@ export default function DinnerSuccessPage() {
         const data = await res.json();
         if (!data.success) { setStatus("error"); return; }
         setCustomerName(data.customer_name);
+        const orderQuantity: number = data.quantity || 1;
 
         // Check if webhook already recorded this order (idempotency)
         const { data: existing } = await supabase
@@ -47,7 +48,9 @@ export default function DinnerSuccessPage() {
           if (data.menu_id) {
             const { data: menuData } = await supabase.from("dinner_menus").select("quantity_remaining").eq("id", data.menu_id).single();
             if (menuData && menuData.quantity_remaining > 0) {
-              await supabase.from("dinner_menus").update({ quantity_remaining: menuData.quantity_remaining - 1 }).eq("id", data.menu_id);
+              await supabase.from("dinner_menus").update({
+                quantity_remaining: Math.max(0, menuData.quantity_remaining - orderQuantity)
+              }).eq("id", data.menu_id);
             }
           }
           await fetch("/api/notify", {

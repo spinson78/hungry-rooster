@@ -249,7 +249,13 @@ export default function MenuPage() {
   const [confirmed, setConfirmed] = useState<{ order_number: string } | null>(null);
   const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryCityZip, setDeliveryCityZip] = useState("");
   const [tipAmount, setTipAmount] = useState<number>(0);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
+  const [deliveryFeeMsg, setDeliveryFeeMsg] = useState("");
+  const [deliveryFeeErr, setDeliveryFeeErr] = useState("");
+  const [checkingDelivery, setCheckingDelivery] = useState(false);
 
   const categories = Object.keys(menu);
 
@@ -325,10 +331,38 @@ export default function MenuPage() {
     setCart(prev => prev.filter((_, i) => i !== index));
   };
 
+  const checkDeliveryFee = async (address: string) => {
+    if (!address.trim() || address.trim().length < 10) return;
+    setCheckingDelivery(true);
+    setDeliveryFeeErr("");
+    setDeliveryFeeMsg("");
+    try {
+      const res = await fetch("/api/delivery-fee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
+      });
+      const data = await res.json();
+      if (!data.inRange || data.error) {
+        setDeliveryFeeErr(data.message || data.error || "Outside our delivery radius (30 miles max).");
+        setDeliveryFee(null);
+        setDeliveryDistance(null);
+      } else {
+        setDeliveryFee(data.fee);
+        setDeliveryDistance(data.distance ?? null);
+        setDeliveryFeeMsg(data.message || "");
+      }
+    } catch {
+      setDeliveryFeeErr("Couldn't verify address. Please enter a full street address.");
+    }
+    setCheckingDelivery(false);
+  };
+
   const TAX_RATE = 0.0825;
   const cartSubtotal = cart.reduce((sum, item) => sum + item.unit_price * item.qty, 0);
   const cartTax = cartSubtotal * TAX_RATE;
-  const cartTotal = cartSubtotal + cartTax + (Number(tipAmount) || 0);
+  const deliveryFeeAmount = fulfillment === "delivery" ? (deliveryFee ?? 0) : 0;
+  const cartTotal = cartSubtotal + cartTax + deliveryFeeAmount + (Number(tipAmount) || 0);
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const hasDrink = cart.some((item) => ["Coke","Diet Coke","Dr Pepper","Root Beer","Sprite","Sunkist","Sweet Tea","Water"].includes(item.name));
@@ -344,9 +378,12 @@ export default function MenuPage() {
     }
   };
 
+  const fullDeliveryAddress = `${deliveryAddress.trim()}, ${deliveryCityZip.trim()}`.replace(/^,\s*|,\s*$/, "");
+
   const submitOrder = async () => {
     if (!checkoutName.trim()) return;
-    if (fulfillment === "delivery" && !deliveryAddress.trim()) return;
+    if (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) return;
+    if (fulfillment === "delivery" && deliveryFeeErr) return;
     setSubmitting(true);
     const items = cart.map(item => ({
       name: item.name,
@@ -363,10 +400,12 @@ export default function MenuPage() {
       body: JSON.stringify({
         customer_name: checkoutName,
         customer_phone: checkoutPhone,
-        customer_address: fulfillment === "delivery" ? deliveryAddress : "Pickup",
+        customer_address: fulfillment === "delivery" ? fullDeliveryAddress : "Pickup",
         items,
         subtotal: cartSubtotal,
         tax: cartTax,
+        delivery_fee: deliveryFeeAmount,
+        delivery_distance_miles: fulfillment === "delivery" ? (deliveryDistance ?? 0) : 0,
         tip,
         total: cartTotal,
         special_requests: checkoutNote,
@@ -723,7 +762,17 @@ export default function MenuPage() {
                 {(["pickup", "delivery"] as const).map(type => (
                   <button
                     key={type}
-                    onClick={() => setFulfillment(type)}
+                    onClick={() => {
+                      setFulfillment(type);
+                      if (type === "pickup") {
+                        setDeliveryAddress("");
+                        setDeliveryCityZip("");
+                        setDeliveryFee(null);
+                        setDeliveryDistance(null);
+                        setDeliveryFeeMsg("");
+                        setDeliveryFeeErr("");
+                      }
+                    }}
                     className={`flex-1 py-2.5 rounded-full font-black text-sm border transition-colors ${fulfillment === type ? "bg-yellow-400 border-yellow-400 text-black" : "border-zinc-700 text-zinc-400 hover:text-white"}`}
                   >
                     {type === "pickup" ? "🏪 Pickup" : "🚗 Delivery"}
@@ -731,7 +780,48 @@ export default function MenuPage() {
                 ))}
               </div>
               {fulfillment === "delivery" && (
-                <input type="text" placeholder="Delivery address" value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm mt-3" />
+                <div className="mt-3 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Street address (e.g. 1234 Main St, Apt 2)"
+                    value={deliveryAddress}
+                    onChange={e => {
+                      setDeliveryAddress(e.target.value);
+                      setDeliveryFee(null);
+                      setDeliveryDistance(null);
+                      setDeliveryFeeMsg("");
+                      setDeliveryFeeErr("");
+                    }}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="City, State, ZIP (e.g. Dallas, TX 75201)"
+                    value={deliveryCityZip}
+                    onChange={e => {
+                      setDeliveryCityZip(e.target.value);
+                      setDeliveryFee(null);
+                      setDeliveryDistance(null);
+                      setDeliveryFeeMsg("");
+                      setDeliveryFeeErr("");
+                    }}
+                    onBlur={e => {
+                      if (deliveryAddress.trim() && e.target.value.trim()) {
+                        checkDeliveryFee(`${deliveryAddress.trim()}, ${e.target.value.trim()}`);
+                      }
+                    }}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm"
+                  />
+                  {checkingDelivery && (
+                    <p className="text-zinc-500 text-xs">Checking delivery range...</p>
+                  )}
+                  {!checkingDelivery && deliveryFeeMsg && (
+                    <p className="text-teal-400 text-xs">✓ {deliveryFeeMsg}</p>
+                  )}
+                  {!checkingDelivery && deliveryFeeErr && (
+                    <p className="text-red-400 text-xs">✗ {deliveryFeeErr}</p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -768,6 +858,9 @@ export default function MenuPage() {
             <div className="bg-zinc-800 rounded-xl p-4 mb-5 space-y-1.5 text-sm">
               <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
               <div className="flex justify-between text-zinc-400"><span>Tax (8.25%)</span><span>${cartTax.toFixed(2)}</span></div>
+              {fulfillment === "delivery" && deliveryFeeAmount > 0 && (
+                <div className="flex justify-between text-zinc-400"><span>Delivery Fee</span><span>${deliveryFeeAmount.toFixed(2)}</span></div>
+              )}
               {(Number(tipAmount) || 0) > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${(Number(tipAmount)).toFixed(2)}</span></div>}
               <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-1">
                 <span>Total</span>
@@ -775,9 +868,12 @@ export default function MenuPage() {
               </div>
             </div>
 
+            {fulfillment === "delivery" && deliveryFeeErr && (
+              <p className="text-red-400 text-xs mb-3">✗ {deliveryFeeErr}</p>
+            )}
             <button
               onClick={submitOrder}
-              disabled={submitting || !checkoutName.trim() || (fulfillment === "delivery" && !deliveryAddress.trim())}
+              disabled={submitting || !checkoutName.trim() || (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) || (fulfillment === "delivery" && !!deliveryFeeErr)}
               className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50"
             >
               {submitting ? "Placing order..." : `Place Order — $${cartTotal.toFixed(2)}`}

@@ -1,0 +1,31 @@
+# systemd service — makes the print daemon start automatically on boot
+#
+# Install on the Pi:
+#   sudo cp thr-printer.service /etc/systemd/system/
+#   sudo systemctl enable thr-printer
+#   sudo systemctl start thr-printer
+#
+# Check status:
+#   sudo systemctl status thr-printer
+#
+# View logs:
+#   journalctl -u thr-printer -f
+
+[Unit]
+Description=THR Print Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi
+ExecStartPre=/usr/bin/rfcomm bind /dev/rfcomm0 00:11:62:4C:17:46 1
+ExecStart=/usr/bin/python3 /home/pi/print_daemon.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

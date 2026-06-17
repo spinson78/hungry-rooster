@@ -1,0 +1,114 @@
+====================================================
+  THR Pi Zero 2 W — Setup Commands (Windows laptop)
+====================================================
+
+STEP 1 — Flash the SD card (on your Windows laptop)
+-----------------------------------------------------
+1. Download Raspberry Pi Imager: https://raspberrypi.com/software/
+2. Insert SD card
+3. Open Imager → Choose Device: "Raspberry Pi Zero 2 W"
+4. Choose OS: "Raspberry Pi OS Lite (64-bit)"  ← no desktop needed
+5. Choose Storage: your SD card
+6. Click the gear icon (⚙) BEFORE hitting Write to set:
+     Hostname:  hungry-rooster
+     Username:  pi
+     Password:  (pick something — you'll need it to SSH in)
+     WiFi SSID: (your restaurant WiFi name)
+     WiFi Pass: (your restaurant WiFi password)
+     Enable SSH: YES (checked)
+7. Click Save → Write → wait ~5 min
+
+
+STEP 2 — Boot the Pi
+---------------------
+1. Eject SD card, insert into Pi Zero 2 W
+2. Plug USB OTG adapter into the Pi's DATA port (not the PWR port)
+3. Connect thermal printer USB to the OTG adapter
+4. Plug in power to the PWR port
+5. Wait 60 seconds for first boot
+
+
+STEP 3 — SSH in from Windows laptop
+-------------------------------------
+Open Command Prompt (cmd) or PowerShell and run:
+
+  ssh pi@hungry-rooster.local
+
+Type 'yes' when asked about fingerprint, then enter the password you set.
+
+If hungry-rooster.local doesn't work, try finding the IP on your router
+admin page, then: ssh pi@192.168.X.X
+
+
+STEP 4 — Install dependencies on the Pi
+-----------------------------------------
+Run these commands one at a time after SSH'ing in:
+
+  sudo apt update && sudo apt upgrade -y
+  sudo apt install -y python3-pip python3-usb libusb-1.0-0
+  pip3 install supabase python-escpos
+
+
+STEP 5 — Add printer USB permissions
+--------------------------------------
+  sudo nano /etc/udev/rules.d/99-star-printer.rules
+
+Paste this line:
+  SUBSYSTEM=="usb", ATTR{idVendor}=="0519", ATTR{idProduct}=="0003", MODE="0666"
+
+Save: Ctrl+O → Enter → Ctrl+X
+
+Then reload:
+  sudo udevadm control --reload-rules && sudo udevadm trigger
+
+
+STEP 6 — Copy the print daemon onto the Pi
+-------------------------------------------
+On your Windows laptop, open a NEW Command Prompt window and run:
+
+  scp C:\path\to\hungry-rooster\scripts\print_daemon.py pi@hungry-rooster.local:/home/pi/print_daemon.py
+
+(Replace C:\path\to\hungry-rooster with wherever the project folder is)
+
+
+STEP 7 — Edit the script with your Supabase credentials
+---------------------------------------------------------
+Back in your SSH window:
+
+  nano /home/pi/print_daemon.py
+
+Change these two lines near the top:
+  SUPABASE_URL = "https://YOURPROJECT.supabase.co"
+  SUPABASE_KEY = "your-anon-key"
+
+Save: Ctrl+O → Enter → Ctrl+X
+
+
+STEP 8 — Test it
+-----------------
+  python3 /home/pi/print_daemon.py
+
+Place a test order → it should print within 10 seconds.
+Press Ctrl+C to stop.
+
+
+STEP 9 — Install as auto-start service
+----------------------------------------
+  scp C:\path\to\hungry-rooster\scripts\thr-printer.service pi@hungry-rooster.local:/home/pi/thr-printer.service
+
+Back in SSH:
+  sudo cp /home/pi/thr-printer.service /etc/systemd/system/
+  sudo systemctl enable thr-printer
+  sudo systemctl start thr-printer
+  sudo systemctl status thr-printer   ← should say "active (running)"
+
+That's it. The Pi will now print automatically every time it boots.
+
+
+STEP 10 — Run the Supabase migration
+--------------------------------------
+Go to Supabase → SQL Editor → paste and run:
+
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS printed_at TIMESTAMPTZ NULL;
+
+====================================================
