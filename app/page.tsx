@@ -18,7 +18,7 @@ export default function Home() {
           <a href="#shabbat" className="hover:text-white transition-colors">Shabbat</a>
           <a href="/story" className="hover:text-white transition-colors">Our Story</a>
           <a href="#concepts" className="hover:text-white transition-colors">Our Concepts</a>
-          <a href="/gift" className="hover:text-yellow-400 text-yellow-400/80 transition-colors">🎁 Gift Cards</a>
+          <a href="/gift" className="hover:text-white text-zinc-400 transition-colors">Gift Cards</a>
         </div>
         <span className="bg-zinc-700 text-zinc-400 font-black px-5 py-2 rounded-full text-sm cursor-not-allowed">
           Coming Soon

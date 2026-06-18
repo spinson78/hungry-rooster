@@ -230,8 +230,8 @@ export default function GiftPage() {
             <img
               src="/fred%20flowers.png"
               alt="Fred with flowers"
-              className="w-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]"
-              style={{ filter: "brightness(0) invert(1)" }}
+              className="w-full object-contain"
+              style={{ mixBlendMode: "screen" }}
             />
           </div>
         </div>
