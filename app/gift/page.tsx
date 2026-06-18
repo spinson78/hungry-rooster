@@ -197,10 +197,7 @@ export default function GiftPage() {
   return (
     <main className="bg-black text-white min-h-screen relative overflow-x-hidden">
 
-      {/* Fred Flowers floating background decoration */}
-      <div className="pointer-events-none fixed bottom-0 right-0 w-72 md:w-96 opacity-[0.07] select-none z-0" aria-hidden="true">
-        <img src="/fred%20flowers.png" alt="" className="w-full object-contain" />
-      </div>
+
 
       {/* Nav */}
       <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -215,15 +212,29 @@ export default function GiftPage() {
       </nav>
 
       {/* Hero */}
-      <section className="px-6 pt-16 pb-10 max-w-3xl mx-auto text-center relative z-10">
-        <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">The Hungry Rooster</p>
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-white">
-          Why send flowers<br />when you can send dinner?
-        </h1>
-        <p className="text-white text-lg max-w-xl mx-auto">
-          Gift cards, surprise deliveries, or a dinner coupon they claim on their own schedule.
-          Fred-approved, every time.
-        </p>
+      <section className="px-6 pt-12 pb-10 max-w-5xl mx-auto relative z-10">
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+          {/* Text */}
+          <div className="flex-1 text-center md:text-left">
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">The Hungry Rooster</p>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-white">
+              Why send flowers<br />when you can send dinner?
+            </h1>
+            <p className="text-white text-lg max-w-xl">
+              Gift cards, surprise deliveries, or a dinner coupon they claim on their own schedule.
+              Fred-approved, every time.
+            </p>
+          </div>
+          {/* Fred */}
+          <div className="shrink-0 w-48 md:w-64" aria-hidden="true">
+            <img
+              src="/fred%20flowers.png"
+              alt="Fred with flowers"
+              className="w-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
+          </div>
+        </div>
       </section>
 
       {/* Tabs */}
