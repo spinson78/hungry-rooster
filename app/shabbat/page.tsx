@@ -34,7 +34,7 @@ export default function ShabbatPage() {
   const [selectedBakery, setSelectedBakery] = useState<Record<string, boolean>>({});
   const [tipAmount, setTipAmount] = useState<number>(0);
 
-  const [selectedSize, setSelectedSize] = useState<typeof SIZES[0] | null>(null);
+  const [selectedSize, setSelectedSize] = useState<typeof SIZES[0]>(SIZES[0]);
   const [addons, setAddons] = useState({
     greens:  { selected: false, choice: "Kale" },
     dessert: { selected: false },
@@ -88,10 +88,8 @@ export default function ShabbatPage() {
     fetchBakery();
   }, []);
 
-  const SHABBAT_MINIMUM = 50;
-
   const getTotal = () => {
-    let total = selectedSize ? selectedSize.price : 0;
+    let total = selectedSize.price;
     if (addons.greens.selected)   total += 15;
     if (addons.dessert.selected)  total += 25;
     if (addons.babka.selected)    total += 18;
@@ -104,9 +102,7 @@ export default function ShabbatPage() {
 
   const buildLineItems = () => {
     const items: { price_data: { currency: string; product_data: { name: string; description: string }; unit_amount: number }; quantity: number }[] = [];
-    if (selectedSize) {
-      items.push({ price_data: { currency: "usd", product_data: { name: `Shabbat Box — ${selectedSize.label}`, description: `${menu?.protein}, ${menu?.side1}, ${menu?.side2}, ${menu?.extra}` }, unit_amount: selectedSize.price * 100 }, quantity: 1 });
-    }
+    items.push({ price_data: { currency: "usd", product_data: { name: `Shabbat Box — ${selectedSize.label}`, description: `${menu?.protein}, ${menu?.side1}, ${menu?.side2}, ${menu?.extra}` }, unit_amount: selectedSize.price * 100 }, quantity: 1 });
     if (addons.greens.selected)   items.push({ price_data: { currency: "usd", product_data: { name: `Certified Greens (${addons.greens.choice})`, description: "Choice of kale or romaine" }, unit_amount: 1500 }, quantity: 1 });
     if (addons.dessert.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "Friday Night Dessert Add On", description: "Check socials for this week" }, unit_amount: 2500 }, quantity: 1 });
     if (addons.babka.selected)    items.push({ price_data: { currency: "usd", product_data: { name: `Signature Babka (${addons.babka.choice})`, description: "Chocolate or cinnamon" }, unit_amount: 1800 }, quantity: 1 });
@@ -125,7 +121,7 @@ export default function ShabbatPage() {
   const buildItems = () => {
     const bakeryAddons = bakeryMenu ? bakeryMenu.items.filter(i => selectedBakery[i.name]).map(i => ({ name: `🥐 ${i.name}` })) : [];
     return [
-      ...(selectedSize ? [{ name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra }] : []),
+      { name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra },
       ...(addons.greens.selected  ? [{ name: `Certified Greens — ${addons.greens.choice}` }] : []),
       ...(addons.dessert.selected ? [{ name: "Friday Night Dessert Add On" }] : []),
       ...(addons.babka.selected   ? [{ name: `Signature Babka — ${addons.babka.choice}` }] : []),
@@ -143,11 +139,6 @@ export default function ShabbatPage() {
       return;
     }
     if (!menu) return;
-    if (getTotal() < SHABBAT_MINIMUM) {
-      setError(`Minimum Shabbat order is $${SHABBAT_MINIMUM}. Add a box or more items to continue.`);
-      return;
-    }
-
     if (!upsellShown) {
       const missingAny = !addons.greens.selected || !addons.babka.selected || !addons.salmon.selected;
       if (missingAny) {
@@ -212,7 +203,7 @@ export default function ShabbatPage() {
       <div className="px-6 py-12 max-w-2xl mx-auto">
         <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-2">Every Friday</p>
         <h1 className="text-4xl font-black mb-2">Shabbat Box</h1>
-        <p className="text-zinc-400 mb-10">Delivered Friday. $50 minimum order. Free delivery on orders $100+. Order by Friday 9AM.</p>
+        <p className="text-zinc-400 mb-10">Delivered Friday. Free delivery on orders $100+. Order by Friday 9AM.</p>
 
         {!isOpen ? (
           <div className="bg-zinc-900 rounded-2xl p-8 border border-yellow-400/30 text-center mb-8">
@@ -240,13 +231,10 @@ export default function ShabbatPage() {
               </div>
             </div>
 
-            {/* Size selection — optional */}
+            {/* Size selection */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <div className="flex items-center justify-between mb-4">
-                <p className="font-bold text-sm uppercase tracking-wide text-zinc-300">Shabbat Box <span className="text-zinc-600 font-normal normal-case">(optional)</span></p>
-                {selectedSize && (
-                  <button onClick={() => setSelectedSize(null)} className="text-xs text-zinc-500 hover:text-zinc-300 underline transition-colors">Remove</button>
-                )}
+                <p className="font-bold text-sm uppercase tracking-wide text-zinc-300">Choose Your Box</p>
               </div>
               <div className="space-y-3">
                 {SIZES.map((size) => (
@@ -262,9 +250,6 @@ export default function ShabbatPage() {
                   </label>
                 ))}
               </div>
-              {!selectedSize && (
-                <p className="text-zinc-500 text-xs mt-3">No box selected — build your order from add-ons below. $50 minimum applies.</p>
-              )}
             </div>
 
             {/* Add-ons */}
@@ -393,10 +378,7 @@ export default function ShabbatPage() {
                   <span>Total</span><span>${(getTotal() * 1.0825 + tipAmount).toFixed(2)}</span>
                 </div>
               </div>
-              {getTotal() < SHABBAT_MINIMUM && (
-                <p className="text-red-400 text-xs mt-2">Minimum order is ${SHABBAT_MINIMUM}. Current total: ${getTotal().toFixed(2)}.</p>
-              )}
-              {getTotal() >= SHABBAT_MINIMUM && getTotal() < 100 && (
+              {getTotal() < 100 && (
                 <p className="text-zinc-500 text-xs mt-2">Add more to reach $100 for free delivery.</p>
               )}
 
