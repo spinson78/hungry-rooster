@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function StoryPage() {
   return (
-    <main className="bg-white text-black min-h-screen">
+    <main className="bg-black text-white min-h-screen">
 
       {/* NAV */}
       <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -19,98 +19,134 @@ export default function StoryPage() {
           <a href="/menu" className="hover:text-white transition-colors">Menu</a>
           <a href="/catering" className="hover:text-white transition-colors">Catering</a>
           <a href="/story" className="text-white">Our Story</a>
-          <a href="/gift" className="hover:text-yellow-400 text-yellow-400/80 transition-colors">🎁 Gift Cards</a>
+          <a href="/gift" className="hover:text-white transition-colors">Gift Cards</a>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="bg-black text-white px-6 py-20 text-center">
-        <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-4">The Hungry Rooster</p>
-        <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-none">
+      <section className="px-6 pt-20 pb-10 max-w-6xl mx-auto">
+        <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-4 text-center">The Hungry Rooster</p>
+        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-center mb-6">
           Our Story
         </h1>
+        <p className="text-zinc-400 text-xl text-center max-w-2xl mx-auto">
+          50+ years of combined experience. One mission: food that hits different.
+        </p>
       </section>
 
-      {/* SECTION 1 — We Don't Just Cook */}
-      <section className="bg-[#C5D9E8] px-6 py-16 md:py-20">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-black mb-6 leading-tight">
-            We Don&apos;t Just Cook—We Crow!
-          </h2>
-          <p className="text-[17px] leading-relaxed text-zinc-800">
-            Chef Jordona and industry expert Scarlet bring over 50 years of combined experience
-            in food service. Our mission is clear: to serve scratch-made meals bursting with bold
-            flavors, a fun atmosphere, and genuine passion! Whether you&apos;re enjoying a quick bite
-            or catering to a crowd, we create delicious, convenient food that feels like home—crafted
-            with heart, hustle, and plenty of flavor. From our kitchen to your table, we prioritize
-            freshness and authenticity, ensuring you keep coming back for more!
-          </p>
+      {/* SQUAD GRAPHIC */}
+      <section className="px-6 pb-6 max-w-5xl mx-auto">
+        <div className="rounded-2xl overflow-hidden border border-zinc-800">
+          <img
+            src="/the%20squad.png"
+            alt="The Hungry Rooster Squad"
+            className="w-full object-cover"
+            style={{ mixBlendMode: "screen" }}
+          />
         </div>
       </section>
 
-      {/* SECTION 2 — Quality Food */}
-      <section className="bg-white px-6 py-16 md:py-20 border-b border-zinc-100">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-black mb-6 leading-tight">
-            Quality Food, Anytime, Anywhere!
-          </h2>
-          <p className="text-[17px] leading-relaxed text-zinc-700">
-            We believe that quality should never be compromised, no matter when or where you decide
-            to enjoy your meal. Every decision we make— from sourcing the finest ingredients to the
-            meticulous preparation, cooking, and packaging— is crafted with you in mind. We attend
-            to every detail to guarantee you an exceptional experience, whether you&apos;re picking up
-            your order, receiving a delivery, or hosting an event.
-          </p>
-        </div>
-      </section>
-
-      {/* SECTION 3 — Kosher Certified */}
-      <section className="bg-white px-6 py-16 md:py-20">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12">
-
-          {/* Graphic placeholder — drop in the "Kosher? You bet your tail feathers we are!" image */}
-          <div className="w-full md:w-1/2 flex-shrink-0">
-            <div className="bg-[#3B82C4] rounded-2xl overflow-hidden aspect-square flex items-center justify-center text-white text-center p-8">
-              {/* Replace this div with: <img src="/kosher-rooster.png" alt="Kosher certified" className="w-full h-full object-cover" /> */}
-              <div>
-                <p className="text-4xl font-black leading-tight mb-4">Kosher?</p>
-                <p className="text-3xl font-black leading-tight mb-4">You bet your<br />tail feathers<br />we are!</p>
-                <div className="text-6xl mt-4">🐓</div>
-              </div>
-            </div>
-            <p className="text-zinc-400 text-xs text-center mt-2">Graphic coming soon — drop your image here</p>
-          </div>
-
-          {/* Text */}
-          <div className="flex-1">
-            <p className="text-yellow-500 font-bold text-sm uppercase tracking-widest mb-3">Kosher Certified</p>
-            <h2 className="text-3xl md:text-4xl font-black mb-5 leading-tight">
-              Kosher certified by Dallas Kosher.
+      {/* WE DON'T JUST COOK */}
+      <section className="px-6 py-16 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">Who We Are</p>
+            <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+              We Don&apos;t Just<br />Cook — We Crow.
             </h2>
-            <p className="text-[17px] leading-relaxed text-zinc-700">
-              Certified by Dallas Kosher, THE Dallas Kosher boasts a legacy of over 50 years as the
-              oldest kosher certification agency in the Southwest. This nonprofit organization delivers
-              high-quality kosher supervision and certification for discerning consumers and businesses
-              both locally and beyond. The Hungry Rooster is proud to be recognized as a Dallas Kosher
-              Certified partner.
+          </div>
+          <div>
+            <p className="text-zinc-300 text-lg leading-relaxed">
+              Chef Jordona and industry expert Scarlet bring over 50 years of combined experience
+              in food service. Our mission is clear: scratch-made meals bursting with bold
+              flavors, genuine passion, and the kind of food that feels like home.
             </p>
+            <p className="text-zinc-300 text-lg leading-relaxed mt-4">
+              Whether you&apos;re ordering a quick bite or catering to a crowd, we prioritize
+              freshness and authenticity — from our kitchen to your table. We create delicious,
+              convenient food crafted with heart, hustle, and plenty of flavor.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            {/* Dallas Kosher badge */}
-            <div className="mt-8 inline-flex items-center gap-3 border-2 border-zinc-200 rounded-xl px-5 py-4">
-              <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center text-2xl">✡️</div>
+      {/* DIVIDER */}
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="border-t border-zinc-800" />
+      </div>
+
+      {/* QUALITY SECTION */}
+      <section className="px-6 py-16 max-w-5xl mx-auto">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 md:p-14">
+          <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-3">Our Standard</p>
+          <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+            Quality Food.<br />Anytime, Anywhere.
+          </h2>
+          <p className="text-zinc-300 text-lg leading-relaxed max-w-2xl">
+            We believe quality should never be compromised — no matter when or where you enjoy your meal.
+            Every decision we make, from sourcing the finest ingredients to meticulous preparation,
+            cooking, and packaging, is crafted with you in mind. We attend to every detail to guarantee
+            an exceptional experience, whether you&apos;re picking up, getting delivery, or hosting an event.
+          </p>
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-black border border-zinc-800 rounded-xl p-6">
+              <p className="text-yellow-400 font-black text-3xl mb-2">50+</p>
+              <p className="text-zinc-300 text-sm">Years of combined food service experience</p>
+            </div>
+            <div className="bg-black border border-zinc-800 rounded-xl p-6">
+              <p className="text-teal-400 font-black text-3xl mb-2">100%</p>
+              <p className="text-zinc-300 text-sm">Scratch-made — every dish, every time</p>
+            </div>
+            <div className="bg-black border border-zinc-800 rounded-xl p-6">
+              <p className="text-yellow-400 font-black text-3xl mb-2">DK</p>
+              <p className="text-zinc-300 text-sm">Dallas Kosher certified — oldest in the Southwest</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* KOSHER SECTION */}
+      <section className="px-6 pb-20 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">Kosher Certified</p>
+            <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+              Kosher? You bet your<br />tail feathers we are.
+            </h2>
+            <p className="text-zinc-300 text-lg leading-relaxed">
+              Certified by Dallas Kosher — the oldest kosher certification agency in the Southwest
+              with over 50 years of legacy. This nonprofit delivers high-quality kosher supervision
+              for discerning consumers and businesses locally and beyond.
+            </p>
+            <p className="text-zinc-300 text-lg leading-relaxed mt-4">
+              The Hungry Rooster is proud to be a Dallas Kosher Certified partner. That means
+              every dish, every ingredient, every time — you can eat with full confidence.
+            </p>
+            <a
+              href="https://dallaskosher.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 mt-8 border border-zinc-700 hover:border-yellow-400 rounded-xl px-5 py-4 transition-colors group"
+            >
+              <span className="text-2xl">✡️</span>
               <div>
-                <p className="font-black text-sm">Dallas Kosher Certified</p>
+                <p className="font-black text-sm group-hover:text-yellow-400 transition-colors">Dallas Kosher Certified</p>
                 <p className="text-zinc-500 text-xs">dallaskosher.org</p>
               </div>
-            </div>
+            </a>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 text-center">
+            <p className="text-5xl font-black text-yellow-400 leading-tight mb-2">Kosher?</p>
+            <p className="text-4xl font-black text-white leading-tight">You bet your<br />tail feathers<br />we are!</p>
+            <div className="mt-6 text-6xl">🐓</div>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="bg-black text-white px-6 py-16 text-center">
-        <h2 className="text-3xl md:text-4xl font-black mb-4">Ready to eat?</h2>
-        <p className="text-zinc-400 mb-8 text-lg">Order online, cater your next event, or send dinner as a gift.</p>
+      <section className="border-t border-zinc-800 px-6 py-20 text-center">
+        <h2 className="text-4xl md:text-5xl font-black mb-4">Ready to eat?</h2>
+        <p className="text-zinc-400 mb-10 text-lg">Order online, cater your next event, or send dinner as a gift.</p>
         <div className="flex flex-wrap gap-4 justify-center">
           <a href="/menu" className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg transition-colors">
             Order Now
@@ -119,7 +155,7 @@ export default function StoryPage() {
             Book Catering
           </a>
           <a href="/gift" className="border-2 border-yellow-400/50 hover:border-yellow-400 text-yellow-400 font-black px-8 py-4 rounded-full text-lg transition-colors">
-            🎁 Send a Gift
+            Send a Gift
           </a>
         </div>
       </section>
