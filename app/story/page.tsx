@@ -35,12 +35,12 @@ export default function StoryPage() {
       </section>
 
       {/* SQUAD GRAPHIC */}
-      <section className="px-6 pb-6 max-w-5xl mx-auto">
+      <section className="px-6 pb-10 max-w-3xl mx-auto">
         <div className="rounded-2xl overflow-hidden border border-zinc-800">
           <img
             src="/the%20squad.png"
             alt="The Hungry Rooster Squad"
-            className="w-full object-cover"
+            className="w-full object-cover max-h-[480px]"
             style={{ mixBlendMode: "screen" }}
           />
         </div>

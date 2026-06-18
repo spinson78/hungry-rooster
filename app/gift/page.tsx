@@ -212,8 +212,8 @@ export default function GiftPage() {
       </nav>
 
       {/* Hero */}
-      <section className="px-6 pt-12 pb-10 max-w-5xl mx-auto relative z-10">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+      <section className="px-6 pt-12 pb-10 max-w-3xl mx-auto relative z-10">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
           {/* Text */}
           <div className="flex-1 text-center md:text-left">
             <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">The Hungry Rooster</p>
@@ -226,7 +226,7 @@ export default function GiftPage() {
             </p>
           </div>
           {/* Fred */}
-          <div className="shrink-0 w-48 md:w-64" aria-hidden="true">
+          <div className="shrink-0 w-52 md:w-56" aria-hidden="true">
             <img
               src="/fred%20flowers.png"
               alt="Fred with flowers"
