@@ -1,28 +1,34 @@
 "use client";
 import { useState } from "react";
 
-// THR delivers Mon/Tue/Thu/Fri only (0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat)
-const DELIVERY_DAYS = [1, 2, 4, 5];
+const DELIVERY_DAYS = [1, 2, 4, 5]; // Mon/Tue/Thu/Fri
 function isDeliveryDay(dateStr: string): boolean {
   if (!dateStr) return false;
-  const d = new Date(dateStr + "T12:00:00"); // noon avoids UTC offset issues
-  return DELIVERY_DAYS.includes(d.getDay());
+  return DELIVERY_DAYS.includes(new Date(dateStr + "T12:00:00").getDay());
 }
-function deliveryDayError(dateStr: string): string {
-  if (!dateStr) return "";
-  if (!isDeliveryDay(dateStr)) return "We deliver Mon, Tue, Thu, and Fri only. Please pick one of those days.";
-  return "";
+function isFriday(dateStr: string): boolean {
+  if (!dateStr) return false;
+  return new Date(dateStr + "T12:00:00").getDay() === 5;
+}
+function isPastCutoff(dateStr: string): boolean {
+  // Same-day orders must be placed before 12 PM (noon) Central Time
+  const now = new Date();
+  const todayCST = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const todayStr = todayCST.toISOString().split("T")[0];
+  if (dateStr !== todayStr) return false;
+  return todayCST.getHours() >= 12;
 }
 
 const GIFT_CARD_AMOUNTS = [25, 50, 75, 100, 150, 200];
 
 const DINNER_PACKAGES = [
-  { name: "Dinner for 2", price: 65, serves: "Serves 2", description: "2 entrees + 2 sides + bread" },
-  { name: "Dinner for 4", price: 115, serves: "Serves 4", description: "4 entrees + 4 sides + bread" },
-  { name: "Dinner for 6", price: 165, serves: "Serves 6", description: "6 entrees + 6 sides + bread + dessert" },
-  { name: "Shabbat Bundle for 2", price: 80, serves: "Serves 2", description: "Shabbat dinner with challah, salad, main + sides" },
-  { name: "Shabbat Bundle for 4", price: 145, serves: "Serves 4", description: "Full Shabbat spread for the family" },
+  { name: "Dinner for 4-6", price: 85, serves: "Serves 4-6", description: "Weekly rotation — beef, chicken, or fish. Menu posted on the website week of.", fridayOnly: false },
+  { name: "Fish Dinner for 4-6", price: 100, serves: "Serves 4-6", description: "Always available. 6 pcs roasted salmon, mashed potatoes, roasted veggies, house salad. Great pick when the weekly dinner isn't fish.", fridayOnly: false },
+  { name: "Shabbat Dinner for 2", price: 65, serves: "Serves 2", description: "Friday delivery only", fridayOnly: true },
+  { name: "Shabbat Dinner for 4-6", price: 115, serves: "Serves 4-6", description: "Friday delivery only", fridayOnly: true },
 ];
+
+const COOKIE_ADDON = { name: "A Dozen Mini Cookies", price: 24 };
 
 type Tab = "gift_card" | "scheduled" | "claim_code";
 
@@ -38,6 +44,7 @@ export default function GiftPage() {
 
   // Dinner gift shared state
   const [selectedPackage, setSelectedPackage] = useState(DINNER_PACKAGES[0]);
+  const [addCookies, setAddCookies] = useState(false);
   const [dinnerForm, setDinnerForm] = useState({ purchaserName: "", purchaserEmail: "", recipientName: "", recipientEmail: "", recipientPhone: "", message: "" });
 
   // Scheduled-only state
@@ -46,6 +53,15 @@ export default function GiftPage() {
   const [deliveryCityZip, setDeliveryCityZip] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
+  const packageTotal = selectedPackage.price + (addCookies ? COOKIE_ADDON.price : 0);
+
+  const deliveryDateError = () => {
+    if (!deliveryDate) return "";
+    if (!isDeliveryDay(deliveryDate)) return "We deliver Mon, Tue, Thu & Fri only.";
+    if (selectedPackage.fridayOnly && !isFriday(deliveryDate)) return "Shabbat orders deliver Friday only.";
+    if (isPastCutoff(deliveryDate)) return "Same-day orders must be placed before 12 PM. Please choose a future date.";
+    return "";
+  };
 
   const handleGiftCard = async () => {
     setError("");
@@ -69,13 +85,14 @@ export default function GiftPage() {
   const handleDinnerGift = async () => {
     setError("");
     if (!dinnerForm.purchaserName.trim() || !dinnerForm.purchaserEmail.trim()) { setError("Please enter your name and email."); return; }
-    if (!dinnerForm.recipientName.trim()) { setError("Please enter the recipient's name."); return; }
+    if (!dinnerForm.recipientName.trim()) { setError("Please enter the recipient\'s name."); return; }
     if (tab === "scheduled") {
       if (!deliveryDate) { setError("Please pick a delivery date."); return; }
-      if (!isDeliveryDay(deliveryDate)) { setError("We deliver Mon, Tue, Thu, and Fri only. Please pick one of those days."); return; }
+      const dateErr = deliveryDateError();
+      if (dateErr) { setError(dateErr); return; }
       if (!deliveryAddress.trim() || !deliveryCityZip.trim()) { setError("Please enter the delivery address."); return; }
     } else {
-      if (!dinnerForm.recipientEmail.trim()) { setError("Please enter the recipient's email so we can send their claim link."); return; }
+      if (!dinnerForm.recipientEmail.trim()) { setError("Please enter the recipient\'s email so we can send their claim link."); return; }
     }
     setLoading(true);
     try {
@@ -88,6 +105,7 @@ export default function GiftPage() {
           packageName: selectedPackage.name,
           packagePrice: String(selectedPackage.price),
           serves: selectedPackage.serves,
+          addCookies,
           ...dinnerForm,
           deliveryDate: tab === "scheduled" ? deliveryDate : "",
           deliveryAddress: tab === "scheduled" ? deliveryAddress : "",
@@ -103,8 +121,87 @@ export default function GiftPage() {
 
   const gcFinalAmount = gcAmount === "custom" ? parseFloat(gcCustom) || 0 : gcAmount;
 
+  const PackageSelector = () => (
+    <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+      <h2 className="font-black text-xl mb-4">Choose a Package</h2>
+      <div className="space-y-3 mb-4">
+        {DINNER_PACKAGES.map((pkg) => (
+          <button
+            key={pkg.name}
+            onClick={() => { setSelectedPackage(pkg); setAddCookies(false); }}
+            className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${selectedPackage.name === pkg.name ? "border-teal-400 bg-teal-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-black">{pkg.name}</p>
+                  {pkg.fridayOnly && <span className="text-xs bg-yellow-400/20 text-yellow-400 font-bold px-2 py-0.5 rounded-full">Friday only</span>}
+                </div>
+                <p className="text-zinc-400 text-sm mt-0.5">{pkg.description}</p>
+              </div>
+              <span className="font-black text-xl text-teal-400 shrink-0 ml-4">${pkg.price}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => setAddCookies(!addCookies)}
+        className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${addCookies ? "border-yellow-400 bg-yellow-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${addCookies ? "border-yellow-400 bg-yellow-400" : "border-zinc-500"}`}>
+              {addCookies && <span className="text-black text-xs font-black">+</span>}
+            </div>
+            <div>
+              <p className="font-black text-sm">Add-on: A Dozen Mini Cookies</p>
+              <p className="text-zinc-400 text-xs">Freshly baked, delivered with the order</p>
+            </div>
+          </div>
+          <span className="font-black text-yellow-400 shrink-0 ml-4">+$24</span>
+        </div>
+      </button>
+    </div>
+  );
+
+  const OrderSummary = ({ onSubmit, label }: { onSubmit: () => void; label: string }) => (
+    <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-zinc-400">{selectedPackage.name}</span>
+        <span className="font-black">${selectedPackage.price.toFixed(2)}</span>
+      </div>
+      {addCookies && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-zinc-400">{COOKIE_ADDON.name}</span>
+          <span className="font-black">${COOKIE_ADDON.price.toFixed(2)}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-zinc-400">Tax (8.25%)</span>
+        <span className="font-black">${(packageTotal * 0.0825).toFixed(2)}</span>
+      </div>
+      <div className="flex items-center justify-between text-xl font-black mb-5 border-t border-zinc-700 pt-4">
+        <span>Total</span>
+        <span className="text-teal-400">${(packageTotal * 1.0825).toFixed(2)}</span>
+      </div>
+      <button
+        onClick={onSubmit}
+        disabled={loading}
+        className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
+      >
+        {loading ? "Redirecting to payment..." : label}
+      </button>
+    </div>
+  );
+
   return (
-    <main className="bg-black text-white min-h-screen">
+    <main className="bg-black text-white min-h-screen relative overflow-x-hidden">
+
+      {/* Fred Flowers floating background decoration */}
+      <div className="pointer-events-none fixed bottom-0 right-0 w-72 md:w-96 opacity-[0.07] select-none z-0" aria-hidden="true">
+        <img src="/fred%20flowers.png" alt="" className="w-full object-contain" />
+      </div>
+
       {/* Nav */}
       <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <a href="/">
@@ -118,44 +215,44 @@ export default function GiftPage() {
       </nav>
 
       {/* Hero */}
-      <section className="px-6 pt-16 pb-10 max-w-3xl mx-auto text-center">
+      <section className="px-6 pt-16 pb-10 max-w-3xl mx-auto text-center relative z-10">
         <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">The Hungry Rooster</p>
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
+        <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-white">
           Why send flowers<br />when you can send dinner?
         </h1>
-        <p className="text-zinc-400 text-lg max-w-xl mx-auto">
+        <p className="text-white text-lg max-w-xl mx-auto">
           Gift cards, surprise deliveries, or a dinner coupon they claim on their own schedule.
           Fred-approved, every time.
         </p>
       </section>
 
       {/* Tabs */}
-      <div className="max-w-3xl mx-auto px-6 mb-8">
+      <div className="max-w-3xl mx-auto px-6 mb-8 relative z-10">
         <div className="flex rounded-xl overflow-hidden border border-zinc-800">
           <button
             onClick={() => setTab("gift_card")}
             className={`flex-1 py-3 text-sm font-bold transition-colors ${tab === "gift_card" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
           >
-            💳 Gift Card
+            Gift Card
           </button>
           <button
             onClick={() => setTab("scheduled")}
             className={`flex-1 py-3 text-sm font-bold transition-colors border-l border-zinc-800 ${tab === "scheduled" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
           >
-            🚗 Send a Dinner
+            Send a Dinner
           </button>
           <button
             onClick={() => setTab("claim_code")}
             className={`flex-1 py-3 text-sm font-bold transition-colors border-l border-zinc-800 ${tab === "claim_code" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
           >
-            🎟️ Dinner Coupon
+            Dinner Coupon
           </button>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 pb-20">
+      <div className="max-w-3xl mx-auto px-6 pb-20 relative z-10">
 
-        {/* ─── GIFT CARD ─── */}
+        {/* GIFT CARD */}
         {tab === "gift_card" && (
           <div className="space-y-8">
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
@@ -172,27 +269,22 @@ export default function GiftPage() {
                   </button>
                 ))}
               </div>
-              <div>
-                <button
-                  onClick={() => setGcAmount("custom")}
-                  className={`w-full py-3 rounded-xl font-bold text-sm border-2 transition-colors ${gcAmount === "custom" ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
-                >
-                  Custom Amount
-                </button>
-                {gcAmount === "custom" && (
-                  <div className="mt-3 relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">$</span>
-                    <input
-                      type="number"
-                      min="10"
-                      placeholder="Enter amount (min $10)"
-                      value={gcCustom}
-                      onChange={(e) => setGcCustom(e.target.value)}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 pl-8 py-3 text-white focus:outline-none focus:border-yellow-400"
-                    />
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={() => setGcAmount("custom")}
+                className={`w-full py-3 rounded-xl font-bold text-sm border-2 transition-colors ${gcAmount === "custom" ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
+              >
+                Custom Amount
+              </button>
+              {gcAmount === "custom" && (
+                <div className="mt-3 relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">$</span>
+                  <input
+                    type="number" min="10" placeholder="Enter amount (min $10)"
+                    value={gcCustom} onChange={(e) => setGcCustom(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 pl-8 py-3 text-white focus:outline-none focus:border-yellow-400"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 space-y-4">
@@ -251,44 +343,25 @@ export default function GiftPage() {
           </div>
         )}
 
-        {/* ─── SCHEDULED DINNER ─── */}
+        {/* SCHEDULED DINNER */}
         {tab === "scheduled" && (
           <div className="space-y-8">
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <h2 className="font-black text-xl mb-1">Send a Surprise Dinner 🚗</h2>
+              <h2 className="font-black text-xl mb-1">Send a Surprise Dinner</h2>
               <p className="text-zinc-400 text-sm">You pick the package, date, and address. We show up. They're surprised. Like flowers — but better.</p>
             </div>
 
-            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <h2 className="font-black text-xl mb-4">Choose a Package</h2>
-              <div className="space-y-3">
-                {DINNER_PACKAGES.map((pkg) => (
-                  <button
-                    key={pkg.name}
-                    onClick={() => setSelectedPackage(pkg)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${selectedPackage.name === pkg.name ? "border-teal-400 bg-teal-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-black">{pkg.name}</p>
-                        <p className="text-zinc-400 text-sm">{pkg.description}</p>
-                      </div>
-                      <span className="font-black text-xl text-teal-400">${pkg.price}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <PackageSelector />
 
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 space-y-4">
               <h2 className="font-black text-xl">Delivery Details</h2>
               <div>
                 <label className="text-xs text-zinc-400 font-semibold uppercase tracking-wide">Delivery Date</label>
                 <input type="date" min={today} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
-                  className={`mt-1 w-full bg-zinc-800 border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 ${deliveryDate && !isDeliveryDay(deliveryDate) ? "border-red-500" : "border-zinc-700"}`} />
-                {deliveryDate && !isDeliveryDay(deliveryDate)
-                  ? <p className="text-red-400 text-xs mt-1">We deliver Mon, Tue, Thu & Fri only.</p>
-                  : <p className="text-zinc-500 text-xs mt-1">Available Mon, Tue, Thu & Fri</p>
+                  className={`mt-1 w-full bg-zinc-800 border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 ${deliveryDate && deliveryDateError() ? "border-red-500" : "border-zinc-700"}`} />
+                {deliveryDate && deliveryDateError()
+                  ? <p className="text-red-400 text-xs mt-1">{deliveryDateError()}</p>
+                  : <p className="text-zinc-500 text-xs mt-1">{selectedPackage.fridayOnly ? "Friday delivery only" : "Available Mon, Tue, Thu & Fri"}</p>
                 }
               </div>
               <div>
@@ -318,7 +391,7 @@ export default function GiftPage() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-zinc-400 font-semibold uppercase tracking-wide">Their Email <span className="font-normal">(optional — we'll let them know)</span></label>
+                <label className="text-xs text-zinc-400 font-semibold uppercase tracking-wide">Their Email <span className="font-normal">(optional)</span></label>
                 <input type="email" value={dinnerForm.recipientEmail} onChange={(e) => setDinnerForm({ ...dinnerForm, recipientEmail: e.target.value })}
                   className="mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400" placeholder="recipient@email.com" />
               </div>
@@ -347,59 +420,19 @@ export default function GiftPage() {
             </div>
 
             {error && <p className="text-red-400 text-sm font-semibold">{error}</p>}
-
-            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-zinc-400">{selectedPackage.name}</span>
-                <span className="font-black">${selectedPackage.price.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-zinc-400">Tax (8.25%)</span>
-                <span className="font-black">${(selectedPackage.price * 0.0825).toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xl font-black mb-5 border-t border-zinc-700 pt-4">
-                <span>Total</span>
-                <span className="text-teal-400">${(selectedPackage.price * 1.0825).toFixed(2)}</span>
-              </div>
-              <button
-                onClick={handleDinnerGift}
-                disabled={loading}
-                className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
-              >
-                {loading ? "Redirecting to payment..." : "Send This Dinner"}
-              </button>
-            </div>
+            <OrderSummary onSubmit={handleDinnerGift} label="Send This Dinner" />
           </div>
         )}
 
-        {/* ─── DINNER COUPON (CLAIM CODE) ─── */}
+        {/* DINNER COUPON */}
         {tab === "claim_code" && (
           <div className="space-y-8">
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <h2 className="font-black text-xl mb-1">Dinner Coupon 🎟️</h2>
+              <h2 className="font-black text-xl mb-1">Dinner Coupon</h2>
               <p className="text-zinc-400 text-sm">You pay, they get a claim link in their email. They pick their date, enter their address, and we deliver. Perfect when you don't know their schedule.</p>
             </div>
 
-            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <h2 className="font-black text-xl mb-4">Choose a Package</h2>
-              <div className="space-y-3">
-                {DINNER_PACKAGES.map((pkg) => (
-                  <button
-                    key={pkg.name}
-                    onClick={() => setSelectedPackage(pkg)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${selectedPackage.name === pkg.name ? "border-teal-400 bg-teal-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-black">{pkg.name}</p>
-                        <p className="text-zinc-400 text-sm">{pkg.description}</p>
-                      </div>
-                      <span className="font-black text-xl text-teal-400">${pkg.price}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <PackageSelector />
 
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 space-y-4">
               <h2 className="font-black text-xl">Recipient Info</h2>
@@ -440,28 +473,7 @@ export default function GiftPage() {
             </div>
 
             {error && <p className="text-red-400 text-sm font-semibold">{error}</p>}
-
-            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-zinc-400">{selectedPackage.name}</span>
-                <span className="font-black">${selectedPackage.price.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-zinc-400">Tax (8.25%)</span>
-                <span className="font-black">${(selectedPackage.price * 0.0825).toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xl font-black mb-5 border-t border-zinc-700 pt-4">
-                <span>Total</span>
-                <span className="text-teal-400">${(selectedPackage.price * 1.0825).toFixed(2)}</span>
-              </div>
-              <button
-                onClick={handleDinnerGift}
-                disabled={loading}
-                className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
-              >
-                {loading ? "Redirecting to payment..." : "Send Dinner Coupon"}
-              </button>
-            </div>
+            <OrderSummary onSubmit={handleDinnerGift} label="Send Dinner Coupon" />
           </div>
         )}
       </div>

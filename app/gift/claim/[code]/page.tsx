@@ -8,6 +8,13 @@ function isDeliveryDay(dateStr: string): boolean {
   if (!dateStr) return false;
   return DELIVERY_DAYS.includes(new Date(dateStr + "T12:00:00").getDay());
 }
+function isPastCutoff(dateStr: string): boolean {
+  const now = new Date();
+  const todayCST = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const todayStr = todayCST.toISOString().split("T")[0];
+  if (dateStr !== todayStr) return false;
+  return todayCST.getHours() >= 12;
+}
 
 type GiftData = {
   package_name: string;
@@ -50,6 +57,7 @@ export default function ClaimPage() {
   const handleClaim = async () => {
     if (!deliveryDate) { setErrorMsg("Please pick a delivery date."); return; }
     if (!isDeliveryDay(deliveryDate)) { setErrorMsg("We deliver Mon, Tue, Thu & Fri only. Please pick one of those days."); return; }
+    if (isPastCutoff(deliveryDate)) { setErrorMsg("Same-day orders must be placed before 12 PM. Please choose a future date."); return; }
     if (!deliveryAddress.trim() || !deliveryCityZip.trim()) { setErrorMsg("Please enter your delivery address."); return; }
     setErrorMsg("");
     setSubmitting(true);
@@ -133,8 +141,8 @@ export default function ClaimPage() {
             <label className="text-xs text-zinc-400 font-semibold uppercase tracking-wide">Delivery Date</label>
             <input type="date" min={today} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
               className={`mt-1 w-full bg-zinc-800 border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 ${deliveryDate && !isDeliveryDay(deliveryDate) ? "border-red-500" : "border-zinc-700"}`} />
-            {deliveryDate && !isDeliveryDay(deliveryDate)
-              ? <p className="text-red-400 text-xs mt-1">We deliver Mon, Tue, Thu & Fri only.</p>
+            {deliveryDate && (!isDeliveryDay(deliveryDate) || isPastCutoff(deliveryDate))
+              ? <p className="text-red-400 text-xs mt-1">{isPastCutoff(deliveryDate) ? "Same-day orders must be placed before 12 PM." : "We deliver Mon, Tue, Thu & Fri only."}</p>
               : <p className="text-zinc-500 text-xs mt-1">Available Mon, Tue, Thu & Fri. We deliver within 30 miles of Dallas.</p>
             }
           </div>

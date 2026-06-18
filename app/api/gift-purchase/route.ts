@@ -52,12 +52,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (giftType === "dinner_gift") {
-      // Send a dinner — scheduled OR claim code
+      // Send a dinner -- scheduled OR claim code
       const {
         dinnerGiftType,   // "scheduled" | "claim_code"
         packageName,
         packagePrice,
         serves,
+        addCookies,
         purchaserName,
         purchaserEmail,
         recipientName,
@@ -71,7 +72,9 @@ export async function POST(req: NextRequest) {
       } = body;
 
       const priceCents = Math.round(parseFloat(packagePrice) * 100);
-      const taxCents = Math.round(priceCents * TAX_RATE);
+      const cookieCents = addCookies ? 2400 : 0;
+      const subtotalCents = priceCents + cookieCents;
+      const taxCents = Math.round(subtotalCents * TAX_RATE);
 
       const lineItems = [
         {
@@ -87,6 +90,14 @@ export async function POST(req: NextRequest) {
           },
           quantity: 1,
         },
+        ...(addCookies ? [{
+          price_data: {
+            currency: "usd" as const,
+            product_data: { name: "Add-on: A Dozen Mini Cookies", description: "Freshly baked cookies delivered with the dinner" },
+            unit_amount: 2400,
+          },
+          quantity: 1,
+        }] : []),
         {
           price_data: {
             currency: "usd",
@@ -108,6 +119,7 @@ export async function POST(req: NextRequest) {
           dinner_gift_type: dinnerGiftType || "claim_code",
           package_name: packageName || "",
           package_price_cents: String(priceCents),
+          add_cookies: addCookies ? "true" : "false",
           serves: serves || "",
           purchaser_name: purchaserName || "",
           purchaser_email: purchaserEmail || "",
