@@ -35,12 +35,12 @@ export default function StoryPage() {
       </section>
 
       {/* SQUAD GRAPHIC */}
-      <section className="px-6 pb-10 max-w-3xl mx-auto">
+      <section className="px-6 pb-10 max-w-sm mx-auto">
         <div className="rounded-2xl overflow-hidden border border-zinc-800">
           <img
             src="/the%20squad.png"
             alt="The Hungry Rooster Squad"
-            className="w-full object-cover max-h-[480px]"
+            className="w-full object-contain max-h-[320px]"
             style={{ mixBlendMode: "screen" }}
           />
         </div>
@@ -138,7 +138,7 @@ export default function StoryPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 text-center">
             <p className="text-5xl font-black text-yellow-400 leading-tight mb-2">Kosher?</p>
             <p className="text-4xl font-black text-white leading-tight">You bet your<br />tail feathers<br />we are!</p>
-            <div className="mt-6 text-6xl">🐓</div>
+
           </div>
         </div>
       </section>
