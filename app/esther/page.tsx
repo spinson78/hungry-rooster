@@ -20,6 +20,14 @@ type BakeryMenu = {
 
 const MIN_ORDER = 50;
 
+const SHABBAT_ADDONS = [
+  { name: "House Greens Salad", price: 15, description: "Fresh house salad" },
+  { name: "Roasted Salmon (6 pcs)", price: 48, description: "6 pieces of roasted salmon" },
+  { name: "Roasted Chicken", price: 36, description: "Whole roasted chicken" },
+  { name: "Chicken Nuggets", price: 28, description: "Crispy chicken nuggets" },
+  { name: "Bourekas", price: 18, description: "Freshly baked bourekas" },
+];
+
 export default function EstherPage() {
   const [menu, setMenu] = useState<BakeryMenu | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +36,7 @@ export default function EstherPage() {
   const [error, setError] = useState("");
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [addons, setAddons] = useState<Record<string, boolean>>({});
 
   const [form, setForm] = useState({
     name: "",
@@ -73,7 +82,7 @@ export default function EstherPage() {
     });
   };
 
-  const getSubtotal = () => {
+  const getBakerySubtotal = () => {
     if (!menu) return 0;
     return menu.items.reduce((sum, item) => {
       const qty = quantities[item.name] || 0;
@@ -81,12 +90,15 @@ export default function EstherPage() {
     }, 0);
   };
 
-  const subtotal = getSubtotal();
+  const getAddonSubtotal = () =>
+    SHABBAT_ADDONS.reduce((sum, a) => sum + (addons[a.name] ? a.price : 0), 0);
+
+  const subtotal = getBakerySubtotal() + getAddonSubtotal();
   const meetsMinimum = subtotal >= MIN_ORDER;
 
   const buildLineItems = () => {
     if (!menu) return [];
-    return menu.items
+    const bakeryItems = menu.items
       .filter((item) => (quantities[item.name] || 0) > 0)
       .map((item) => ({
         price_data: {
@@ -96,13 +108,28 @@ export default function EstherPage() {
         },
         quantity: quantities[item.name],
       }));
+    const addonItems = SHABBAT_ADDONS
+      .filter((a) => addons[a.name])
+      .map((a) => ({
+        price_data: {
+          currency: "usd",
+          product_data: { name: a.name, description: a.description },
+          unit_amount: Math.round(a.price * 100),
+        },
+        quantity: 1,
+      }));
+    return [...bakeryItems, ...addonItems];
   };
 
   const buildItems = () => {
     if (!menu) return [];
-    return menu.items
+    const bakery = menu.items
       .filter((item) => (quantities[item.name] || 0) > 0)
       .map((item) => ({ name: item.name, description: item.description, quantity: quantities[item.name] }));
+    const addonList = SHABBAT_ADDONS
+      .filter((a) => addons[a.name])
+      .map((a) => ({ name: a.name, description: a.description, quantity: 1 }));
+    return [...bakery, ...addonList];
   };
 
   const handleSubmit = async () => {
@@ -266,6 +293,34 @@ export default function EstherPage() {
                     : `$${(MIN_ORDER - subtotal).toFixed(2)} more to reach the $${MIN_ORDER} minimum`}
                 </p>
                 <p className="text-white font-black">${subtotal.toFixed(2)}</p>
+              </div>
+            </div>
+
+            {/* SHABBAT ADD-ONS */}
+            <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+              <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-1">Shabbat Add-Ons</p>
+              <p className="text-zinc-500 text-xs mb-4">Mix and match to reach your $50 minimum.</p>
+              <div className="space-y-3">
+                {SHABBAT_ADDONS.map((addon) => (
+                  <button
+                    key={addon.name}
+                    onClick={() => setAddons((prev) => ({ ...prev, [addon.name]: !prev[addon.name] }))}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${addons[addon.name] ? "border-teal-400 bg-teal-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${addons[addon.name] ? "border-teal-400 bg-teal-400" : "border-zinc-500"}`}>
+                          {addons[addon.name] && <span className="text-black text-xs font-black">✓</span>}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">{addon.name}</p>
+                          <p className="text-zinc-500 text-xs">{addon.description}</p>
+                        </div>
+                      </div>
+                      <span className="font-black text-teal-400 shrink-0 ml-4">${addon.price}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
 
