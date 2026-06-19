@@ -21,7 +21,7 @@ type BakeryMenu = {
 const MIN_ORDER = 50;
 
 const SHABBAT_ADDONS = [
-  { name: "House Greens Salad", price: 15, description: "Fresh house salad" },
+  { name: "House Greens Salad", price: 15, description: "Romaine or Kale" },
   { name: "Roasted Salmon (6 pcs)", price: 48, description: "6 pieces of roasted salmon" },
   { name: "Roasted Chicken", price: 36, description: "Whole roasted chicken" },
   { name: "Chicken Nuggets", price: 28, description: "Crispy chicken nuggets" },
@@ -37,6 +37,7 @@ export default function EstherPage() {
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [addons, setAddons] = useState<Record<string, number>>({});
+  const [greensChoice, setGreensChoice] = useState<"Romaine" | "Kale">("Romaine");
 
   const [form, setForm] = useState({
     name: "",
@@ -82,12 +83,21 @@ export default function EstherPage() {
     });
   };
 
+  const setAddonQty = (name: string, delta: number) => {
+    setAddons((prev) => {
+      const next = (prev[name] || 0) + delta;
+      if (next <= 0) {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      }
+      return { ...prev, [name]: next };
+    });
+  };
+
   const getBakerySubtotal = () => {
     if (!menu) return 0;
-    return menu.items.reduce((sum, item) => {
-      const qty = quantities[item.name] || 0;
-      return sum + item.price * qty;
-    }, 0);
+    return menu.items.reduce((sum, item) => sum + item.price * (quantities[item.name] || 0), 0);
   };
 
   const getAddonSubtotal = () =>
@@ -96,9 +106,11 @@ export default function EstherPage() {
   const subtotal = getBakerySubtotal() + getAddonSubtotal();
   const meetsMinimum = subtotal >= MIN_ORDER;
 
+  const addonDisplayName = (name: string) =>
+    name === "House Greens Salad" ? `House Greens Salad (${greensChoice})` : name;
+
   const buildLineItems = () => {
-    if (!menu) return [];
-    const bakeryItems = menu.items
+    const bakeryItems = (menu?.items ?? [])
       .filter((item) => (quantities[item.name] || 0) > 0)
       .map((item) => ({
         price_data: {
@@ -113,7 +125,7 @@ export default function EstherPage() {
       .map((a) => ({
         price_data: {
           currency: "usd",
-          product_data: { name: a.name, description: a.description },
+          product_data: { name: addonDisplayName(a.name), description: a.description },
           unit_amount: Math.round(a.price * 100),
         },
         quantity: addons[a.name],
@@ -122,13 +134,12 @@ export default function EstherPage() {
   };
 
   const buildItems = () => {
-    if (!menu) return [];
-    const bakery = menu.items
+    const bakery = (menu?.items ?? [])
       .filter((item) => (quantities[item.name] || 0) > 0)
       .map((item) => ({ name: item.name, description: item.description, quantity: quantities[item.name] }));
     const addonList = SHABBAT_ADDONS
       .filter((a) => (addons[a.name] || 0) > 0)
-      .map((a) => ({ name: a.name, description: a.description, quantity: addons[a.name] }));
+      .map((a) => ({ name: addonDisplayName(a.name), description: a.description, quantity: addons[a.name] }));
     return [...bakery, ...addonList];
   };
 
@@ -177,7 +188,7 @@ export default function EstherPage() {
   if (loading) {
     return (
       <main className="bg-black text-white min-h-screen flex items-center justify-center">
-        <p className="text-zinc-400">Loading this week's fixins menu...</p>
+        <p className="text-zinc-400">Loading this week's menu...</p>
       </main>
     );
   }
@@ -202,7 +213,7 @@ export default function EstherPage() {
       <div className="px-6 py-12 max-w-2xl mx-auto">
 
         {/* HEADER */}
-        <div className="mb-6">
+        <div className="mb-4">
           <img
             src="/freds%20fixins.png"
             alt="Fred's Fixins'"
@@ -232,7 +243,7 @@ export default function EstherPage() {
         {isOpen && menu && menu.items && menu.items.length > 0 && (
           <div className="space-y-6">
 
-            {/* THIS WEEK'S BAKERY ITEMS */}
+            {/* THIS WEEK'S FIXINS' */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">This Week's Fixins'</p>
               <p className="text-zinc-500 text-xs mb-5">Add quantities — minimum ${MIN_ORDER} to order.</p>
@@ -246,11 +257,7 @@ export default function EstherPage() {
                     <div
                       key={item.name}
                       className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
-                        soldOut
-                          ? "border-zinc-800 opacity-40"
-                          : qty > 0
-                          ? "border-yellow-400 bg-zinc-800"
-                          : "border-zinc-700"
+                        soldOut ? "border-zinc-800 opacity-40" : qty > 0 ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"
                       }`}
                     >
                       <div className="flex-1 min-w-0 pr-4">
@@ -263,26 +270,15 @@ export default function EstherPage() {
                           <p className="text-red-400 text-xs font-bold">Only {maxQty} left</p>
                         )}
                       </div>
-
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-zinc-300 font-black text-sm">${item.price.toFixed(2)}</span>
                         {!soldOut && (
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setQty(item.name, -1, maxQty)}
-                              disabled={qty === 0}
-                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                              −
-                            </button>
+                            <button onClick={() => setQty(item.name, -1, maxQty)} disabled={qty === 0}
+                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">−</button>
                             <span className="w-5 text-center font-black text-sm text-white">{qty}</span>
-                            <button
-                              onClick={() => setQty(item.name, 1, maxQty)}
-                              disabled={atMax}
-                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                              +
-                            </button>
+                            <button onClick={() => setQty(item.name, 1, maxQty)} disabled={atMax}
+                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-yellow-400 hover:text-yellow-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">+</button>
                           </div>
                         )}
                       </div>
@@ -290,12 +286,10 @@ export default function EstherPage() {
                   );
                 })}
               </div>
-
-              {/* MINIMUM INDICATOR */}
               <div className="mt-4 flex items-center justify-between">
                 <p className={`text-sm font-bold ${meetsMinimum ? "text-teal-400" : "text-zinc-500"}`}>
                   {meetsMinimum
-                    ? `✓ Minimum met — great selection!`
+                    ? "✓ Minimum met — great selection!"
                     : `$${(MIN_ORDER - subtotal).toFixed(2)} more to reach the $${MIN_ORDER} minimum`}
                 </p>
                 <p className="text-white font-black">${subtotal.toFixed(2)}</p>
@@ -310,33 +304,34 @@ export default function EstherPage() {
                 {SHABBAT_ADDONS.map((addon) => {
                   const qty = addons[addon.name] || 0;
                   return (
-                    <div
-                      key={addon.name}
-                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-colors ${qty > 0 ? "border-teal-400 bg-teal-400/10" : "border-zinc-700"}`}
-                    >
-                      <div className="flex-1 min-w-0 pr-4">
-                        <p className="font-bold text-sm">{addon.name}</p>
-                        <p className="text-zinc-500 text-xs">{addon.description}</p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-zinc-300 font-black text-sm">${addon.price.toFixed(2)}</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setAddons((prev) => {
-                              const next = (prev[addon.name] || 0) - 1;
-                              if (next <= 0) { const u = { ...prev }; delete u[addon.name]; return u; }
-                              return { ...prev, [addon.name]: next };
-                            })}
-                            disabled={qty === 0}
-                            className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-teal-400 hover:text-teal-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          >−</button>
-                          <span className="w-5 text-center font-black text-sm text-white">{qty}</span>
-                          <button
-                            onClick={() => setAddons((prev) => ({ ...prev, [addon.name]: (prev[addon.name] || 0) + 1 }))}
-                            className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-teal-400 hover:text-teal-400 transition-colors"
-                          >+</button>
+                    <div key={addon.name} className="space-y-2">
+                      <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-colors ${qty > 0 ? "border-teal-400 bg-teal-400/10" : "border-zinc-700"}`}>
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="font-bold text-sm">{addon.name}</p>
+                          <p className="text-zinc-500 text-xs">{addon.description}</p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-zinc-300 font-black text-sm">${addon.price.toFixed(2)}</span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setAddonQty(addon.name, -1)} disabled={qty === 0}
+                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-teal-400 hover:text-teal-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">−</button>
+                            <span className="w-5 text-center font-black text-sm text-white">{qty}</span>
+                            <button onClick={() => setAddonQty(addon.name, 1)}
+                              className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-teal-400 hover:text-teal-400 transition-colors">+</button>
+                          </div>
                         </div>
                       </div>
+                      {addon.name === "House Greens Salad" && qty > 0 && (
+                        <div className="flex items-center gap-2 pl-1">
+                          {(["Romaine", "Kale"] as const).map((choice) => (
+                            <button key={choice} onClick={() => setGreensChoice(choice)}
+                              className={`px-4 py-1.5 rounded-full text-xs font-black border-2 transition-colors ${greensChoice === choice ? "border-teal-400 bg-teal-400 text-black" : "border-zinc-600 text-zinc-400 hover:border-zinc-400"}`}>
+                              {choice}
+                            </button>
+                          ))}
+                          <span className="text-zinc-500 text-xs">Select your greens</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -378,15 +373,9 @@ export default function EstherPage() {
                 <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Driver Tip (optional)</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={tipAmount || ""}
+                  <input type="number" min="0" step="0.01" placeholder="0.00" value={tipAmount || ""}
                     onChange={(e) => setTipAmount(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500"
-                  />
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500" />
                 </div>
               </div>
 
@@ -402,17 +391,11 @@ export default function EstherPage() {
 
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !meetsMinimum || subtotal === 0}
-                className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting
-                  ? "Redirecting to payment..."
-                  : subtotal === 0
-                  ? "Add items to continue"
-                  : !meetsMinimum
-                  ? `Add $${(MIN_ORDER - subtotal).toFixed(2)} more to checkout`
+              <button onClick={handleSubmit} disabled={submitting || !meetsMinimum || subtotal === 0}
+                className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                {submitting ? "Redirecting to payment..."
+                  : subtotal === 0 ? "Add items to continue"
+                  : !meetsMinimum ? `Add $${(MIN_ORDER - subtotal).toFixed(2)} more to checkout`
                   : `Pay $${(subtotal * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
               </button>
               <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
@@ -425,12 +408,8 @@ export default function EstherPage() {
       <footer className="border-t border-zinc-800 px-6 py-10 mt-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-8 w-auto opacity-50" />
-          <p className="text-zinc-600 text-xs text-center">
-            Fred's Fixins' is a Hungry Rooster concept. Dallas, TX.
-          </p>
-          <a href="/" className="text-zinc-400 hover:text-white text-sm font-bold transition-colors">
-            ← Back to The Hungry Rooster
-          </a>
+          <p className="text-zinc-600 text-xs text-center">Fred's Fixins' is a Hungry Rooster concept. Dallas, TX.</p>
+          <a href="/" className="text-zinc-400 hover:text-white text-sm font-bold transition-colors">← Back to The Hungry Rooster</a>
         </div>
       </footer>
 
