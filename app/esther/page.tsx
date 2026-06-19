@@ -36,7 +36,7 @@ export default function EstherPage() {
   const [error, setError] = useState("");
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [addons, setAddons] = useState<Record<string, boolean>>({});
+  const [addons, setAddons] = useState<Record<string, number>>({});
 
   const [form, setForm] = useState({
     name: "",
@@ -91,7 +91,7 @@ export default function EstherPage() {
   };
 
   const getAddonSubtotal = () =>
-    SHABBAT_ADDONS.reduce((sum, a) => sum + (addons[a.name] ? a.price : 0), 0);
+    SHABBAT_ADDONS.reduce((sum, a) => sum + (addons[a.name] || 0) * a.price, 0);
 
   const subtotal = getBakerySubtotal() + getAddonSubtotal();
   const meetsMinimum = subtotal >= MIN_ORDER;
@@ -109,14 +109,14 @@ export default function EstherPage() {
         quantity: quantities[item.name],
       }));
     const addonItems = SHABBAT_ADDONS
-      .filter((a) => addons[a.name])
+      .filter((a) => (addons[a.name] || 0) > 0)
       .map((a) => ({
         price_data: {
           currency: "usd",
           product_data: { name: a.name, description: a.description },
           unit_amount: Math.round(a.price * 100),
         },
-        quantity: 1,
+        quantity: addons[a.name],
       }));
     return [...bakeryItems, ...addonItems];
   };
@@ -127,8 +127,8 @@ export default function EstherPage() {
       .filter((item) => (quantities[item.name] || 0) > 0)
       .map((item) => ({ name: item.name, description: item.description, quantity: quantities[item.name] }));
     const addonList = SHABBAT_ADDONS
-      .filter((a) => addons[a.name])
-      .map((a) => ({ name: a.name, description: a.description, quantity: 1 }));
+      .filter((a) => (addons[a.name] || 0) > 0)
+      .map((a) => ({ name: a.name, description: a.description, quantity: addons[a.name] }));
     return [...bakery, ...addonList];
   };
 
@@ -301,26 +301,39 @@ export default function EstherPage() {
               <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-1">Shabbat Add-Ons</p>
               <p className="text-zinc-500 text-xs mb-4">Mix and match to reach your $50 minimum.</p>
               <div className="space-y-3">
-                {SHABBAT_ADDONS.map((addon) => (
-                  <button
-                    key={addon.name}
-                    onClick={() => setAddons((prev) => ({ ...prev, [addon.name]: !prev[addon.name] }))}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${addons[addon.name] ? "border-teal-400 bg-teal-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${addons[addon.name] ? "border-teal-400 bg-teal-400" : "border-zinc-500"}`}>
-                          {addons[addon.name] && <span className="text-black text-xs font-black">✓</span>}
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm">{addon.name}</p>
-                          <p className="text-zinc-500 text-xs">{addon.description}</p>
+                {SHABBAT_ADDONS.map((addon) => {
+                  const qty = addons[addon.name] || 0;
+                  return (
+                    <div
+                      key={addon.name}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-colors ${qty > 0 ? "border-teal-400 bg-teal-400/10" : "border-zinc-700"}`}
+                    >
+                      <div className="flex-1 min-w-0 pr-4">
+                        <p className="font-bold text-sm">{addon.name}</p>
+                        <p className="text-zinc-500 text-xs">{addon.description}</p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-zinc-300 font-black text-sm">${addon.price.toFixed(2)}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setAddons((prev) => {
+                              const next = (prev[addon.name] || 0) - 1;
+                              if (next <= 0) { const u = { ...prev }; delete u[addon.name]; return u; }
+                              return { ...prev, [addon.name]: next };
+                            })}
+                            disabled={qty === 0}
+                            className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-teal-400 hover:text-teal-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          >−</button>
+                          <span className="w-5 text-center font-black text-sm text-white">{qty}</span>
+                          <button
+                            onClick={() => setAddons((prev) => ({ ...prev, [addon.name]: (prev[addon.name] || 0) + 1 }))}
+                            className="w-8 h-8 rounded-full border border-zinc-600 text-zinc-300 font-black text-lg leading-none flex items-center justify-center hover:border-teal-400 hover:text-teal-400 transition-colors"
+                          >+</button>
                         </div>
                       </div>
-                      <span className="font-black text-teal-400 shrink-0 ml-4">${addon.price}</span>
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
