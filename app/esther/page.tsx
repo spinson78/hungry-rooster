@@ -217,7 +217,7 @@ export default function EstherPage() {
           <img
             src="/freds%20fixins.png"
             alt="Fred's Fixins'"
-            className="w-64 object-contain"
+            className="w-full max-w-xs object-contain"
             style={{ mixBlendMode: "screen" }}
           />
         </div>

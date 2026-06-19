@@ -109,12 +109,12 @@ export default function Home() {
             <span className="text-teal-400 text-sm font-bold">Ghost Kitchen + Catering</span>
           </div>
           <div>
-            <img src="/esther.png" alt="Esther" className="w-36 mb-5" />
-            <h3 className="text-xl font-black mb-2">Esther</h3>
+            <img src="/freds%20fixins.png" alt="Fred's Fixins'" className="w-36 mb-5" style={{ mixBlendMode: "screen" }} />
+            <h3 className="text-xl font-black mb-2">Fred's Fixins'</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
-              Food cart, 3x a week. Mon + Thu: sandwiches and salads. Friday: pastry-heavy for Shabbat.
+              Friday delivery. Bakery items, Shabbat add-ons, and Fred's personal touch — every week.
             </p>
-            <a href="/esther" className="text-yellow-400 text-sm font-bold hover:text-yellow-300 transition-colors">Find the cart →</a>
+            <a href="/esther" className="text-yellow-400 text-sm font-bold hover:text-yellow-300 transition-colors">Order now →</a>
           </div>
           <div>
             <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36 mb-5" />
