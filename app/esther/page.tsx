@@ -103,7 +103,7 @@ export default function EstherPage() {
       .map((item) => ({
         price_data: {
           currency: "usd",
-          product_data: { name: item.name, description: item.description || "Esther's Friday Bakery" },
+          product_data: { name: item.name, description: item.description || "Fred's Fixins'" },
           unit_amount: Math.round(item.price * 100),
         },
         quantity: quantities[item.name],
@@ -177,7 +177,7 @@ export default function EstherPage() {
   if (loading) {
     return (
       <main className="bg-black text-white min-h-screen flex items-center justify-center">
-        <p className="text-zinc-400">Loading this week's bakery menu...</p>
+        <p className="text-zinc-400">Loading this week's fixins menu...</p>
       </main>
     );
   }
@@ -202,9 +202,15 @@ export default function EstherPage() {
       <div className="px-6 py-12 max-w-2xl mx-auto">
 
         {/* HEADER */}
-        <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-2">Every Friday</p>
-        <h1 className="text-4xl font-black mb-1">Esther's Friday Bakery</h1>
-        <p className="text-zinc-400 mb-2">Fresh-baked and delivered Friday. Order by Friday 9AM.</p>
+        <div className="mb-6">
+          <img
+            src="/freds%20fixins.png"
+            alt="Fred's Fixins'"
+            className="w-64 object-contain"
+            style={{ mixBlendMode: "screen" }}
+          />
+        </div>
+        <p className="text-zinc-400 mb-2">Delivered Friday. Order by Friday 9AM.</p>
         <p className="text-zinc-500 text-sm mb-10">
           Orders open Monday at 9PM with the Shabbat menu. Minimum order ${MIN_ORDER}.
         </p>
@@ -214,7 +220,7 @@ export default function EstherPage() {
           <div className="bg-zinc-900 rounded-2xl p-8 border border-yellow-400/30 text-center mb-8">
             <p className="text-3xl mb-3">🥐</p>
             <h2 className="text-2xl font-black mb-2">Orders Open Monday at 9PM</h2>
-            <p className="text-zinc-300 font-bold mb-2">This week's bakery menu isn't live yet.</p>
+            <p className="text-zinc-300 font-bold mb-2">This week's menu isn't live yet.</p>
             <p className="text-zinc-500 text-sm">Check back Monday evening — orders open alongside the Shabbat Box menu.</p>
             <a href="/shabbat" className="inline-block mt-6 border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-black px-8 py-3 rounded-full text-sm transition-colors">
               Order Shabbat Box
@@ -228,7 +234,7 @@ export default function EstherPage() {
 
             {/* THIS WEEK'S BAKERY ITEMS */}
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">This Week's Bakery</p>
+              <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">This Week's Fixins'</p>
               <p className="text-zinc-500 text-xs mb-5">Add quantities — minimum ${MIN_ORDER} to order.</p>
               <div className="space-y-3">
                 {menu.items.map((item) => {
@@ -420,7 +426,7 @@ export default function EstherPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-8 w-auto opacity-50" />
           <p className="text-zinc-600 text-xs text-center">
-            Esther is a Hungry Rooster concept. Dallas, TX.
+            Fred's Fixins' is a Hungry Rooster concept. Dallas, TX.
           </p>
           <a href="/" className="text-zinc-400 hover:text-white text-sm font-bold transition-colors">
             ← Back to The Hungry Rooster
