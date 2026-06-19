@@ -50,7 +50,7 @@ const TYPE_LABELS: Record<string, string> = {
   menu:    "Menu (Walk-in)",
   dinner:  "Dinner Drop",
   shabbat: "Shabbat Box",
-  bakery:  "Esther's Bakery",
+  bakery:  "Fred's Fixins'",
   invoice: "Catering / Invoices",
   group_order: "Group Order",
   catering: "Catering (Direct)",
