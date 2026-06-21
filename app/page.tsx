@@ -114,7 +114,6 @@ export default function Home() {
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Friday delivery. Bakery items, Shabbat add-ons, and Fred's personal touch — every week.
             </p>
-            <a href="/esther" className="text-yellow-400 text-sm font-bold hover:text-yellow-300 transition-colors">Click here to find Esther →</a>
           </div>
           <div>
             <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36 mb-5" />
