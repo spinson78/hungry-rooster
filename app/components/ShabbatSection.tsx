@@ -24,6 +24,16 @@ type BakeryMenu = {
   is_active: boolean;
 };
 
+// Sunday 10 AM of the week the cutoff falls in
+function getSundayReveal(cutoffTime: string): Date {
+  const cutoff = new Date(cutoffTime);
+  const dayOfWeek = cutoff.getDay(); // 5 = Friday
+  const sunday = new Date(cutoff);
+  sunday.setDate(cutoff.getDate() - dayOfWeek);
+  sunday.setHours(10, 0, 0, 0);
+  return sunday;
+}
+
 export default function ShabbatSection() {
   const [menu, setMenu] = useState<ShabbatMenu | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -31,6 +41,7 @@ export default function ShabbatSection() {
   const [loading, setLoading] = useState(true);
   const [bakery, setBakery] = useState<BakeryMenu | null>(null);
   const [bakeryOpen, setBakeryOpen] = useState(false);
+  const [bakeryRevealed, setBakeryRevealed] = useState(false);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -45,7 +56,7 @@ export default function ShabbatSection() {
       if (data && data.length > 0) {
         const shabbat = data[0];
         setMenu(shabbat);
-        const reveal = new Date(shabbat.reveal_time);
+        const reveal = getSundayReveal(shabbat.cutoff_time);
         const cutoff = new Date(shabbat.cutoff_time);
         setIsRevealed(now >= reveal);
         setIsOpen(now >= reveal && now < cutoff && shabbat.quantity_remaining > 0);
@@ -65,8 +76,9 @@ export default function ShabbatSection() {
       if (data && data.length > 0) {
         const b = data[0];
         setBakery(b);
-        const reveal = new Date(b.reveal_time);
+        const reveal = getSundayReveal(b.cutoff_time);
         const cutoff = new Date(b.cutoff_time);
+        setBakeryRevealed(now >= reveal);
         setBakeryOpen(now >= reveal && now < cutoff && b.quantity_remaining > 0);
       }
     };
@@ -88,7 +100,7 @@ export default function ShabbatSection() {
       {/* 3-COLUMN: Fred | Shabbat Box | Esther's Bakery */}
       <div className="flex flex-col md:flex-row items-start gap-8">
 
-        {/* FRED — stage left, smaller */}
+        {/* FRED */}
         <div className="flex-shrink-0 flex flex-col items-center">
           <img
             src="/shabbat%20fred.png"
@@ -102,7 +114,7 @@ export default function ShabbatSection() {
           <div className="mb-4">
             <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Shabbat Box</p>
             <h3 className="text-2xl font-black mb-1">Dinner for the whole table</h3>
-            <p className="text-zinc-500 text-sm">Delivered Friday. Orders open Monday at 9PM. Cutoff Friday 9AM.</p>
+            <p className="text-zinc-500 text-sm">Delivered Friday. Menu drops Sunday at 10AM. Cutoff Friday 9AM.</p>
           </div>
 
           {!menu ? (
@@ -115,7 +127,7 @@ export default function ShabbatSection() {
           ) : !isRevealed ? (
             <>
               <p className="text-zinc-400 text-sm mb-4 leading-relaxed">
-                This week&apos;s menu drops <span className="text-white font-bold">Monday at 9PM</span>. Follow us on Instagram for the preview.
+                This week&apos;s menu drops <span className="text-white font-bold">Sunday at 10AM</span>. Follow us on Instagram for the preview.
               </p>
               <p className="text-zinc-600 text-xs mb-4">Kosher. Scratch-made. No stress. From $65.</p>
             </>
@@ -140,7 +152,7 @@ export default function ShabbatSection() {
             <>
               <p className="text-zinc-400 text-sm mb-4 leading-relaxed">
                 {menu.quantity_remaining === 0 ? "Sold out for this week." : "Ordering closed for this week."}{" "}
-                Back Monday at 9PM.
+                Back Sunday at 10AM.
               </p>
             </>
           )}
@@ -163,10 +175,10 @@ export default function ShabbatSection() {
           <div className="mb-4">
             <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Esther&apos;s Bakery</p>
             <h3 className="text-2xl font-black mb-1">Fresh-baked, every Friday</h3>
-            <p className="text-zinc-500 text-sm">Weekly rotating menu. Orders open Monday at 9PM. Cutoff Friday 9AM. Min $50.</p>
+            <p className="text-zinc-500 text-sm">Weekly rotating menu. Menu drops Sunday at 10AM. Cutoff Friday 9AM. Min $50.</p>
           </div>
 
-          {bakery && bakeryOpen ? (
+          {bakery && bakeryRevealed ? (
             <>
               <p className="text-zinc-400 text-xs uppercase tracking-widest font-bold mb-3">This week&apos;s bakery</p>
               <ul className="text-white text-sm mb-3 space-y-1">
@@ -187,7 +199,7 @@ export default function ShabbatSection() {
               <p className="text-zinc-400 text-sm mb-4 leading-relaxed">
                 Challahs, babka, pastries and more — baked fresh and delivered Friday alongside your Shabbat table.
               </p>
-              <p className="text-zinc-600 text-xs mb-4">Menu changes weekly. Back Monday for this week&apos;s drop.</p>
+              <p className="text-zinc-600 text-xs mb-4">Menu drops Sunday at 10AM.</p>
             </>
           )}
 
