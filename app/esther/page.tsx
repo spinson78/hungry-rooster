@@ -215,8 +215,8 @@ export default function EstherPage() {
         {/* HEADER */}
         <div className="mb-4">
           <img
-            src="/freds%20fixins.png"
-            alt="Fred's Fixins'"
+            src="/esther%20glow%20up.png"
+            alt="Esther's Bakery"
             className="w-full object-contain"
             style={{ mixBlendMode: "screen" }}
           />
