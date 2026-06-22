@@ -2,8 +2,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-const KDS_PASSWORD = "kitchen";
-
 type OrderItem = {
   name: string;
   qty: number;
@@ -30,6 +28,7 @@ type Order = {
   order_type: string;
   status: string;
   created_at: string;
+  item_statuses?: Record<string, boolean>;
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -47,13 +46,11 @@ function elapsed(created: string) {
 }
 
 let sharedCtx: AudioContext | null = null;
-
 function getAudioContext() {
   if (!sharedCtx) sharedCtx = new AudioContext();
   if (sharedCtx.state === "suspended") sharedCtx.resume();
   return sharedCtx;
 }
-
 function playAlarm(muted: boolean) {
   if (muted) return;
   try {
@@ -61,8 +58,7 @@ function playAlarm(muted: boolean) {
     [0, 0.22, 0.44].forEach(offset => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.type = "square";
       osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
       gain.gain.setValueAtTime(0.4, ctx.currentTime + offset);
@@ -70,17 +66,28 @@ function playAlarm(muted: boolean) {
       osc.start(ctx.currentTime + offset);
       osc.stop(ctx.currentTime + offset + 0.2);
     });
-  } catch {
-    // Audio not available
-  }
+  } catch { /* Audio not available */ }
 }
 
-function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () => void; onPrint: (o: Order) => void }) {
+function OrderCard({
+  order, onUpdate, onPrint, isCompleted,
+}: {
+  order: Order; onUpdate: () => void; onPrint: (o: Order) => void; isCompleted?: boolean;
+}) {
   const [updating, setUpdating] = useState(false);
+  const [itemStatuses, setItemStatuses] = useState<Record<string, boolean>>(
+    order.item_statuses || {}
+  );
+
+  // Sync item statuses when order prop updates (real-time from other kitchen)
+  useEffect(() => {
+    setItemStatuses(order.item_statuses || {});
+  }, [order.item_statuses]);
+
   const isNew = order.status === "pending";
   const isStarted = order.status === "in_progress";
   const mins = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
-  const urgent = mins >= 10;
+  const urgent = mins >= 10 && !isCompleted;
 
   const updateStatus = async (status: string) => {
     setUpdating(true);
@@ -89,13 +96,23 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
     setUpdating(false);
   };
 
-  const handlePrint = () => onPrint(order);
+  const toggleItem = async (index: number) => {
+    if (isCompleted) return;
+    const key = String(index);
+    const newStatuses = { ...itemStatuses, [key]: !itemStatuses[key] };
+    setItemStatuses(newStatuses); // Optimistic update
+    await supabase.from("orders").update({ item_statuses: newStatuses }).eq("id", order.id);
+  };
+
+  const allItemsDone = order.items.length > 0 &&
+    order.items.every((_, i) => itemStatuses[String(i)]);
 
   return (
     <div className={`rounded-3xl border-4 p-6 flex flex-col gap-4 transition-all ${
+      isCompleted ? "border-zinc-700 bg-zinc-900/60 opacity-70" :
       isNew ? (urgent ? "border-red-500 bg-red-500/10" : "border-yellow-400 bg-yellow-400/5") :
-      isStarted ? "border-teal-500 bg-teal-500/5" :
-      "border-zinc-700 bg-zinc-900 opacity-50"
+      isStarted ? (allItemsDone ? "border-green-500 bg-green-500/10" : "border-teal-500 bg-teal-500/5") :
+      "border-zinc-700 bg-zinc-900"
     }`}>
 
       {/* Header */}
@@ -106,13 +123,13 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
         </div>
         <div className="text-right shrink-0">
           {order.order_number && <p className="text-zinc-400 font-mono text-sm">{order.order_number}</p>}
-          <p className={`text-xl font-black mt-1 ${urgent ? "text-red-400" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
+          <p className={`text-xl font-black mt-1 ${urgent ? "text-red-400" : isCompleted ? "text-zinc-500" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
             {elapsed(order.created_at)}
           </p>
         </div>
       </div>
 
-      {/* Delivery address — shown prominently for delivery orders */}
+      {/* Delivery address */}
       {order.fulfillment_type === "delivery" && order.customer_address && order.customer_address !== "Pickup" && (
         <div className="bg-blue-500/20 border-2 border-blue-400/40 rounded-2xl px-4 py-3">
           <p className="text-blue-300 font-black text-xs uppercase tracking-widest mb-1">🚗 Deliver to</p>
@@ -120,18 +137,13 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
         </div>
       )}
 
-      {/* Status badge */}
+      {/* Status badges */}
       <div className="flex items-center gap-3 flex-wrap">
-        {/* For menu orders, show Delivery or Pickup instead of "Walk-in" */}
         {order.order_type === "menu" ? (
           order.fulfillment_type === "delivery" ? (
-            <span className="text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">
-              🚗 Delivery
-            </span>
+            <span className="text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">🚗 Delivery</span>
           ) : (
-            <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR.menu}`}>
-              🥡 Pickup
-            </span>
+            <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR.menu}`}>🥡 Pickup</span>
           )
         ) : (
           <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
@@ -139,32 +151,47 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
           </span>
         )}
         {isNew && <span className="text-base font-black text-yellow-400 animate-pulse">● NEW</span>}
-        {isStarted && <span className="text-base font-black text-teal-400">● IN PROGRESS</span>}
+        {isStarted && !allItemsDone && <span className="text-base font-black text-teal-400">● IN PROGRESS</span>}
+        {isStarted && allItemsDone && <span className="text-base font-black text-green-400">✓ READY</span>}
+        {isCompleted && <span className="text-base font-black text-zinc-500">✓ DONE</span>}
         {urgent && <span className="text-base font-black text-red-400">⚠ URGENT</span>}
       </div>
 
-      {/* Items */}
-      <div className="border-t-2 border-zinc-700 pt-4 space-y-3">
-        {order.items.map((item, i) => (
-          <div key={i}>
-            <p className="text-xl font-black">
-              {item.qty > 1 && <span className="text-yellow-400">{item.qty}× </span>}
-              <span className="text-white">{item.name}</span>
-              {item.size && <span className="text-zinc-400 text-base font-normal"> — {item.size}</span>}
-            </p>
-            {item.addons && item.addons.length > 0 && (
-              <p className="text-zinc-400 text-base mt-1 ml-4">+ {item.addons.join(", ")}</p>
-            )}
-            {item.mods && (
-              <p className="text-orange-300 text-base font-bold mt-1 ml-4">⚠ {item.mods}</p>
-            )}
-            {item.protein && (
-              <p className="text-zinc-400 text-base mt-1 ml-4">
-                {[item.protein, item.side1, item.side2, item.extra].filter(Boolean).join(" / ")}
+      {/* Items — tappable for per-item completion */}
+      <div className="border-t-2 border-zinc-700 pt-4 space-y-2">
+        {!isCompleted && (
+          <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Tap item to mark done</p>
+        )}
+        {order.items.map((item, i) => {
+          const done = itemStatuses[String(i)];
+          return (
+            <div
+              key={i}
+              onClick={() => toggleItem(i)}
+              className={`rounded-xl px-3 py-2 transition-all select-none ${
+                !isCompleted ? "cursor-pointer hover:bg-zinc-800 active:scale-95" : ""
+              } ${done ? "bg-green-500/15 border border-green-500/30" : "border border-transparent"}`}
+            >
+              <p className={`text-xl font-black transition-colors ${done ? "text-green-400 line-through" : "text-white"}`}>
+                {item.qty > 1 && <span className={done ? "text-green-400" : "text-yellow-400"}>{item.qty}× </span>}
+                {item.name}
+                {item.size && <span className="text-zinc-400 text-base font-normal"> — {item.size}</span>}
+                {done && <span className="text-green-400 text-base ml-2">✓</span>}
               </p>
-            )}
-          </div>
-        ))}
+              {item.addons && item.addons.length > 0 && (
+                <p className={`text-base mt-0.5 ml-4 ${done ? "text-green-600 line-through" : "text-zinc-400"}`}>+ {item.addons.join(", ")}</p>
+              )}
+              {item.mods && (
+                <p className={`text-base font-bold mt-0.5 ml-4 ${done ? "text-green-600" : "text-orange-300"}`}>⚠ {item.mods}</p>
+              )}
+              {item.protein && (
+                <p className={`text-base mt-0.5 ml-4 ${done ? "text-green-600 line-through" : "text-zinc-400"}`}>
+                  {[item.protein, item.side1, item.side2, item.extra].filter(Boolean).join(" / ")}
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Special requests */}
@@ -177,10 +204,10 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
       {/* Actions */}
       <div className="flex gap-3 mt-auto pt-2">
         <button
-          onClick={handlePrint}
+          onClick={() => onPrint(order)}
           className="text-base font-black text-zinc-400 hover:text-white border-2 border-zinc-700 hover:border-zinc-500 px-4 py-3 rounded-full transition-colors"
         >
-          🖨 Print
+          🖨
         </button>
         {isNew && (
           <button
@@ -195,9 +222,22 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
           <button
             onClick={() => updateStatus("complete")}
             disabled={updating}
-            className="flex-1 text-xl font-black bg-yellow-400 hover:bg-yellow-300 text-black py-3 rounded-full transition-colors disabled:opacity-50"
+            className={`flex-1 text-xl font-black py-3 rounded-full transition-colors disabled:opacity-50 ${
+              allItemsDone
+                ? "bg-green-500 hover:bg-green-400 text-black"
+                : "bg-yellow-400 hover:bg-yellow-300 text-black"
+            }`}
           >
             Done ✓
+          </button>
+        )}
+        {isCompleted && (
+          <button
+            onClick={() => updateStatus("in_progress")}
+            disabled={updating}
+            className="flex-1 text-base font-black bg-zinc-700 hover:bg-zinc-600 text-white py-3 rounded-full transition-colors disabled:opacity-50"
+          >
+            ↩ Recall
           </button>
         )}
       </div>
@@ -206,10 +246,8 @@ function OrderCard({ order, onUpdate, onPrint }: { order: Order; onUpdate: () =>
 }
 
 export default function KDSPage() {
-  const [authed, setAuthed] = useState(true);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [showDone, setShowDone] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [muted, setMuted] = useState(false);
   const knownOrderIds = useRef<Set<string>>(new Set());
@@ -219,58 +257,55 @@ export default function KDSPage() {
     const { data } = await supabase
       .from("orders")
       .select("*")
-      .in("status", showDone ? ["pending", "in_progress", "complete"] : ["pending", "in_progress"])
+      .in("status", ["pending", "in_progress", "complete"])
       .not("order_type", "in", '("shabbat","bakery")')
       .order("created_at", { ascending: true });
     const fetched = (data as Order[]) || [];
 
-    // Detect brand-new pending orders and play alarm
     if (initialLoadDone.current) {
       const newPending = fetched.filter(
         o => o.status === "pending" && !knownOrderIds.current.has(o.id)
       );
-      if (newPending.length > 0) {
-        playAlarm(muted);
-      }
+      if (newPending.length > 0) playAlarm(muted);
     }
 
-    // Track all seen order IDs
     fetched.forEach(o => knownOrderIds.current.add(o.id));
     initialLoadDone.current = true;
-
     setOrders(fetched);
-  }, [showDone]);
+  }, [muted]);
 
   useEffect(() => {
-    if (!authed) return;
     fetchOrders();
-
     const channel = supabase
       .channel("kds-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
         fetchOrders();
       })
       .subscribe();
-
     const poll = setInterval(fetchOrders, 10000);
     const tick = setInterval(() => setNow(Date.now()), 30000);
-
     return () => {
       supabase.removeChannel(channel);
       clearInterval(poll);
       clearInterval(tick);
     };
-  }, [authed, fetchOrders]);
+  }, [fetchOrders]);
 
   void now;
 
   const active = orders.filter(o => o.status === "pending" || o.status === "in_progress");
-  const done = orders.filter(o => o.status === "complete");
+  // Completed: show last 15, most recent first for the backlog
+  const completed = orders
+    .filter(o => o.status === "complete")
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 15);
+
+  const handlePrint = (o: Order) => { setPrintOrder(o); setTimeout(() => window.print(), 100); };
 
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
 
-      {/* Header — tap anywhere to unlock audio */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6" onClick={() => getAudioContext()}>
         <div className="flex items-center gap-4">
           <span className="text-white font-black text-2xl">🍳 Kitchen</span>
@@ -288,12 +323,6 @@ export default function KDSPage() {
             {muted ? "🔇 Muted" : "🔔 Sound"}
           </button>
           <button
-            onClick={() => setShowDone(s => !s)}
-            className={`text-base font-black px-5 py-2.5 rounded-full border transition-colors ${showDone ? "bg-zinc-700 border-zinc-600 text-white" : "border-zinc-700 text-zinc-500 hover:text-white"}`}
-          >
-            {showDone ? "Hide Done" : "Show Done"}
-          </button>
-          <button
             onClick={fetchOrders}
             className="text-base font-black text-zinc-400 hover:text-white border border-zinc-700 px-5 py-2.5 rounded-full transition-colors"
           >
@@ -302,8 +331,8 @@ export default function KDSPage() {
         </div>
       </div>
 
-      {/* Order Grid */}
-      {orders.length === 0 ? (
+      {/* Active Orders */}
+      {active.length === 0 && completed.length === 0 ? (
         <div className="flex items-center justify-center h-72 text-zinc-600">
           <div className="text-center">
             <p className="text-7xl mb-4">🐓</p>
@@ -312,17 +341,33 @@ export default function KDSPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {active.map(order => (
-            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={o => { setPrintOrder(o); setTimeout(() => window.print(), 100); }} />
-          ))}
-          {showDone && done.map(order => (
-            <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={o => { setPrintOrder(o); setTimeout(() => window.print(), 100); }} />
-          ))}
-        </div>
+        <>
+          {active.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+              {active.map(order => (
+                <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={handlePrint} />
+              ))}
+            </div>
+          )}
+
+          {/* Completed Backlog */}
+          {completed.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <p className="text-zinc-500 font-black text-sm uppercase tracking-widest">Completed — tap Recall if needed</p>
+                <span className="bg-zinc-800 text-zinc-500 font-black text-xs px-3 py-1 rounded-full">{completed.length}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completed.map(order => (
+                  <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={handlePrint} isCompleted />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Hidden print ticket — rendered offscreen, shown only on print */}
+      {/* Print ticket */}
       {printOrder && (
         <div id="kds-print-ticket">
           <div style={{ textAlign: "center", paddingBottom: "6px" }}>
@@ -371,20 +416,8 @@ export default function KDSPage() {
       )}
 
       <style>{`
-        #kds-print-ticket {
-          display: none;
-          font-family: 'Courier New', monospace;
-          font-size: 12px;
-          width: 80mm;
-          background: white;
-          color: black;
-          padding: 4mm;
-        }
-        @media print {
-          body > * { display: none !important; }
-          #kds-print-ticket { display: block !important; }
-          @page { margin: 2mm; size: 80mm auto; }
-        }
+        #kds-print-ticket { display: none; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; background: white; color: black; padding: 4mm; }
+        @media print { body > * { display: none !important; } #kds-print-ticket { display: block !important; } @page { margin: 2mm; size: 80mm auto; } }
       `}</style>
     </div>
   );

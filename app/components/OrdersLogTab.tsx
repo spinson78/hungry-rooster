@@ -93,6 +93,7 @@ export default function OrdersLogTab() {
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState("");
@@ -142,6 +143,13 @@ export default function OrdersLogTab() {
     setOrders(prev => prev.filter(o => o.id !== id));
     setDeletingId(null);
     setConfirmDeleteId(null);
+  };
+
+  const handleCancel = async (id: string) => {
+    setCancellingId(id);
+    await supabase.from("orders").update({ status: "cancelled" }).eq("id", id);
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: "cancelled" } : o));
+    setCancellingId(null);
   };
 
   const handleExportCSV = () => {
@@ -332,8 +340,19 @@ export default function OrdersLogTab() {
                 )}
               </div>
 
-              {/* Delete */}
-              <div className="shrink-0">
+              {/* Actions */}
+              <div className="shrink-0 flex flex-col gap-2 items-end">
+                {/* Cancel order */}
+                {order.status !== "cancelled" && (
+                  <button
+                    onClick={() => handleCancel(order.id)}
+                    disabled={cancellingId === order.id}
+                    className="text-xs font-black px-3 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-orange-400 hover:border-orange-400 disabled:opacity-50 transition-colors"
+                  >
+                    {cancellingId === order.id ? "…" : "Cancel Order"}
+                  </button>
+                )}
+                {/* Delete */}
                 {confirmDeleteId === order.id ? (
                   <div className="flex gap-2">
                     <button
@@ -347,16 +366,15 @@ export default function OrdersLogTab() {
                       onClick={() => setConfirmDeleteId(null)}
                       className="text-xs font-black px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
                     >
-                      Cancel
+                      Keep
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => setConfirmDeleteId(order.id)}
-                    className="text-zinc-600 hover:text-red-400 transition-colors p-1"
-                    title="Delete order"
+                    className="text-xs font-black px-3 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-600 hover:text-red-400 hover:border-red-400 transition-colors"
                   >
-                    🗑
+                    🗑 Delete
                   </button>
                 )}
               </div>
