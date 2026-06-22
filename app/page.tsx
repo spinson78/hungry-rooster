@@ -109,10 +109,11 @@ export default function Home() {
             <span className="text-teal-400 text-sm font-bold">Ghost Kitchen + Catering</span>
           </div>
           <div>
-            <img src="/esther.png" alt="Esther's Bakery" className="w-36 mb-5" />
-            <h3 className="text-xl font-black mb-2">Esther&apos;s Bakery</h3>
+            <img src="/esther.png" alt="Esther's Cart" className="w-36 mb-5" />
+            <h3 className="text-xl font-black mb-2">Esther&apos;s Cart</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
-              Friday delivery. Bakery items, Shabbat add-ons, and Fred's personal touch — every week.
+              Looking for Esther&apos;s location?{" "}
+              <a href="/esther" className="text-yellow-400 font-bold hover:text-yellow-300 transition-colors">Click here.</a>
             </p>
           </div>
           <div>
