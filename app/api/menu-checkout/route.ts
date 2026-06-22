@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Build Stripe line items
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item: { name: string; qty: number; unit_price: number; size?: string; mods?: string; addons?: string[] }) => ({
+  type LineItem = { price_data: { currency: string; product_data: { name: string; description?: string }; unit_amount: number }; quantity: number };
+  const lineItems: LineItem[] = items.map((item: { name: string; qty: number; unit_price: number; size?: string; mods?: string; addons?: string[] }) => ({
     price_data: {
       currency: "usd",
       product_data: {

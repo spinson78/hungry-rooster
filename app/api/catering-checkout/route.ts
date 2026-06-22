@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Build line items
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item: {
+  type LineItem = { price_data: { currency: string; product_data: { name: string; description?: string }; unit_amount: number }; quantity: number };
+  const lineItems: LineItem[] = items.map((item: {
     name?: string; itemName?: string; qty?: number; price?: number; size?: string; serving?: string; category?: string;
     includes?: string[]; choices?: string[];
   }) => ({
