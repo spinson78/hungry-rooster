@@ -548,7 +548,7 @@ export default function AdminPage() {
     const refreshFn = isDinner ? fetchDinnerOrders : isShabbat ? fetchShabbatOrders : isBakery ? fetchBakeryOrders : fetchCateringOrders;
     const clearType: "dinner" | "shabbat" | "bakery" | "catering" = isDinner ? "dinner" : isShabbat ? "shabbat" : isBakery ? "bakery" : "catering";
     const accentColor = isDinner ? "teal" : isShabbat ? "yellow" : isBakery ? "yellow" : "purple";
-    const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : isBakery ? "🥐 Bakery Orders" : "🍽️ Catering Orders";
+    const label = isDinner ? "🍽️ Dinner Drop Orders" : isShabbat ? "🕯️ Shabbat Orders" : isBakery ? "🥐 Fred's Fixins' Orders" : "🍽️ Catering Orders";
     const completedCount = orderList.filter(o => o.status === "complete").length;
 
     return (
@@ -582,7 +582,7 @@ export default function AdminPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDinner ? "bg-teal-400/20 text-teal-400" : isShabbat ? "bg-yellow-400/20 text-yellow-400" : isBakery ? "bg-yellow-400/20 text-yellow-400" : "bg-purple-400/20 text-purple-400"}`}>
-                      {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : isBakery ? "🥐 Bakery" : "Catering"}
+                      {isDinner ? "Dinner Drop" : isShabbat ? "🕯️ Shabbat" : isBakery ? "🥐 Fred's Fixins'" : "Catering"}
                     </span>
                     <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${order.status === "complete" ? "bg-green-400/20 text-green-400" : "bg-orange-400/20 text-orange-400"}`}>
                       {order.status}
@@ -687,7 +687,7 @@ export default function AdminPage() {
             🕯️ Shabbat
           </button>
           <button onClick={() => setTab("bakery-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "bakery-orders" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
-            🥐 Bakery
+            🥐 Fred's Fixins'
           </button>
           <button onClick={() => setTab("catering-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-orders" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🍽️ Catering
@@ -823,14 +823,14 @@ export default function AdminPage() {
             </div>
 
             <div className="mb-10">
-              <h2 className="text-xl font-black mb-1">🥐 Esther&apos;s Friday Bakery</h2>
-              <p className="text-zinc-500 text-sm mb-6">Weekly bakery menu — drops Monday at 9PM alongside Shabbat. Same Friday 9AM cutoff. Minimum order $50. Uses the same &ldquo;week of&rdquo; date as the Shabbat Box above.</p>
+              <h2 className="text-xl font-black mb-1">🥐 Fred&apos;s Fixins&apos;</h2>
+              <p className="text-zinc-500 text-sm mb-6">Fred's Fixins' weekly menu — drops Sunday at 10AM alongside Shabbat. Same Friday 9AM cutoff. Minimum order $50. Uses the same &ldquo;week of&rdquo; date as the Shabbat Box above.</p>
               <div className="bg-zinc-900 rounded-2xl p-6 border border-yellow-400/20">
                 <div className="mb-5">
                   <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Any date this week <span className="text-yellow-400 normal-case">(Monday is auto-calculated — same logic as Shabbat)</span></label>
                   <input type="date" value={bakeryWeekOf} onChange={(e) => setBakeryWeekOf(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm" />
                   {bakeryWeekOf && (
-                    <p className="text-teal-400 text-xs mt-1">↳ Monday: {getMondayOfWeek(bakeryWeekOf)} · Reveals Monday 9PM · Cutoff Friday 9AM</p>
+                    <p className="text-teal-400 text-xs mt-1">↳ Monday: {getMondayOfWeek(bakeryWeekOf)} · Reveals Sunday 10AM · Cutoff Friday 9AM</p>
                   )}
                 </div>
                 <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">This Week&apos;s Items</p>

@@ -174,10 +174,7 @@ export default function ShabbatSection() {
         <div className="flex-1 bg-zinc-900 rounded-2xl border border-zinc-700 p-7 flex flex-col">
           <div className="mb-4">
             <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Fred&apos;s Fixins&apos;</p>
-            <>
-            <img src="/freds%20fixins.png" alt="Fred's Fixins'" className="w-full mb-3 object-contain" style={{ mixBlendMode: "screen" }} />
             <h3 className="text-2xl font-black mb-1">Fresh-baked, every Friday</h3>
-            </>
             <p className="text-zinc-500 text-sm">Weekly rotating menu. Menu drops Sunday at 10AM. Cutoff Friday 9AM. Min $50.</p>
           </div>
 
