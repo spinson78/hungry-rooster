@@ -30,12 +30,12 @@ export default function Home() {
             Delivered to your coop.
           </p>
           <div className="flex flex-wrap gap-4">
-            <span className="bg-zinc-700 text-zinc-400 font-black px-8 py-4 rounded-full text-lg cursor-not-allowed">
-              Pickup / Delivery — Coming Soon
-            </span>
-            <span className="border-2 border-zinc-700 text-zinc-500 font-black px-8 py-4 rounded-full text-lg cursor-not-allowed">
-              Book Catering — Coming Soon
-            </span>
+            <a href="/menu" className="bg-yellow-400 text-black font-black px-8 py-4 rounded-full text-lg hover:bg-yellow-300 transition-colors">
+              Order from Menu
+            </a>
+            <a href="/catering" className="border-2 border-yellow-400 text-yellow-400 font-black px-8 py-4 rounded-full text-lg hover:bg-yellow-400 hover:text-black transition-colors">
+              Book Catering
+            </a>
           </div>
         </div>
       </section>
@@ -130,12 +130,12 @@ export default function Home() {
           Corporate. Schools. Weddings. Shiva. Whatever the occasion — we show up with food that hits.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
-          <span className="bg-zinc-700 text-zinc-400 font-black px-10 py-5 rounded-full text-xl cursor-not-allowed inline-block">
-            Order a Package — Coming Soon
-          </span>
-          <span className="border-2 border-zinc-700 text-zinc-500 font-black px-10 py-5 rounded-full text-xl cursor-not-allowed inline-block">
-            Get a Custom Quote — Coming Soon
-          </span>
+          <a href="/catering" className="bg-yellow-400 text-black font-black px-10 py-5 rounded-full text-xl hover:bg-yellow-300 transition-colors inline-block">
+            Order a Package
+          </a>
+          <a href="/catering" className="border-2 border-yellow-400 text-yellow-400 font-black px-10 py-5 rounded-full text-xl hover:bg-yellow-400 hover:text-black transition-colors inline-block">
+            Get a Custom Quote
+          </a>
         </div>
       </section>
 
