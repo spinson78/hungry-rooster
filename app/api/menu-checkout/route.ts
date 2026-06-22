@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Gift card → Stripe coupon
-  const discounts: Stripe.Checkout.SessionCreateParams.Discount[] = [];
+  type Discount = { coupon: string } | { promotion_code: string };
+  const discounts: Discount[] = [];
   if ((gift_discount || 0) > 0) {
     const coupon = await stripe.coupons.create({
       amount_off: Math.round(gift_discount * 100),
