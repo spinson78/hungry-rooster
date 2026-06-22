@@ -27,6 +27,9 @@ export default function Home() {
 
       {/* HERO */}
       <section className="px-6 py-20 md:py-32 max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+        <div className="flex-1 flex justify-center">
+          <img src="/white%20fred%20png.png" alt="Fred" className="max-w-xs w-full" />
+        </div>
         <div className="flex-1">
           <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-4">
             Dallas, TX - Ghost Kitchen + Catering
@@ -43,15 +46,12 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap gap-4">
             <span className="bg-zinc-700 text-zinc-400 font-black px-8 py-4 rounded-full text-lg cursor-not-allowed">
-              Order Pickup — Coming Soon
+              Pickup / Delivery — Coming Soon
             </span>
             <span className="border-2 border-zinc-700 text-zinc-500 font-black px-8 py-4 rounded-full text-lg cursor-not-allowed">
               Book Catering — Coming Soon
             </span>
           </div>
-        </div>
-        <div className="flex-1 flex justify-center">
-          <img src="/group%20orders%20fred.png" alt="Fred" className="max-w-xs w-full" />
         </div>
       </section>
 
