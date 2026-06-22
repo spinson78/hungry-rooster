@@ -145,4 +145,13 @@ export default function Home() {
           <div className="flex items-center gap-6 text-zinc-400 text-sm font-semibold">
             <a href="https://instagram.com/thehungryroostertx" className="hover:text-white transition-colors">Instagram</a>
             <a href="https://facebook.com/thehungryroostertx" className="hover:text-white transition-colors">Facebook</a>
-            <a href="https://tiktok.com/@thehungryroostertx" className="hover:text-
+            <a href="https://tiktok.com/@thehungryroostertx" className="hover:text-white transition-colors">TikTok</a>
+          </div>
+          <p className="text-zinc-600 text-xs">Food that happens to be kosher. Fred Approved.</p>
+        </div>
+      </footer>
+
+      <ShabbatReminderPopup />
+    </main>
+  );
+}

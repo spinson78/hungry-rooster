@@ -1,3 +1,4 @@
+import NavBar from "../components/NavBar";
 export default function EstherCartPage() {
   return (
     <main className="bg-black text-white min-h-screen">
