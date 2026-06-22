@@ -12,7 +12,7 @@ const PACKAGE_SIZES = [
 
 const PACKAGES = [
   { id: "showstopper", name: "The Showstopper", category: "Parve Breakfast", color: "teal", description: "Wake up and nosh like royalty. Fred's got the lox on lock.", items: ["Bagels and spread", "House-cured gravlax platter", "Scrambled eggs", "Assorted fruit salad", "Morning tea sweets platter"], choices: [] as { key: string; label: string; options: string[] }[] },
-  { id: "meat-greet", name: "Fred's Meat and Greet", category: "Meat Breakfast", color: "yellow", description: "Turkey sausage, eggs, and a crispy side — your official cluck-in to the day.", items: ["Scrambled Eggs", "Turkey Breakfast Sausage Patties", "Fresh Fruit Salad", "Mini Challah Rolls or Toasted Bagels"], choices: [{ key: "potato", label: "Choose your potato side", options: ["Breakfast Potatoes", "Hash Browns"] }] },
+  { id: "meat-greet", name: "Fred's Meat and Greet", category: "Meat Breakfast", color: "yellow", description: "Turkey sausage, eggs, and a crispy side — your official cluck-in to the day.", items: ["Scrambled Eggs", "Turkey Breakfast Sausage Patties", "Fresh Fruit Salad", "Toasted Bagels", "Breakfast Potatoes"], choices: [] },
   { id: "strut-stuff", name: "The Strut and Stuff", category: "Meat Brunch", color: "yellow", description: "Wraps, skewers, and savory bites. Brunch with attitude.", items: ["BBQ Chicken Salad Wrap Halves", "Potato Wedges with Maple Chili Glaze", "Fruit Skewers", "Parve Muffin Bites"], choices: [] },
   { id: "golden-plate", name: "The Golden Plate", category: "Parve Dinner", color: "teal", description: "Cozy up with a wholesome spread that brings the whole flock to the table.", items: ["Lemon herb roasted salmon", "House roasted veggies", "Garlic mashed potatoes", "Garden Salad"], choices: [] },
   { id: "pasta-la-vista", name: "Pasta La Vista", category: "Parve Dinner", color: "teal", description: "Pasta night just got an upgrade!", items: ["Choice of pasta", "Garden salad", "Garlic breadsticks", "Cookies"], choices: [{ key: "pasta", label: "Choose your pasta sauce", options: ["Pesto", "Marinara"] }] },
@@ -337,13 +337,21 @@ export default function CateringPage() {
     <main className="bg-black text-white min-h-screen">
       <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <a href="/"><img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" /></a>
+        <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-zinc-400">
+          <a href="/menu" className="hover:text-white transition-colors">Menu</a>
+          <a href="/catering" className="text-white">Catering</a>
+          <a href="/group" className="hover:text-white transition-colors">Group Orders</a>
+          <a href="/shabbat" className="hover:text-white transition-colors">Shabbat</a>
+          <a href="/story" className="hover:text-white transition-colors">Our Story</a>
+          <a href="/#concepts" className="hover:text-white transition-colors">Our Concepts</a>
+          <a href="/gift" className="hover:text-white transition-colors">Gift Cards</a>
+        </div>
         <div className="flex items-center gap-4">
           {flow === "alacarte" && !showAlcForm && cartCount > 0 && (
             <button onClick={() => setCartOpen(true)} className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors">
               Cart ({cartCount}) — ${cartSubtotal.toFixed(2)}
             </button>
           )}
-          <a href="/menu" className="text-zinc-400 hover:text-white font-bold text-sm transition-colors hidden md:block">Full Menu</a>
         </div>
       </nav>
 

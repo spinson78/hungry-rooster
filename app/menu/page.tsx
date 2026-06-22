@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
+import NavBar from "../components/NavBar";
 
 const menu = {
   Breakfast: [
     {
       name: "Big Cluck Burrito",
       price: 16,
-      description: "Flour tortilla, scrambled eggs, peppers & onions, crispy hashbrowns, jalapeño and charred green onion sauce. Served with homestyle potatoes & red salsa.",
+      description: "Flour tortilla, scrambled eggs, peppers & onions, house potatoes, jalapeño and charred green onion sauce. Served with homestyle potatoes & red salsa.",
       tag: "Fan Favorite",
       addons: [
         { label: "Add Vegan Cheese", price: 2 },
@@ -38,7 +39,7 @@ const menu = {
     {
       name: "Hangover Burrito",
       price: 17,
-      description: "Flour tortilla, beef bacon, scrambled eggs, vegan cheese, pepper, onion, pico de gallo, charred green onion sauce. Served with homestyle potatoes.",
+      description: "Flour tortilla, beef bacon, scrambled eggs, vegan cheese, pepper, onion, pico de gallo, charred green onion sauce. Served with homestyle potatoes and a side of house made salsa.",
       tag: "",
       addons: [],
     },
@@ -54,7 +55,7 @@ const menu = {
     {
       name: "Caesar Salmon Wrap",
       price: 16.5,
-      description: "Tortilla, grilled salmon, spiced chickpeas, romaine lettuce, caesar dressing. Served with chips and a pickle.",
+      description: "Tortilla, grilled salmon, romaine lettuce, caesar dressing. Served with chips and a pickle.",
       tag: "",
       addons: [],
     },
@@ -497,23 +498,7 @@ export default function MenuPage() {
   return (
     <main className="bg-black text-white min-h-screen">
       {/* NAVBAR */}
-      <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="/">
-          <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" />
-        </a>
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
-          <a href="/" className="hover:text-white transition-colors">Home</a>
-          <a href="/menu" className="text-white">Menu</a>
-          <a href="/#catering" className="hover:text-white transition-colors">Catering</a>
-          <a href="/#shabbat" className="hover:text-white transition-colors">Shabbat</a>
-        </div>
-        <button
-          onClick={() => setCartOpen(true)}
-          className={`font-black px-5 py-2 rounded-full text-sm transition-all ${justAdded ? "bg-green-400 text-black scale-110" : "bg-teal-500 hover:bg-teal-400 text-black"}`}
-        >
-          Cart {cartCount > 0 && <span className="ml-1">({cartCount})</span>}
-        </button>
-      </nav>
+      <NavBar active="Menu" />
 
       {/* PAGE HEADER */}
       <div className="px-6 py-10 max-w-6xl mx-auto">

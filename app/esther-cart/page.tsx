@@ -3,12 +3,7 @@ export default function EstherCartPage() {
     <main className="bg-black text-white min-h-screen">
 
       {/* NAVBAR */}
-      <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="/">
-          <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" />
-        </a>
-        <a href="/" className="text-zinc-400 hover:text-white text-sm font-bold transition-colors">← Back home</a>
-      </nav>
+      <NavBar />
 
       {/* CONTENT */}
       <section className="px-6 py-16 max-w-2xl mx-auto flex flex-col items-center text-center">

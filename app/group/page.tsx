@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import NavBar from "../components/NavBar";
 import { supabase } from "@/lib/supabase";
 
 type Location = {
@@ -47,10 +48,7 @@ export default function GroupOrdersPage() {
 
   return (
     <main className="bg-black text-white min-h-screen">
-      <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="/"><img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" /></a>
-        <a href="/menu" className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors">Full Menu</a>
-      </nav>
+      <NavBar />
 
       {/* HERO */}
       <section className="px-6 py-20 max-w-5xl mx-auto text-center">

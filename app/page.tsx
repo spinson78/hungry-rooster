@@ -1,4 +1,5 @@
 import DinnerDropSection from "./components/DinnerDropSection";
+import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
 
@@ -7,23 +8,7 @@ export default function Home() {
     <main className="bg-black text-white min-h-screen">
 
       {/* NAVBAR */}
-      <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center">
-          <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" />
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
-          <a href="#menu" className="hover:text-white transition-colors">Menu</a>
-          <a href="/catering" className="hover:text-white transition-colors">Catering</a>
-          <a href="/group" className="hover:text-white transition-colors">Group Orders</a>
-          <a href="#shabbat" className="hover:text-white transition-colors">Shabbat</a>
-          <a href="/story" className="hover:text-white transition-colors">Our Story</a>
-          <a href="#concepts" className="hover:text-white transition-colors">Our Concepts</a>
-          <a href="/gift" className="hover:text-white text-zinc-400 transition-colors">Gift Cards</a>
-        </div>
-        <span className="bg-zinc-700 text-zinc-400 font-black px-5 py-2 rounded-full text-sm cursor-not-allowed">
-          Coming Soon
-        </span>
-      </nav>
+      <NavBar />
 
       {/* HERO */}
       <section className="px-6 py-20 md:py-32 max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
@@ -160,13 +145,4 @@ export default function Home() {
           <div className="flex items-center gap-6 text-zinc-400 text-sm font-semibold">
             <a href="https://instagram.com/thehungryroostertx" className="hover:text-white transition-colors">Instagram</a>
             <a href="https://facebook.com/thehungryroostertx" className="hover:text-white transition-colors">Facebook</a>
-            <a href="https://tiktok.com/@thehungryroostertx" className="hover:text-white transition-colors">TikTok</a>
-          </div>
-          <p className="text-zinc-600 text-xs">Food that happens to be kosher. Fred Approved.</p>
-        </div>
-      </footer>
-
-      <ShabbatReminderPopup />
-    </main>
-  );
-}
+            <a href="https://tiktok.com/@thehungryroostertx" className="hover:text-

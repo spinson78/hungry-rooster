@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import NavBar from "../components/NavBar";
 
 const DELIVERY_DAYS = [1, 2, 4, 5]; // Mon/Tue/Thu/Fri
 function isDeliveryDay(dateStr: string): boolean {
@@ -200,16 +201,7 @@ export default function GiftPage() {
 
 
       {/* Nav */}
-      <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="/">
-          <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" />
-        </a>
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
-          <a href="/menu" className="hover:text-white transition-colors">Menu</a>
-          <a href="/catering" className="hover:text-white transition-colors">Catering</a>
-          <a href="/gift" className="text-yellow-400">Gift Cards</a>
-        </div>
-      </nav>
+      <NavBar active="Gift Cards" />
 
       {/* Hero */}
       <section className="px-6 pt-12 pb-10 max-w-3xl mx-auto relative z-10">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NavBar from "../components/NavBar";
 
 export const metadata: Metadata = {
   title: "Our Story | The Hungry Rooster",
@@ -11,17 +12,7 @@ export default function StoryPage() {
     <main className="bg-black text-white min-h-screen">
 
       {/* NAV */}
-      <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="/">
-          <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" />
-        </a>
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
-          <a href="/menu" className="hover:text-white transition-colors">Menu</a>
-          <a href="/catering" className="hover:text-white transition-colors">Catering</a>
-          <a href="/story" className="text-white">Our Story</a>
-          <a href="/gift" className="hover:text-white transition-colors">Gift Cards</a>
-        </div>
-      </nav>
+      <NavBar active="Our Story" />
 
       {/* HERO */}
       <section className="px-6 pt-20 pb-10 max-w-6xl mx-auto">
