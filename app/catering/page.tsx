@@ -24,7 +24,7 @@ const PACKAGES = [
 
 const PKG_CATEGORIES = ["All", "Parve Breakfast", "Meat Breakfast", "Meat Brunch", "Parve Dinner", "Meat Dinner"];
 
-// ── À LA CARTE MENU ($100 min, $50 delivery, 48hr notice) ────────────────────
+// ── À LA CARTE MENU ($100 min, 24hr notice) ─────────────────────────────────────
 
 type SizeOption = { label: string; serving: string; price: number };
 type ItemOption = { key: string; label: string; choices: string[] };
@@ -93,6 +93,8 @@ const ALC_CATEGORIES: CateringCategory[] = [
       { id: "egg-wrap", name: "Egg Salad Wrap", description: "Whole wheat wrap with house-made egg salad, lettuce, tomatoes, and purple onions.", priceNote: "$12 each · 5 minimum" },
       { id: "tuna-wrap", name: "Tuna Salad Wrap", description: "Whole wheat wrap with house-made tuna salad, romaine, tomatoes, and purple onions.", priceNote: "$12 each · 5 minimum" },
       { id: "salmon-wrap", name: "Caesar Salmon Wrap", description: "Whole wheat wrap with roasted salmon, romaine, and Caesar dressing.", priceNote: "$12 each · 5 minimum" },
+      { id: "grilled-chicken-wrap", name: "Grilled Chicken Wrap", description: "Whole wheat wrap with grilled chicken, shredded lettuce, tomato, red onion, and Fred's sauce.", priceNote: "$12 each · 5 minimum" },
+      { id: "crispy-chicken-wrap", name: "Crispy Chicken Wrap", description: "Flour tortilla with crispy fried chicken, shredded lettuce, tomato, pickle, and house spicy BBQ sauce.", priceNote: "$12 each · 5 minimum" },
     ],
   },
   {
@@ -155,6 +157,8 @@ export default function CateringPage() {
   const [alcForm, setAlcForm] = useState({ name: "", phone: "", email: "", address: "", address_city: "", event_date: "", special_requests: "" });
   const [quoteForm, setQuoteForm] = useState({ name: "", phone: "", email: "", event_date: "", headcount: "", event_type: "", location: "", budget: "", notes: "" });
 
+  const [pkgFulfillment, setPkgFulfillment] = useState<"pickup" | "delivery">("delivery");
+  const [alcFulfillment, setAlcFulfillment] = useState<"pickup" | "delivery">("delivery");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
@@ -285,30 +289,77 @@ export default function CateringPage() {
   };
 
   const handlePkgSubmit = async () => {
-    if (!pkgForm.name || !pkgForm.phone || !pkgForm.address || !pkgForm.address_city || !pkgForm.event_date || !selectedPkg) { setError("Please fill in all required fields including city and ZIP."); return; }
-    if (pkgDelivErr) { setError(pkgDelivErr); return; }
+    const needsAddress = pkgFulfillment === "delivery";
+    if (!pkgForm.name || !pkgForm.phone || !pkgForm.event_date || !selectedPkg) { setError("Please fill in all required fields."); return; }
+    if (needsAddress && (!pkgForm.address || !pkgForm.address_city)) { setError("Please enter your delivery address."); return; }
+    if (needsAddress && pkgDelivErr) { setError(pkgDelivErr); return; }
     setSubmitting(true); setError("");
-    const delivFee = pkgDelivFee ?? 0;
+    const delivFee = needsAddress ? (pkgDelivFee ?? 0) : 0;
     const total = pkgSize.price + delivFee;
-    const fullPkgAddress = `${pkgForm.address.trim()}, ${pkgForm.address_city.trim()}`;
+    const fullPkgAddress = needsAddress ? `${pkgForm.address.trim()}, ${pkgForm.address_city.trim()}` : "Pickup";
     const choicesSummary = Object.entries(pkgChoices).map(([k, v]) => `${selectedPkg.choices.find(c => c.key === k)?.label}: ${v}`);
     const items = [{ name: selectedPkg.name, category: selectedPkg.category, size: pkgSize.label, includes: selectedPkg.items, choices: choicesSummary }];
-    const { error: dbError } = await supabase.from("orders").insert({ order_type: "catering", customer_name: pkgForm.name, customer_email: pkgForm.email, customer_phone: pkgForm.phone, customer_address: fullPkgAddress, special_requests: `Event: ${pkgForm.event_date}${pkgForm.special_requests ? " · " + pkgForm.special_requests : ""}`, items, total, delivery_fee: delivFee, delivery_distance_miles: pkgDelivDist ?? 0, status: "pending" });
-    if (dbError) { setError("Something went wrong. Please try again."); setSubmitting(false); return; }
-    await submitNotify({ order_type: "catering", customer_name: pkgForm.name, customer_phone: pkgForm.phone, customer_email: pkgForm.email, customer_address: fullPkgAddress, special_requests: `Package: ${selectedPkg.name} · ${pkgSize.label} · Delivery: $${delivFee.toFixed(2)} · Event: ${pkgForm.event_date}`, items, total });
-    setSubmitted(true); setSubmitting(false);
+    const res = await fetch("/api/catering-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        flow_type: "package",
+        customer_name: pkgForm.name,
+        customer_email: pkgForm.email,
+        customer_phone: pkgForm.phone,
+        customer_address: fullPkgAddress,
+        event_date: pkgForm.event_date,
+        special_requests: pkgForm.special_requests,
+        items,
+        subtotal: pkgSize.price,
+        delivery_fee: delivFee,
+        delivery_distance_miles: needsAddress ? (pkgDelivDist ?? 0) : 0,
+        total,
+      }),
+    });
+    const data = await res.json();
+    setSubmitting(false);
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   const handleAlcSubmit = async () => {
-    if (!alcForm.name || !alcForm.phone || !alcForm.address || !alcForm.address_city || !alcForm.event_date) { setError("Please fill in all required fields including city and ZIP."); return; }
-    if (alcDelivErr) { setError(alcDelivErr); return; }
+    const needsAddress = alcFulfillment === "delivery";
+    if (!alcForm.name || !alcForm.phone || !alcForm.event_date) { setError("Please fill in all required fields."); return; }
+    if (needsAddress && (!alcForm.address || !alcForm.address_city)) { setError("Please enter your delivery address."); return; }
+    if (needsAddress && alcDelivErr) { setError(alcDelivErr); return; }
     setSubmitting(true); setError("");
-    const total = cartSubtotal + cartDelivFee;
-    const fullAlcAddress = `${alcForm.address.trim()}, ${alcForm.address_city.trim()}`;
-    const { error: dbError } = await supabase.from("orders").insert({ order_type: "catering", customer_name: alcForm.name, customer_email: alcForm.email, customer_phone: alcForm.phone, customer_address: fullAlcAddress, special_requests: `Event: ${alcForm.event_date}${alcForm.special_requests ? " · " + alcForm.special_requests : ""}`, items: cart, total, delivery_fee: cartDelivFee, delivery_distance_miles: alcDelivDist ?? 0, status: "pending" });
-    if (dbError) { setError("Something went wrong. Please try again."); setSubmitting(false); return; }
-    await submitNotify({ order_type: "catering", customer_name: alcForm.name, customer_phone: alcForm.phone, customer_email: alcForm.email, customer_address: fullAlcAddress, special_requests: `À la carte order · Delivery: $${cartDelivFee.toFixed(2)} · Event: ${alcForm.event_date}`, items: cart, total });
-    setSubmitted(true); setSubmitting(false);
+    const delivFee = needsAddress ? cartDelivFee : 0;
+    const total = cartSubtotal + delivFee;
+    const fullAlcAddress = needsAddress ? `${alcForm.address.trim()}, ${alcForm.address_city.trim()}` : "Pickup";
+    const res = await fetch("/api/catering-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        flow_type: "alacarte",
+        customer_name: alcForm.name,
+        customer_email: alcForm.email,
+        customer_phone: alcForm.phone,
+        customer_address: fullAlcAddress,
+        event_date: alcForm.event_date,
+        special_requests: alcForm.special_requests,
+        items: cart,
+        subtotal: cartSubtotal,
+        delivery_fee: delivFee,
+        delivery_distance_miles: needsAddress ? (alcDelivDist ?? 0) : 0,
+        total,
+      }),
+    });
+    const data = await res.json();
+    setSubmitting(false);
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   const handleQuoteSubmit = async () => {
@@ -372,7 +423,7 @@ export default function CateringPage() {
             <button onClick={() => setFlow("alacarte")} className="bg-zinc-900 border border-zinc-700 hover:border-yellow-400 rounded-2xl p-7 text-left transition-colors group">
               <p className="text-3xl mb-4">🍽️</p>
               <p className="font-black text-xl mb-2">Build Your Order</p>
-              <p className="text-zinc-400 text-sm mb-4">Choose from salads, sides, chicken, fish, platters, wraps, and more. $100 minimum · $50 delivery · 48-hour notice.</p>
+              <p className="text-zinc-400 text-sm mb-4">Choose from salads, sides, chicken, fish, platters, wraps, and more. $100 minimum · 24-hour notice.</p>
               <span className="text-yellow-400 font-bold text-sm group-hover:text-yellow-300">Browse menu →</span>
             </button>
             <button onClick={() => setFlow("quote")} className="bg-zinc-900 border border-zinc-700 hover:border-zinc-400 rounded-2xl p-7 text-left transition-colors group">
@@ -456,44 +507,53 @@ export default function CateringPage() {
                 </div>
 
                 <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-                  <h2 className="text-xl font-black mb-6">Delivery / Event Info</h2>
+                  <h2 className="text-xl font-black mb-6">Event Info</h2>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label><input type="text" placeholder="Jane Smith" value={pkgForm.name} onChange={e => setPkgForm({ ...pkgForm, name: e.target.value })} className={inputCls()} /></div>
                       <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone *</label><input type="tel" placeholder="(214) 555-0100" value={pkgForm.phone} onChange={e => setPkgForm({ ...pkgForm, phone: e.target.value })} className={inputCls()} /></div>
                     </div>
                     <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label><input type="email" placeholder="jane@email.com" value={pkgForm.email} onChange={e => setPkgForm({ ...pkgForm, email: e.target.value })} className={inputCls()} /></div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
-                      <input
-                        type="text"
-                        placeholder="Street address (e.g. 1234 Main St, Suite 100)"
-                        value={pkgForm.address}
-                        onChange={e => {
-                          setPkgForm({ ...pkgForm, address: e.target.value });
-                          setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
-                        }}
-                        className={inputCls()}
-                      />
-                      <input
-                        type="text"
-                        placeholder="City, State, ZIP (e.g. Dallas, TX 75201)"
-                        value={pkgForm.address_city}
-                        onChange={e => {
-                          setPkgForm({ ...pkgForm, address_city: e.target.value });
-                          setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
-                        }}
-                        onBlur={e => {
-                          if (pkgForm.address.trim() && e.target.value.trim()) {
-                            checkDeliveryFee(`${pkgForm.address.trim()}, ${e.target.value.trim()}`, "pkg");
-                          }
-                        }}
-                        className={inputCls()}
-                      />
-                      {checkingPkgDeliv && <p className="text-zinc-500 text-xs">Checking delivery range...</p>}
-                      {!checkingPkgDeliv && pkgDelivMsg && <p className="text-teal-400 text-xs">✓ {pkgDelivMsg}</p>}
-                      {!checkingPkgDeliv && pkgDelivErr && <p className="text-red-400 text-xs">✗ {pkgDelivErr}</p>}
+                    <div>
+                      <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Pickup or Delivery? *</label>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => setPkgFulfillment("pickup")} className={`flex-1 py-3 rounded-xl font-bold text-sm border transition-colors ${pkgFulfillment === "pickup" ? "border-teal-500 bg-teal-500/20 text-teal-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-400"}`}>🚗 Pickup</button>
+                        <button type="button" onClick={() => setPkgFulfillment("delivery")} className={`flex-1 py-3 rounded-xl font-bold text-sm border transition-colors ${pkgFulfillment === "delivery" ? "border-teal-500 bg-teal-500/20 text-teal-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-400"}`}>🚚 Delivery</button>
+                      </div>
                     </div>
+                    {pkgFulfillment === "delivery" && (
+                      <div className="space-y-2">
+                        <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
+                        <input
+                          type="text"
+                          placeholder="Street address (e.g. 1234 Main St, Suite 100)"
+                          value={pkgForm.address}
+                          onChange={e => {
+                            setPkgForm({ ...pkgForm, address: e.target.value });
+                            setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
+                          }}
+                          className={inputCls()}
+                        />
+                        <input
+                          type="text"
+                          placeholder="City, State, ZIP (e.g. Dallas, TX 75201)"
+                          value={pkgForm.address_city}
+                          onChange={e => {
+                            setPkgForm({ ...pkgForm, address_city: e.target.value });
+                            setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
+                          }}
+                          onBlur={e => {
+                            if (pkgForm.address.trim() && e.target.value.trim()) {
+                              checkDeliveryFee(`${pkgForm.address.trim()}, ${e.target.value.trim()}`, "pkg");
+                            }
+                          }}
+                          className={inputCls()}
+                        />
+                        {checkingPkgDeliv && <p className="text-zinc-500 text-xs">Checking delivery range...</p>}
+                        {!checkingPkgDeliv && pkgDelivMsg && <p className="text-teal-400 text-xs">✓ {pkgDelivMsg}</p>}
+                        {!checkingPkgDeliv && pkgDelivErr && <p className="text-red-400 text-xs">✗ {pkgDelivErr}</p>}
+                      </div>
+                    )}
                     <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice)</span></label><input type="date" min={getMinDate(24)} value={pkgForm.event_date} onChange={e => setPkgForm({ ...pkgForm, event_date: e.target.value })} className={inputCls()} /></div>
                     <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, setup notes, gate codes..." value={pkgForm.special_requests} onChange={e => setPkgForm({ ...pkgForm, special_requests: e.target.value })} className={`${inputCls()} resize-none h-20`} /></div>
                   </div>
@@ -501,20 +561,22 @@ export default function CateringPage() {
                   {pkgDelivErr && <p className="text-red-400 text-sm mt-3">✗ {pkgDelivErr}</p>}
                   <div className="mt-6 mb-3 space-y-1 text-sm">
                     <div className="flex justify-between"><span className="text-zinc-400">Package</span><span>${pkgSize.price}</span></div>
-                    {pkgDelivFee !== null ? (
-                      <div className="flex justify-between"><span className="text-zinc-400">Delivery fee</span><span>${pkgDelivFee.toFixed(2)}</span></div>
-                    ) : (
-                      <div className="flex justify-between text-zinc-600"><span>Delivery fee</span><span>enter address above</span></div>
+                    {pkgFulfillment === "delivery" && (
+                      pkgDelivFee !== null ? (
+                        <div className="flex justify-between"><span className="text-zinc-400">Delivery fee</span><span>${pkgDelivFee.toFixed(2)}</span></div>
+                      ) : (
+                        <div className="flex justify-between text-zinc-600"><span>Delivery fee</span><span>enter address above</span></div>
+                      )
                     )}
                     <div className="flex justify-between font-black text-xl border-t border-zinc-700 pt-2 mt-1">
                       <span>Total</span>
-                      <span>${(pkgSize.price + (pkgDelivFee ?? 0)).toFixed(2)}</span>
+                      <span>${(pkgSize.price + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}</span>
                     </div>
                   </div>
-                  <button onClick={handlePkgSubmit} disabled={submitting || !!pkgDelivErr} className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50">
-                    {submitting ? "Placing order..." : `Place Catering Order — $${(pkgSize.price + (pkgDelivFee ?? 0)).toFixed(2)}`}
+                  <button onClick={handlePkgSubmit} disabled={submitting || (pkgFulfillment === "delivery" && !!pkgDelivErr)} className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50">
+                    {submitting ? "Redirecting to payment..." : `Pay Now — $${(pkgSize.price + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}`}
                   </button>
-                  <p className="text-zinc-600 text-xs text-center mt-3">Payment collected on delivery. We'll confirm by phone.</p>
+                  <p className="text-zinc-600 text-xs text-center mt-3">Secure payment via Stripe. Fred&apos;s crew will confirm by phone within 24 hours.</p>
                 </div>
               </div>
             )}
@@ -540,7 +602,7 @@ export default function CateringPage() {
             <div className="flex gap-3 mb-8 flex-wrap items-center">
               <span className="bg-yellow-400/20 text-yellow-400 text-xs font-bold px-3 py-1 rounded-full">$100 order minimum</span>
               <span className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded-full">Delivery from $7.99</span>
-              <span className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded-full">48-hour notice</span>
+              <span className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded-full">24-hour notice</span>
             </div>
 
             <div className="flex gap-2 flex-wrap mb-8">
@@ -619,57 +681,66 @@ export default function CateringPage() {
               </div>
             </div>
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-              <h2 className="text-xl font-black mb-6">Event & Delivery Info</h2>
+              <h2 className="text-xl font-black mb-6">Event Info</h2>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label><input type="text" placeholder="Jane Smith" value={alcForm.name} onChange={e => setAlcForm({ ...alcForm, name: e.target.value })} className={inputCls()} /></div>
                   <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone *</label><input type="tel" placeholder="(214) 555-0100" value={alcForm.phone} onChange={e => setAlcForm({ ...alcForm, phone: e.target.value })} className={inputCls()} /></div>
                 </div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label><input type="email" placeholder="jane@email.com" value={alcForm.email} onChange={e => setAlcForm({ ...alcForm, email: e.target.value })} className={inputCls()} /></div>
-                <div className="space-y-2">
-                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
-                  <input
-                    type="text"
-                    placeholder="Street address (e.g. 1234 Main St, Suite 100)"
-                    value={alcForm.address}
-                    onChange={e => {
-                      setAlcForm({ ...alcForm, address: e.target.value });
-                      setAlcDelivFee(null); setAlcDelivDist(null); setAlcDelivMsg(""); setAlcDelivErr("");
-                    }}
-                    className={inputCls()}
-                  />
-                  <input
-                    type="text"
-                    placeholder="City, State, ZIP (e.g. Dallas, TX 75201)"
-                    value={alcForm.address_city}
-                    onChange={e => {
-                      setAlcForm({ ...alcForm, address_city: e.target.value });
-                      setAlcDelivFee(null); setAlcDelivDist(null); setAlcDelivMsg(""); setAlcDelivErr("");
-                    }}
-                    onBlur={e => {
-                      if (alcForm.address.trim() && e.target.value.trim()) {
-                        checkDeliveryFee(`${alcForm.address.trim()}, ${e.target.value.trim()}`, "alc");
-                      }
-                    }}
-                    className={inputCls()}
-                  />
-                  {checkingAlcDeliv && <p className="text-zinc-500 text-xs">Checking delivery range...</p>}
-                  {!checkingAlcDeliv && alcDelivMsg && <p className="text-teal-400 text-xs">✓ {alcDelivMsg}</p>}
-                  {!checkingAlcDeliv && alcDelivErr && <p className="text-red-400 text-xs">✗ {alcDelivErr}</p>}
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Pickup or Delivery? *</label>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setAlcFulfillment("pickup")} className={`flex-1 py-3 rounded-xl font-bold text-sm border transition-colors ${alcFulfillment === "pickup" ? "border-yellow-400 bg-yellow-400/20 text-yellow-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-400"}`}>🚗 Pickup</button>
+                    <button type="button" onClick={() => setAlcFulfillment("delivery")} className={`flex-1 py-3 rounded-xl font-bold text-sm border transition-colors ${alcFulfillment === "delivery" ? "border-yellow-400 bg-yellow-400/20 text-yellow-300" : "border-zinc-700 text-zinc-400 hover:border-zinc-400"}`}>🚚 Delivery</button>
+                  </div>
                 </div>
-                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(48-hour notice required)</span></label><input type="date" min={getMinDate(48)} value={alcForm.event_date} onChange={e => setAlcForm({ ...alcForm, event_date: e.target.value })} className={inputCls()} /></div>
+                {alcFulfillment === "delivery" && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
+                    <input
+                      type="text"
+                      placeholder="Street address (e.g. 1234 Main St, Suite 100)"
+                      value={alcForm.address}
+                      onChange={e => {
+                        setAlcForm({ ...alcForm, address: e.target.value });
+                        setAlcDelivFee(null); setAlcDelivDist(null); setAlcDelivMsg(""); setAlcDelivErr("");
+                      }}
+                      className={inputCls()}
+                    />
+                    <input
+                      type="text"
+                      placeholder="City, State, ZIP (e.g. Dallas, TX 75201)"
+                      value={alcForm.address_city}
+                      onChange={e => {
+                        setAlcForm({ ...alcForm, address_city: e.target.value });
+                        setAlcDelivFee(null); setAlcDelivDist(null); setAlcDelivMsg(""); setAlcDelivErr("");
+                      }}
+                      onBlur={e => {
+                        if (alcForm.address.trim() && e.target.value.trim()) {
+                          checkDeliveryFee(`${alcForm.address.trim()}, ${e.target.value.trim()}`, "alc");
+                        }
+                      }}
+                      className={inputCls()}
+                    />
+                    {checkingAlcDeliv && <p className="text-zinc-500 text-xs">Checking delivery range...</p>}
+                    {!checkingAlcDeliv && alcDelivMsg && <p className="text-teal-400 text-xs">✓ {alcDelivMsg}</p>}
+                    {!checkingAlcDeliv && alcDelivErr && <p className="text-red-400 text-xs">✗ {alcDelivErr}</p>}
+                  </div>
+                )}
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice required)</span></label><input type="date" min={getMinDate(24)} value={alcForm.event_date} onChange={e => setAlcForm({ ...alcForm, event_date: e.target.value })} className={inputCls()} /></div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, setup notes, gate codes..." value={alcForm.special_requests} onChange={e => setAlcForm({ ...alcForm, special_requests: e.target.value })} className={`${inputCls()} resize-none h-20`} /></div>
               </div>
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
-              {alcDelivErr && <p className="text-red-400 text-sm mt-3">✗ {alcDelivErr}</p>}
+              {alcFulfillment === "delivery" && alcDelivErr && <p className="text-red-400 text-sm mt-3">✗ {alcDelivErr}</p>}
               <button
                 onClick={handleAlcSubmit}
-                disabled={submitting || !!alcDelivErr}
+                disabled={submitting || (alcFulfillment === "delivery" && !!alcDelivErr)}
                 className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50"
               >
-                {submitting ? "Submitting..." : `Submit Order — $${cartTotal.toFixed(2)}`}
+                {submitting ? "Redirecting to payment..." : `Pay Now — $${(cartSubtotal + (alcFulfillment === "delivery" ? cartDelivFee : 0)).toFixed(2)}`}
               </button>
-              <p className="text-zinc-600 text-xs text-center mt-3">We&apos;ll confirm by phone within 24 hours. Payment collected on delivery.</p>
+              <p className="text-zinc-600 text-xs text-center mt-3">Secure payment via Stripe. We&apos;ll confirm by phone within 24 hours.</p>
             </div>
           </div>
         )}

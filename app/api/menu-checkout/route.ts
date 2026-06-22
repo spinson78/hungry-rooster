@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     customer_address, special_requests, fulfillment_type,
     items, subtotal, tax, delivery_fee, delivery_distance_miles,
     tip, gift_discount, gift_code, sms_opted_in,
+    scheduled_for,
   } = body;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
     total: Math.max(0, subtotal + tax + (delivery_fee || 0) + (tip || 0) - (gift_discount || 0)),
     sms_opted_in: sms_opted_in || false,
     fulfillment_type: fulfillment_type || "pickup",
+    scheduled_for: scheduled_for || null,
     status: "pending_payment",
     stripe_session_id: "",
   }).select().single();

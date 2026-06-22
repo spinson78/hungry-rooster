@@ -244,7 +244,11 @@ export default function MenuPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutName, setCheckoutName] = useState("");
   const [checkoutPhone, setCheckoutPhone] = useState("");
+  const [checkoutEmail, setCheckoutEmail] = useState("");
   const [checkoutNote, setCheckoutNote] = useState("");
+  const [scheduleType, setScheduleType] = useState<"asap" | "scheduled">("asap");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<{ order_number: string } | null>(null);
@@ -429,23 +433,26 @@ export default function MenuPage() {
 
   const submitOrder = async () => {
     if (!checkoutName.trim()) return;
+    if (scheduleType === "scheduled" && (!scheduledDate || !scheduledTime)) return;
     if (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) return;
     if (fulfillment === "delivery" && deliveryFeeErr) return;
     setSubmitting(true);
     const items = cart.map(item => ({
       name: item.name,
       qty: item.qty,
+      unit_price: item.unit_price,
       size: item.size || null,
       addons: item.addons,
       mods: item.mods || null,
       price: item.unit_price * item.qty,
     }));
     const tip = Number(tipAmount) || 0;
-    const res = await fetch("/api/menu-order", {
+    const res = await fetch("/api/menu-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         customer_name: checkoutName,
+        customer_email: checkoutEmail,
         customer_phone: checkoutPhone,
         customer_address: fulfillment === "delivery" ? fullDeliveryAddress : "Pickup",
         items,
@@ -454,34 +461,22 @@ export default function MenuPage() {
         delivery_fee: deliveryFeeAmount,
         delivery_distance_miles: fulfillment === "delivery" ? (deliveryDistance ?? 0) : 0,
         tip,
-        total: cartTotal,
+        gift_discount: giftDiscount,
+        gift_code: giftCode.trim().toUpperCase(),
         special_requests: checkoutNote,
         sms_opted_in: smsOptIn,
         fulfillment_type: fulfillment,
+        scheduled_for: scheduleType === "scheduled" && scheduledDate && scheduledTime
+          ? new Date(`${scheduledDate}T${scheduledTime}:00`).toISOString()
+          : null,
       }),
     });
     const data = await res.json();
     setSubmitting(false);
-    if (data.success) {
-      // Redeem gift card if one was applied
-      if (giftDiscount > 0 && giftCode.trim()) {
-        try {
-          await fetch("/api/gift-validate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: giftCode.trim().toUpperCase(), deductCents: Math.round(giftDiscount * 100) }),
-          });
-        } catch { /* non-fatal */ }
-      }
-      setCart([]);
-      setCheckoutOpen(false);
-      setTipAmount(0);
-      setDeliveryAddress("");
-      setFulfillment("pickup");
-      setGiftCode("");
-      setGiftDiscount(0);
-      setGiftCodeMsg("");
-      setConfirmed({ order_number: data.order_number });
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      console.error("Stripe checkout error:", data);
     }
   };
 
@@ -878,6 +873,42 @@ export default function MenuPage() {
               <div>
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Phone Number</label>
                 <input type="tel" placeholder="(214) 555-0100" value={checkoutPhone} onChange={e => setCheckoutPhone(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Email (for receipt)</label>
+                <input type="email" placeholder="jane@email.com" value={checkoutEmail} onChange={e => setCheckoutEmail(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">When do you want it?</label>
+                <div className="flex gap-2 mb-3">
+                  {(["asap", "scheduled"] as const).map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setScheduleType(type)}
+                      className={`flex-1 py-2.5 rounded-full font-black text-sm border transition-colors ${scheduleType === type ? "bg-yellow-400 border-yellow-400 text-black" : "border-zinc-700 text-zinc-400 hover:text-white"}`}
+                    >
+                      {type === "asap" ? "⚡ ASAP" : "📅 Schedule"}
+                    </button>
+                  ))}
+                </div>
+                {scheduleType === "scheduled" && (
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split("T")[0]}
+                      value={scheduledDate}
+                      onChange={e => setScheduledDate(e.target.value)}
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
+                    />
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={e => setScheduledTime(e.target.value)}
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Order Notes</label>

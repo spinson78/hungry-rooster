@@ -28,6 +28,7 @@ type Order = {
   order_type: string;
   status: string;
   created_at: string;
+  scheduled_for?: string | null;
   item_statuses?: Record<string, boolean>;
 };
 
@@ -85,6 +86,9 @@ function OrderCard({
   }, [order.item_statuses]);
 
   const isNew = order.status === "pending";
+  const scheduledLabel = order.scheduled_for
+    ? new Date(order.scheduled_for).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : null;
   const isStarted = order.status === "in_progress";
   const mins = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
   const urgent = mins >= 10 && !isCompleted;
@@ -114,6 +118,12 @@ function OrderCard({
       isStarted ? (allItemsDone ? "border-green-500 bg-green-500/10" : "border-teal-500 bg-teal-500/5") :
       "border-zinc-700 bg-zinc-900"
     }`}>
+
+      {scheduledLabel && (
+        <div className="bg-yellow-400/20 text-yellow-300 text-xs font-black px-2 py-0.5 rounded-full inline-block self-start">
+          📅 {scheduledLabel}
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -253,6 +263,12 @@ export default function KDSPage() {
   const knownOrderIds = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
 
+  const isWithinWindow = (order: Order) => {
+    if (!order.scheduled_for) return true; // ASAP order — always show
+    const scheduledMs = new Date(order.scheduled_for).getTime();
+    return scheduledMs <= Date.now() + 20 * 60 * 1000; // within 20 minutes
+  };
+
   const fetchOrders = useCallback(async () => {
     const { data } = await supabase
       .from("orders")
@@ -260,18 +276,21 @@ export default function KDSPage() {
       .in("status", ["pending", "in_progress", "complete"])
       .not("order_type", "in", '("shabbat","bakery")')
       .order("created_at", { ascending: true });
-    const fetched = (data as Order[]) || [];
+    const all = (data as Order[]) || [];
+
+    // Only surface orders that are ASAP or within 20 min of their scheduled time
+    const visible = all.filter(isWithinWindow);
 
     if (initialLoadDone.current) {
-      const newPending = fetched.filter(
+      const newPending = visible.filter(
         o => o.status === "pending" && !knownOrderIds.current.has(o.id)
       );
       if (newPending.length > 0) playAlarm(muted);
     }
 
-    fetched.forEach(o => knownOrderIds.current.add(o.id));
+    visible.forEach(o => knownOrderIds.current.add(o.id));
     initialLoadDone.current = true;
-    setOrders(fetched);
+    setOrders(visible);
   }, [muted]);
 
   useEffect(() => {

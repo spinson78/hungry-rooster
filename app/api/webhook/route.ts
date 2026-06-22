@@ -30,6 +30,35 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
     const meta = session.metadata ?? {};
 
+    // ── Pre-saved menu / catering orders ──────────────────────────────────────
+    const earlyOrderType = (session.metadata ?? {}).order_type || "";
+    if ((earlyOrderType === "menu" || earlyOrderType === "catering") && (session.metadata ?? {}).order_id) {
+      const preOrderId = (session.metadata ?? {}).order_id;
+      const { data: presaved } = await supabase
+        .from("orders")
+        .select("id, status")
+        .eq("id", preOrderId)
+        .single();
+      if (!presaved || presaved.status === "paid") {
+        return NextResponse.json({ received: true });
+      }
+      await supabase
+        .from("orders")
+        .update({ status: "paid", stripe_session_id: session.id })
+        .eq("id", preOrderId);
+      // Add to SMS subscribers if opted in
+      if ((session.metadata ?? {}).sms_opted_in === "true" && (session.metadata ?? {}).customer_phone) {
+        const digits = ((session.metadata ?? {}).customer_phone || "").replace(/\D/g, "");
+        const e164 = "+" + (digits.length === 10 ? "1" + digits : digits);
+        await supabase.from("sms_subscribers").upsert(
+          { phone: e164, name: (session.metadata ?? {}).customer_name || "", source: "order", opted_in_at: new Date().toISOString(), active: true },
+          { onConflict: "phone" }
+        );
+      }
+      console.log(`Pre-saved ${earlyOrderType} order ${preOrderId} marked paid`);
+      return NextResponse.json({ received: true });
+    }
+
     // Idempotency — if webhook fires twice or success page already wrote, skip
     const { data: existing } = await supabase
       .from("orders")

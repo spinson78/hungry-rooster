@@ -20,6 +20,7 @@ type OrderLogItem = {
   order_type: string;
   status: string;
   created_at: string;
+  scheduled_for?: string | null;
 };
 
 const ORDER_TYPES = ["all", "menu", "dinner", "shabbat", "bakery", "catering"];
@@ -306,6 +307,11 @@ export default function OrdersLogTab() {
                   {order.fulfillment_type === "delivery" && (
                     <span className="text-xs font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">
                       🚗 Delivery
+                    </span>
+                  )}
+                  {order.scheduled_for && (
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300">
+                      📅 {new Date(order.scheduled_for).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </span>
                   )}
                 </div>
