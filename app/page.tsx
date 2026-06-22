@@ -113,7 +113,7 @@ export default function Home() {
             <h3 className="text-xl font-black mb-2">Esther&apos;s Cart</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Looking for Esther&apos;s location?{" "}
-              <a href="/esther" className="text-yellow-400 font-bold hover:text-yellow-300 transition-colors">Click here.</a>
+              <a href="/esther-cart" className="text-yellow-400 font-bold hover:text-yellow-300 transition-colors">Click here.</a>
             </p>
           </div>
           <div>
