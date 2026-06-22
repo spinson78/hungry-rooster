@@ -12,9 +12,10 @@ export async function POST(req: NextRequest) {
 
     if (giftType === "gift_card") {
       // Dollar-amount gift card
-      const { amount, purchaserName, purchaserEmail, recipientName, recipientEmail, message } = body;
-      const amountCents = Math.round(parseFloat(amount) * 100);
-      if (!amountCents || amountCents < 1000) {
+      const { amount, qty: gcQty, purchaserName, purchaserEmail, recipientName, recipientEmail, message } = body;
+      const singleAmountCents = Math.round(parseFloat(amount) * 100);
+      const cardQty = Math.max(1, parseInt(gcQty) || 1);
+      if (!singleAmountCents || singleAmountCents < 1000) {
         return NextResponse.json({ error: "Minimum gift card amount is $10" }, { status: 400 });
       }
 
@@ -25,12 +26,12 @@ export async function POST(req: NextRequest) {
             price_data: {
               currency: "usd",
               product_data: {
-                name: `The Hungry Rooster Gift Card — $${(amountCents / 100).toFixed(2)}`,
+                name: `The Hungry Rooster Gift Card — $${(singleAmountCents / 100).toFixed(2)}`,
                 description: recipientName ? `A gift for ${recipientName}` : "Digital gift card",
               },
-              unit_amount: amountCents,
+              unit_amount: singleAmountCents,
             },
-            quantity: 1,
+            quantity: cardQty,
           },
         ],
         mode: "payment",
@@ -38,7 +39,8 @@ export async function POST(req: NextRequest) {
         cancel_url: `${baseUrl}/gift`,
         metadata: {
           gift_type: "gift_card",
-          amount_cents: String(amountCents),
+          amount_cents: String(singleAmountCents),
+          qty: String(cardQty),
           purchaser_name: purchaserName || "",
           purchaser_email: purchaserEmail || "",
           recipient_name: recipientName || "",
@@ -58,6 +60,7 @@ export async function POST(req: NextRequest) {
         packageName,
         packagePrice,
         serves,
+        qty: dinnerQty,
         addCookies,
         purchaserName,
         purchaserEmail,
@@ -71,9 +74,10 @@ export async function POST(req: NextRequest) {
         deliveryCityZip,
       } = body;
 
+      const dinnerCount = Math.max(1, parseInt(dinnerQty) || 1);
       const priceCents = Math.round(parseFloat(packagePrice) * 100);
       const cookieCents = addCookies ? 2400 : 0;
-      const subtotalCents = priceCents + cookieCents;
+      const subtotalCents = (priceCents + cookieCents) * dinnerCount;
       const taxCents = Math.round(subtotalCents * TAX_RATE);
 
       const lineItems = [
@@ -88,7 +92,7 @@ export async function POST(req: NextRequest) {
             },
             unit_amount: priceCents,
           },
-          quantity: 1,
+          quantity: dinnerCount,
         },
         ...(addCookies ? [{
           price_data: {
@@ -96,7 +100,7 @@ export async function POST(req: NextRequest) {
             product_data: { name: "Add-on: A Dozen Mini Cookies", description: "Freshly baked cookies delivered with the dinner" },
             unit_amount: 2400,
           },
-          quantity: 1,
+          quantity: dinnerCount,
         }] : []),
         {
           price_data: {
@@ -117,6 +121,7 @@ export async function POST(req: NextRequest) {
         metadata: {
           gift_type: "dinner_gift",
           dinner_gift_type: dinnerGiftType || "claim_code",
+          qty: String(dinnerCount),
           package_name: packageName || "",
           package_price_cents: String(priceCents),
           add_cookies: addCookies ? "true" : "false",

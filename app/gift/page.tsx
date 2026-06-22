@@ -126,7 +126,7 @@ export default function GiftPage() {
   const gcSingleAmount = gcAmount === "custom" ? parseFloat(gcCustom) || 0 : gcAmount;
   const gcFinalAmount = gcSingleAmount * gcQty;
 
-  const PackageSelector = () => (
+  const renderPackageSelector = () => (
     <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
       <h2 className="font-black text-xl mb-4">Choose a Package</h2>
       <div className="space-y-3 mb-4">
@@ -169,7 +169,7 @@ export default function GiftPage() {
     </div>
   );
 
-  const OrderSummary = ({ onSubmit, label }: { onSubmit: () => void; label: string }) => (
+  const renderOrderSummary = (onSubmit: () => void, label: string) => (
     <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Quantity</span>
@@ -374,7 +374,7 @@ export default function GiftPage() {
               <p className="text-zinc-400 text-sm">You pick the package, date, and address. We show up. They're surprised. Like flowers — but better.</p>
             </div>
 
-            <PackageSelector />
+            {renderPackageSelector()}
 
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 space-y-4">
               <h2 className="font-black text-xl">Delivery Details</h2>
@@ -443,7 +443,7 @@ export default function GiftPage() {
             </div>
 
             {error && <p className="text-red-400 text-sm font-semibold">{error}</p>}
-            <OrderSummary onSubmit={handleDinnerGift} label="Send This Dinner" />
+            {renderOrderSummary(handleDinnerGift, "Send This Dinner")}
           </div>
         )}
 
@@ -455,7 +455,7 @@ export default function GiftPage() {
               <p className="text-zinc-400 text-sm">You pay, they get a claim link in their email. They pick their date, enter their address, and we deliver. Perfect when you don't know their schedule.</p>
             </div>
 
-            <PackageSelector />
+            {renderPackageSelector()}
 
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 space-y-4">
               <h2 className="font-black text-xl">Recipient Info</h2>
@@ -496,7 +496,7 @@ export default function GiftPage() {
             </div>
 
             {error && <p className="text-red-400 text-sm font-semibold">{error}</p>}
-            <OrderSummary onSubmit={handleDinnerGift} label="Send Dinner Coupon" />
+            {renderOrderSummary(handleDinnerGift, "Send Dinner Coupon")}
           </div>
         )}
       </div>

@@ -91,7 +91,7 @@ export default function Home() {
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               The main event. Breakfast, lunch, salads, and catering. Scratch-made, unapologetically good.
             </p>
-            <span className="text-teal-400 text-sm font-bold">Ghost Kitchen + Catering</span>
+            <a href="/menu" className="inline-block bg-yellow-400 text-black font-black px-6 py-2 rounded-full text-sm hover:bg-yellow-300 transition-colors">Order Here</a>
           </div>
           <div>
             <img src="/esther.png" alt="Esther's Cart" className="w-36 mb-5" />
@@ -102,7 +102,10 @@ export default function Home() {
             </p>
           </div>
           <div>
-            <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36 mb-5" />
+            <div className="relative inline-block mb-5">
+              <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36" />
+              <span className="absolute top-2 right-0 bg-yellow-400 text-black text-xs font-black px-3 py-1 rounded-full rotate-12 shadow-lg">Coming Soon</span>
+            </div>
             <h3 className="text-xl font-black mb-2">Rico Saucey</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Order kiosk with dirty sodas and serious flavor. Plus signature sauces to take home.
@@ -141,6 +144,7 @@ export default function Home() {
             <img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-10 w-auto mb-2" />
             <p className="text-zinc-500 text-sm">1499 Regal Row, Suite 206, Dallas, TX 75247</p>
             <p className="text-zinc-500 text-sm">Mon-Fri 9am-2pm CST</p>
+            <p className="text-zinc-500 text-sm mt-1">Contact Us: <a href="tel:9452157907" className="hover:text-white transition-colors">945-215-7907</a></p>
           </div>
           <div className="flex items-center gap-6 text-zinc-400 text-sm font-semibold">
             <a href="https://instagram.com/thehungryroostertx" className="hover:text-white transition-colors">Instagram</a>
