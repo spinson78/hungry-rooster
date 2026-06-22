@@ -1,12 +1,13 @@
 export default function NavBar({ active }: { active?: string }) {
   const links = [
+    { label: "Home", href: "/" },
     { label: "Menu", href: "/menu" },
     { label: "Catering", href: "/catering" },
-    { label: "Group Orders", href: "/group" },
     { label: "Shabbat", href: "/shabbat" },
-    { label: "Our Story", href: "/story" },
-    { label: "Our Concepts", href: "/#concepts" },
     { label: "Gift Cards", href: "/gift" },
+    { label: "Group Orders", href: "/group" },
+    { label: "Our Concepts", href: "/#concepts" },
+    { label: "Our Story", href: "/story" },
   ];
 
   return (

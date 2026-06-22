@@ -41,11 +41,13 @@ export default function GiftPage() {
   // Gift card state
   const [gcAmount, setGcAmount] = useState<number | "custom">(50);
   const [gcCustom, setGcCustom] = useState("");
+  const [gcQty, setGcQty] = useState(1);
   const [gcForm, setGcForm] = useState({ purchaserName: "", purchaserEmail: "", recipientName: "", recipientEmail: "", message: "" });
 
   // Dinner gift shared state
   const [selectedPackage, setSelectedPackage] = useState(DINNER_PACKAGES[0]);
   const [addCookies, setAddCookies] = useState(false);
+  const [dinnerQty, setDinnerQty] = useState(1);
   const [dinnerForm, setDinnerForm] = useState({ purchaserName: "", purchaserEmail: "", recipientName: "", recipientEmail: "", recipientPhone: "", message: "" });
 
   // Scheduled-only state
@@ -54,7 +56,7 @@ export default function GiftPage() {
   const [deliveryCityZip, setDeliveryCityZip] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
-  const packageTotal = selectedPackage.price + (addCookies ? COOKIE_ADDON.price : 0);
+  const packageTotal = (selectedPackage.price + (addCookies ? COOKIE_ADDON.price : 0)) * dinnerQty;
 
   const deliveryDateError = () => {
     if (!deliveryDate) return "";
@@ -74,7 +76,7 @@ export default function GiftPage() {
       const res = await fetch("/api/gift-purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ giftType: "gift_card", amount: String(amount), ...gcForm }),
+        body: JSON.stringify({ giftType: "gift_card", amount: String(amount), qty: gcQty, ...gcForm }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -106,6 +108,7 @@ export default function GiftPage() {
           packageName: selectedPackage.name,
           packagePrice: String(selectedPackage.price),
           serves: selectedPackage.serves,
+          qty: dinnerQty,
           addCookies,
           ...dinnerForm,
           deliveryDate: tab === "scheduled" ? deliveryDate : "",
@@ -120,7 +123,8 @@ export default function GiftPage() {
     finally { setLoading(false); }
   };
 
-  const gcFinalAmount = gcAmount === "custom" ? parseFloat(gcCustom) || 0 : gcAmount;
+  const gcSingleAmount = gcAmount === "custom" ? parseFloat(gcCustom) || 0 : gcAmount;
+  const gcFinalAmount = gcSingleAmount * gcQty;
 
   const PackageSelector = () => (
     <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
@@ -167,14 +171,22 @@ export default function GiftPage() {
 
   const OrderSummary = ({ onSubmit, label }: { onSubmit: () => void; label: string }) => (
     <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Quantity</span>
+        <div className="flex items-center gap-3 bg-zinc-800 rounded-full px-4 py-1.5">
+          <button type="button" onClick={() => setDinnerQty(q => Math.max(1, q - 1))} className="text-lg font-bold text-zinc-400 hover:text-white w-6 text-center">−</button>
+          <span className="font-black w-5 text-center">{dinnerQty}</span>
+          <button type="button" onClick={() => setDinnerQty(q => q + 1)} className="text-lg font-bold text-zinc-400 hover:text-white w-6 text-center">+</button>
+        </div>
+      </div>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-zinc-400">{selectedPackage.name}</span>
-        <span className="font-black">${selectedPackage.price.toFixed(2)}</span>
+        <span className="text-zinc-400">{selectedPackage.name}{dinnerQty > 1 ? ` × ${dinnerQty}` : ""}</span>
+        <span className="font-black">${(selectedPackage.price * dinnerQty).toFixed(2)}</span>
       </div>
       {addCookies && (
         <div className="flex items-center justify-between mb-1">
           <span className="text-zinc-400">{COOKIE_ADDON.name}</span>
-          <span className="font-black">${COOKIE_ADDON.price.toFixed(2)}</span>
+          <span className="font-black">${(COOKIE_ADDON.price * dinnerQty).toFixed(2)}</span>
         </div>
       )}
       <div className="flex items-center justify-between mb-4">
@@ -332,15 +344,23 @@ export default function GiftPage() {
 
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-zinc-400">Gift Card Value</span>
+                <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Quantity</span>
+                <div className="flex items-center gap-3 bg-zinc-800 rounded-full px-4 py-1.5">
+                  <button type="button" onClick={() => setGcQty(q => Math.max(1, q - 1))} className="text-lg font-bold text-zinc-400 hover:text-white w-6 text-center">−</button>
+                  <span className="font-black w-5 text-center">{gcQty}</span>
+                  <button type="button" onClick={() => setGcQty(q => q + 1)} className="text-lg font-bold text-zinc-400 hover:text-white w-6 text-center">+</button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-zinc-400">{gcQty > 1 ? `${gcQty} × $${gcSingleAmount > 0 ? gcSingleAmount.toFixed(2) : "—"}` : "Gift Card Value"}</span>
                 <span className="font-black text-xl">{gcFinalAmount > 0 ? `$${gcFinalAmount.toFixed(2)}` : "—"}</span>
               </div>
               <button
                 onClick={handleGiftCard}
-                disabled={loading || gcFinalAmount < 10}
+                disabled={loading || gcSingleAmount < 10}
                 className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
               >
-                {loading ? "Redirecting to payment..." : `Buy $${gcFinalAmount > 0 ? gcFinalAmount.toFixed(2) : "—"} Gift Card`}
+                {loading ? "Redirecting to payment..." : `Buy ${gcQty > 1 ? `${gcQty}× ` : ""}$${gcFinalAmount > 0 ? gcFinalAmount.toFixed(2) : "—"} Gift Card${gcQty > 1 ? "s" : ""}`}
               </button>
             </div>
           </div>

@@ -52,6 +52,9 @@ export default function GroupOrdersPage() {
 
       {/* HERO */}
       <section className="px-6 py-20 max-w-5xl mx-auto text-center">
+        <div className="flex justify-center mb-6">
+          <img src="/group%20orders%20fred.png" alt="Group Orders Fred" className="h-48 w-auto" />
+        </div>
         <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-4">Group Orders</p>
         <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-6">
           Lunch for the whole flock.<br />
@@ -71,7 +74,7 @@ export default function GroupOrdersPage() {
             onClick={() => setShowForm(true)}
             className="border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black font-black px-8 py-4 rounded-full text-lg transition-colors"
           >
-            Get Us Our Own Link 🐓
+            Get Us Our Own Link
           </button>
         </div>
       </section>
@@ -141,7 +144,7 @@ export default function GroupOrdersPage() {
           onClick={() => setShowForm(true)}
           className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-10 py-4 rounded-full text-lg transition-colors"
         >
-          Set Up Our Link 🐓
+          Set Up Our Link
         </button>
       </section>
 
@@ -150,7 +153,7 @@ export default function GroupOrdersPage() {
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-md w-full shadow-2xl">
             <button onClick={() => setShowForm(false)} className="float-right text-zinc-500 hover:text-white text-lg">✕</button>
-            <h2 className="text-2xl font-black mb-1">Let's Get Your Flock Fed 🐓</h2>
+            <h2 className="text-2xl font-black mb-1">Let's Get Your Flock Fed</h2>
             <p className="text-zinc-400 text-sm mb-6">Fill this out and we'll set up your crew's dedicated ordering link within 24 hours.</p>
             <div className="space-y-3">
               <input type="text" placeholder="Your name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm" />
@@ -170,8 +173,7 @@ export default function GroupOrdersPage() {
       {showForm && submitted && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-6">
           <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
-            <div className="text-5xl mb-4">🐓</div>
-            <h2 className="text-2xl font-black mb-2">We'll be in touch!</h2>
+                        <h2 className="text-2xl font-black mb-2">We'll be in touch!</h2>
             <p className="text-zinc-400 mb-6">We'll reach out within 24 hours and get your flock their own link. Fred can't wait.</p>
             <button onClick={() => { setShowForm(false); setSubmitted(false); }} className="bg-teal-500 text-black font-black px-8 py-3 rounded-full">Done</button>
           </div>
