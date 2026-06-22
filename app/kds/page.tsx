@@ -108,7 +108,7 @@ function OrderCard({
     order.items.every((_, i) => itemStatuses[String(i)]);
 
   return (
-    <div className={`rounded-3xl border-4 p-6 flex flex-col gap-4 transition-all ${
+    <div className={`rounded-2xl border-2 p-3 flex flex-col gap-2 transition-all ${
       isCompleted ? "border-zinc-700 bg-zinc-900/60 opacity-70" :
       isNew ? (urgent ? "border-red-500 bg-red-500/10" : "border-yellow-400 bg-yellow-400/5") :
       isStarted ? (allItemsDone ? "border-green-500 bg-green-500/10" : "border-teal-500 bg-teal-500/5") :
@@ -118,12 +118,12 @@ function OrderCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-white font-black text-3xl leading-tight">{order.customer_name}</p>
-          {order.customer_phone && <p className="text-zinc-400 text-base mt-1">{order.customer_phone}</p>}
+          <p className="text-white font-black text-lg leading-tight">{order.customer_name}</p>
+          {order.customer_phone && <p className="text-zinc-400 text-xs mt-0.5">{order.customer_phone}</p>}
         </div>
         <div className="text-right shrink-0">
           {order.order_number && <p className="text-zinc-400 font-mono text-sm">{order.order_number}</p>}
-          <p className={`text-xl font-black mt-1 ${urgent ? "text-red-400" : isCompleted ? "text-zinc-500" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
+          <p className={`text-sm font-black mt-0.5 ${urgent ? "text-red-400" : isCompleted ? "text-zinc-500" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
             {elapsed(order.created_at)}
           </p>
         </div>
@@ -131,9 +131,9 @@ function OrderCard({
 
       {/* Delivery address */}
       {order.fulfillment_type === "delivery" && order.customer_address && order.customer_address !== "Pickup" && (
-        <div className="bg-blue-500/20 border-2 border-blue-400/40 rounded-2xl px-4 py-3">
+        <div className="bg-blue-500/20 border border-blue-400/40 rounded-xl px-3 py-2">
           <p className="text-blue-300 font-black text-xs uppercase tracking-widest mb-1">🚗 Deliver to</p>
-          <p className="text-white font-black text-lg leading-snug">{order.customer_address}</p>
+          <p className="text-white font-black text-sm leading-snug">{order.customer_address}</p>
         </div>
       )}
 
@@ -141,26 +141,26 @@ function OrderCard({
       <div className="flex items-center gap-3 flex-wrap">
         {order.order_type === "menu" ? (
           order.fulfillment_type === "delivery" ? (
-            <span className="text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">🚗 Delivery</span>
+            <span className="text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-300 border-blue-400/30">🚗 Delivery</span>
           ) : (
-            <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR.menu}`}>🥡 Pickup</span>
+            <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${TYPE_COLOR.menu}`}>🥡 Pickup</span>
           )
         ) : (
-          <span className={`text-sm font-black uppercase tracking-widest px-3 py-1 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
+          <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${TYPE_COLOR[order.order_type] || TYPE_COLOR.menu}`}>
             {order.order_type}
           </span>
         )}
-        {isNew && <span className="text-base font-black text-yellow-400 animate-pulse">● NEW</span>}
-        {isStarted && !allItemsDone && <span className="text-base font-black text-teal-400">● IN PROGRESS</span>}
-        {isStarted && allItemsDone && <span className="text-base font-black text-green-400">✓ READY</span>}
-        {isCompleted && <span className="text-base font-black text-zinc-500">✓ DONE</span>}
-        {urgent && <span className="text-base font-black text-red-400">⚠ URGENT</span>}
+        {isNew && <span className="text-xs font-black text-yellow-400 animate-pulse">● NEW</span>}
+        {isStarted && !allItemsDone && <span className="text-xs font-black text-teal-400">● IN PROGRESS</span>}
+        {isStarted && allItemsDone && <span className="text-xs font-black text-green-400">✓ READY</span>}
+        {isCompleted && <span className="text-xs font-black text-zinc-500">✓ DONE</span>}
+        {urgent && <span className="text-xs font-black text-red-400">⚠ URGENT</span>}
       </div>
 
       {/* Items — tappable for per-item completion */}
-      <div className="border-t-2 border-zinc-700 pt-4 space-y-2">
+      <div className="border-t border-zinc-700 pt-2 space-y-1">
         {!isCompleted && (
-          <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Tap item to mark done</p>
+          <p className="text-zinc-600 text-xs uppercase tracking-widest mb-1">Tap to mark done</p>
         )}
         {order.items.map((item, i) => {
           const done = itemStatuses[String(i)];
@@ -168,24 +168,24 @@ function OrderCard({
             <div
               key={i}
               onClick={() => toggleItem(i)}
-              className={`rounded-xl px-3 py-2 transition-all select-none ${
+              className={`rounded-lg px-2 py-1 transition-all select-none ${
                 !isCompleted ? "cursor-pointer hover:bg-zinc-800 active:scale-95" : ""
               } ${done ? "bg-green-500/15 border border-green-500/30" : "border border-transparent"}`}
             >
-              <p className={`text-xl font-black transition-colors ${done ? "text-green-400 line-through" : "text-white"}`}>
+              <p className={`text-sm font-black transition-colors ${done ? "text-green-400 line-through" : "text-white"}`}>
                 {item.qty > 1 && <span className={done ? "text-green-400" : "text-yellow-400"}>{item.qty}× </span>}
                 {item.name}
-                {item.size && <span className="text-zinc-400 text-base font-normal"> — {item.size}</span>}
+                {item.size && <span className="text-zinc-400 text-xs font-normal"> — {item.size}</span>}
                 {done && <span className="text-green-400 text-base ml-2">✓</span>}
               </p>
               {item.addons && item.addons.length > 0 && (
-                <p className={`text-base mt-0.5 ml-4 ${done ? "text-green-600 line-through" : "text-zinc-400"}`}>+ {item.addons.join(", ")}</p>
+                <p className={`text-xs mt-0 ml-3 ${done ? "text-green-600 line-through" : "text-zinc-400"}`}>+ {item.addons.join(", ")}</p>
               )}
               {item.mods && (
-                <p className={`text-base font-bold mt-0.5 ml-4 ${done ? "text-green-600" : "text-orange-300"}`}>⚠ {item.mods}</p>
+                <p className={`text-xs font-bold mt-0 ml-3 ${done ? "text-green-600" : "text-orange-300"}`}>⚠ {item.mods}</p>
               )}
               {item.protein && (
-                <p className={`text-base mt-0.5 ml-4 ${done ? "text-green-600 line-through" : "text-zinc-400"}`}>
+                <p className={`text-xs mt-0 ml-3 ${done ? "text-green-600 line-through" : "text-zinc-400"}`}>
                   {[item.protein, item.side1, item.side2, item.extra].filter(Boolean).join(" / ")}
                 </p>
               )}
@@ -196,16 +196,16 @@ function OrderCard({
 
       {/* Special requests */}
       {order.special_requests && (
-        <div className="bg-orange-400/15 border-2 border-orange-400/40 rounded-2xl px-4 py-3">
-          <p className="text-orange-300 font-black text-base">⚠ NOTE: {order.special_requests}</p>
+        <div className="bg-orange-400/15 border border-orange-400/40 rounded-xl px-3 py-2">
+          <p className="text-orange-300 font-black text-xs">⚠ NOTE: {order.special_requests}</p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 mt-auto pt-2">
+      <div className="flex gap-2 mt-auto pt-1">
         <button
           onClick={() => onPrint(order)}
-          className="text-base font-black text-zinc-400 hover:text-white border-2 border-zinc-700 hover:border-zinc-500 px-4 py-3 rounded-full transition-colors"
+          className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-2 rounded-full transition-colors"
         >
           🖨
         </button>
@@ -213,7 +213,7 @@ function OrderCard({
           <button
             onClick={() => updateStatus("in_progress")}
             disabled={updating}
-            className="flex-1 text-xl font-black bg-teal-500 hover:bg-teal-400 text-black py-3 rounded-full transition-colors disabled:opacity-50"
+            className="flex-1 text-sm font-black bg-teal-500 hover:bg-teal-400 text-black py-2 rounded-full transition-colors disabled:opacity-50"
           >
             Start ▶
           </button>
@@ -222,7 +222,7 @@ function OrderCard({
           <button
             onClick={() => updateStatus("complete")}
             disabled={updating}
-            className={`flex-1 text-xl font-black py-3 rounded-full transition-colors disabled:opacity-50 ${
+            className={`flex-1 text-sm font-black py-2 rounded-full transition-colors disabled:opacity-50 ${
               allItemsDone
                 ? "bg-green-500 hover:bg-green-400 text-black"
                 : "bg-yellow-400 hover:bg-yellow-300 text-black"
@@ -235,7 +235,7 @@ function OrderCard({
           <button
             onClick={() => updateStatus("in_progress")}
             disabled={updating}
-            className="flex-1 text-base font-black bg-zinc-700 hover:bg-zinc-600 text-white py-3 rounded-full transition-colors disabled:opacity-50"
+            className="flex-1 text-sm font-black bg-zinc-700 hover:bg-zinc-600 text-white py-2 rounded-full transition-colors disabled:opacity-50"
           >
             ↩ Recall
           </button>
@@ -343,7 +343,7 @@ export default function KDSPage() {
       ) : (
         <>
           {active.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
               {active.map(order => (
                 <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={handlePrint} />
               ))}
@@ -357,7 +357,7 @@ export default function KDSPage() {
                 <p className="text-zinc-500 font-black text-sm uppercase tracking-widest">Completed — tap Recall if needed</p>
                 <span className="bg-zinc-800 text-zinc-500 font-black text-xs px-3 py-1 rounded-full">{completed.length}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {completed.map(order => (
                   <OrderCard key={order.id} order={order} onUpdate={fetchOrders} onPrint={handlePrint} isCompleted />
                 ))}
