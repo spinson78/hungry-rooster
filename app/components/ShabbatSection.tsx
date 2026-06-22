@@ -170,17 +170,20 @@ export default function ShabbatSection() {
           </div>
         </div>
 
-        {/* ESTHER'S BAKERY CARD */}
+        {/* FRED'S FIXINS' CARD */}
         <div className="flex-1 bg-zinc-900 rounded-2xl border border-zinc-700 p-7 flex flex-col">
           <div className="mb-4">
-            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Esther&apos;s Bakery</p>
+            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Fred&apos;s Fixins&apos;</p>
+            <>
+            <img src="/freds%20fixins.png" alt="Fred's Fixins'" className="w-full mb-3 object-contain" style={{ mixBlendMode: "screen" }} />
             <h3 className="text-2xl font-black mb-1">Fresh-baked, every Friday</h3>
+            </>
             <p className="text-zinc-500 text-sm">Weekly rotating menu. Menu drops Sunday at 10AM. Cutoff Friday 9AM. Min $50.</p>
           </div>
 
           {bakery && bakeryRevealed ? (
             <>
-              <p className="text-zinc-400 text-xs uppercase tracking-widest font-bold mb-3">This week&apos;s bakery</p>
+              <p className="text-zinc-400 text-xs uppercase tracking-widest font-bold mb-3">This week&apos;s fixins&apos;</p>
               <ul className="text-white text-sm mb-3 space-y-1">
                 {bakery.items.slice(0, 4).map((item) => (
                   <li key={item.name}>
@@ -206,11 +209,11 @@ export default function ShabbatSection() {
           <div className="mt-auto pt-2">
             {bakeryOpen ? (
               <a href="/esther" className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-black px-6 py-3 rounded-full text-sm transition-colors">
-                Order Esther&apos;s Bakery
+                Order Fred&apos;s Fixins&apos;
               </a>
             ) : (
               <a href="/esther" className="inline-block border-2 border-zinc-600 text-zinc-400 hover:border-yellow-400 hover:text-yellow-400 font-black px-6 py-3 rounded-full text-sm transition-colors">
-                View Esther&apos;s Bakery
+                View Fred&apos;s Fixins&apos;
               </a>
             )}
           </div>
