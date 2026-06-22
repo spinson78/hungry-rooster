@@ -12,7 +12,6 @@ function isFriday(dateStr: string): boolean {
   return new Date(dateStr + "T12:00:00").getDay() === 5;
 }
 function isPastCutoff(dateStr: string): boolean {
-  // Same-day orders must be placed before 12 PM (noon) Central Time
   const now = new Date();
   const todayCST = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
   const todayStr = todayCST.toISOString().split("T")[0];
@@ -44,10 +43,9 @@ export default function GiftPage() {
   const [gcQty, setGcQty] = useState(1);
   const [gcForm, setGcForm] = useState({ purchaserName: "", purchaserEmail: "", recipientName: "", recipientEmail: "", message: "" });
 
-  // Dinner gift shared state
-  const [selectedPackage, setSelectedPackage] = useState(DINNER_PACKAGES[0]);
+  // Dinner gift state — cart-style: qty per package
+  const [pkgQtys, setPkgQtys] = useState<Record<string, number>>({});
   const [addCookies, setAddCookies] = useState(false);
-  const [dinnerQty, setDinnerQty] = useState(1);
   const [dinnerForm, setDinnerForm] = useState({ purchaserName: "", purchaserEmail: "", recipientName: "", recipientEmail: "", recipientPhone: "", message: "" });
 
   // Scheduled-only state
@@ -56,12 +54,26 @@ export default function GiftPage() {
   const [deliveryCityZip, setDeliveryCityZip] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
-  const packageTotal = (selectedPackage.price + (addCookies ? COOKIE_ADDON.price : 0)) * dinnerQty;
+
+  // Cart helpers
+  const getPkgQty = (name: string) => pkgQtys[name] || 0;
+  const setPkgQty = (name: string, qty: number) =>
+    setPkgQtys(prev => ({ ...prev, [name]: Math.max(0, qty) }));
+  const activePackages = DINNER_PACKAGES.filter(p => getPkgQty(p.name) > 0);
+  const hasFridayOnlyPkg = DINNER_PACKAGES.some(p => p.fridayOnly && getPkgQty(p.name) > 0);
+  const packageSubtotal = DINNER_PACKAGES.reduce((s, p) => s + getPkgQty(p.name) * p.price, 0);
+  const dinnerSubtotal = packageSubtotal + (addCookies ? COOKIE_ADDON.price : 0);
+  const dinnerTax = dinnerSubtotal * 0.0825;
+  const dinnerTotal = dinnerSubtotal + dinnerTax;
+
+  // Gift card totals
+  const gcSingleAmount = gcAmount === "custom" ? parseFloat(gcCustom) || 0 : gcAmount;
+  const gcFinalAmount = gcSingleAmount * gcQty;
 
   const deliveryDateError = () => {
     if (!deliveryDate) return "";
     if (!isDeliveryDay(deliveryDate)) return "We deliver Mon, Tue, Thu & Fri only.";
-    if (selectedPackage.fridayOnly && !isFriday(deliveryDate)) return "Shabbat orders deliver Friday only.";
+    if (hasFridayOnlyPkg && !isFriday(deliveryDate)) return "One or more selected packages are Friday delivery only.";
     if (isPastCutoff(deliveryDate)) return "Same-day orders must be placed before 12 PM. Please choose a future date.";
     return "";
   };
@@ -87,15 +99,16 @@ export default function GiftPage() {
 
   const handleDinnerGift = async () => {
     setError("");
+    if (activePackages.length === 0) { setError("Please select at least one package."); return; }
     if (!dinnerForm.purchaserName.trim() || !dinnerForm.purchaserEmail.trim()) { setError("Please enter your name and email."); return; }
-    if (!dinnerForm.recipientName.trim()) { setError("Please enter the recipient\'s name."); return; }
+    if (!dinnerForm.recipientName.trim()) { setError("Please enter the recipient's name."); return; }
     if (tab === "scheduled") {
       if (!deliveryDate) { setError("Please pick a delivery date."); return; }
       const dateErr = deliveryDateError();
       if (dateErr) { setError(dateErr); return; }
       if (!deliveryAddress.trim() || !deliveryCityZip.trim()) { setError("Please enter the delivery address."); return; }
     } else {
-      if (!dinnerForm.recipientEmail.trim()) { setError("Please enter the recipient\'s email so we can send their claim link."); return; }
+      if (!dinnerForm.recipientEmail.trim()) { setError("Please enter the recipient's email so we can send their claim link."); return; }
     }
     setLoading(true);
     try {
@@ -105,10 +118,7 @@ export default function GiftPage() {
         body: JSON.stringify({
           giftType: "dinner_gift",
           dinnerGiftType: tab,
-          packageName: selectedPackage.name,
-          packagePrice: String(selectedPackage.price),
-          serves: selectedPackage.serves,
-          qty: dinnerQty,
+          packages: activePackages.map(p => ({ name: p.name, price: p.price, qty: getPkgQty(p.name) })),
           addCookies,
           ...dinnerForm,
           deliveryDate: tab === "scheduled" ? deliveryDate : "",
@@ -123,39 +133,56 @@ export default function GiftPage() {
     finally { setLoading(false); }
   };
 
-  const gcSingleAmount = gcAmount === "custom" ? parseFloat(gcCustom) || 0 : gcAmount;
-  const gcFinalAmount = gcSingleAmount * gcQty;
-
   const renderPackageSelector = () => (
     <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
       <h2 className="font-black text-xl mb-4">Choose a Package</h2>
       <div className="space-y-3 mb-4">
-        {DINNER_PACKAGES.map((pkg) => (
-          <button
-            key={pkg.name}
-            onClick={() => { setSelectedPackage(pkg); setAddCookies(false); }}
-            className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${selectedPackage.name === pkg.name ? "border-teal-400 bg-teal-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-black">{pkg.name}</p>
-                  {pkg.fridayOnly && <span className="text-xs bg-yellow-400/20 text-yellow-400 font-bold px-2 py-0.5 rounded-full">Friday only</span>}
+        {DINNER_PACKAGES.map((pkg) => {
+          const qty = getPkgQty(pkg.name);
+          return (
+            <div
+              key={pkg.name}
+              className={"p-4 rounded-xl border-2 transition-colors " + (qty > 0 ? "border-teal-400 bg-teal-400/10" : "border-zinc-700")}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-black">{pkg.name}</p>
+                    {pkg.fridayOnly && (
+                      <span className="text-xs bg-yellow-400/20 text-yellow-400 font-bold px-2 py-0.5 rounded-full shrink-0">Friday only</span>
+                    )}
+                  </div>
+                  <p className="text-zinc-400 text-sm mt-0.5">{pkg.description}</p>
                 </div>
-                <p className="text-zinc-400 text-sm mt-0.5">{pkg.description}</p>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="font-black text-lg text-teal-400">${pkg.price}</span>
+                  <div className="flex items-center gap-1 bg-zinc-800 rounded-full px-3 py-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPkgQty(pkg.name, qty - 1)}
+                      className="text-base font-bold text-zinc-400 hover:text-white w-5 text-center leading-none"
+                    >−</button>
+                    <span className="font-black w-5 text-center text-sm">{qty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPkgQty(pkg.name, qty + 1)}
+                      className="text-base font-bold text-teal-400 hover:text-teal-300 w-5 text-center leading-none"
+                    >+</button>
+                  </div>
+                </div>
               </div>
-              <span className="font-black text-xl text-teal-400 shrink-0 ml-4">${pkg.price}</span>
             </div>
-          </button>
-        ))}
+          );
+        })}
       </div>
       <button
+        type="button"
         onClick={() => setAddCookies(!addCookies)}
-        className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${addCookies ? "border-yellow-400 bg-yellow-400/10" : "border-zinc-700 hover:border-zinc-500"}`}
+        className={"w-full text-left p-4 rounded-xl border-2 transition-colors " + (addCookies ? "border-yellow-400 bg-yellow-400/10" : "border-zinc-700 hover:border-zinc-500")}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${addCookies ? "border-yellow-400 bg-yellow-400" : "border-zinc-500"}`}>
+            <div className={"w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 " + (addCookies ? "border-yellow-400 bg-yellow-400" : "border-zinc-500")}>
               {addCookies && <span className="text-black text-xs font-black">+</span>}
             </div>
             <div>
@@ -169,48 +196,54 @@ export default function GiftPage() {
     </div>
   );
 
-  const renderOrderSummary = (onSubmit: () => void, label: string) => (
-    <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Quantity</span>
-        <div className="flex items-center gap-3 bg-zinc-800 rounded-full px-4 py-1.5">
-          <button type="button" onClick={() => setDinnerQty(q => Math.max(1, q - 1))} className="text-lg font-bold text-zinc-400 hover:text-white w-6 text-center">−</button>
-          <span className="font-black w-5 text-center">{dinnerQty}</span>
-          <button type="button" onClick={() => setDinnerQty(q => q + 1)} className="text-lg font-bold text-zinc-400 hover:text-white w-6 text-center">+</button>
+  const renderOrderSummary = (onSubmit: () => void, label: string) => {
+    if (activePackages.length === 0) {
+      return (
+        <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 text-center text-zinc-500 font-semibold">
+          Select at least one package above to continue.
         </div>
-      </div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-zinc-400">{selectedPackage.name}{dinnerQty > 1 ? ` × ${dinnerQty}` : ""}</span>
-        <span className="font-black">${(selectedPackage.price * dinnerQty).toFixed(2)}</span>
-      </div>
-      {addCookies && (
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-zinc-400">{COOKIE_ADDON.name}</span>
-          <span className="font-black">${(COOKIE_ADDON.price * dinnerQty).toFixed(2)}</span>
+      );
+    }
+    return (
+      <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+        <h2 className="font-black text-xl mb-4">Order Summary</h2>
+        <div className="space-y-1 mb-3">
+          {activePackages.map(pkg => (
+            <div key={pkg.name} className="flex items-center justify-between">
+              <span className="text-zinc-400 text-sm">{pkg.name}{getPkgQty(pkg.name) > 1 ? ` × ${getPkgQty(pkg.name)}` : ""}</span>
+              <span className="font-black">${(pkg.price * getPkgQty(pkg.name)).toFixed(2)}</span>
+            </div>
+          ))}
+          {addCookies && (
+            <div className="flex items-center justify-between">
+              <span className="text-zinc-400 text-sm">A Dozen Mini Cookies</span>
+              <span className="font-black">${COOKIE_ADDON.price.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-zinc-400 text-sm">Tax (8.25%)</span>
+            <span className="font-black">${dinnerTax.toFixed(2)}</span>
+          </div>
         </div>
-      )}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-zinc-400">Tax (8.25%)</span>
-        <span className="font-black">${(packageTotal * 0.0825).toFixed(2)}</span>
+        <div className="flex items-center justify-between text-xl font-black mb-5 border-t border-zinc-700 pt-4">
+          <span>Total</span>
+          <span className="text-teal-400">${dinnerTotal.toFixed(2)}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={loading}
+          className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
+        >
+          {loading ? "Redirecting to payment..." : label}
+        </button>
+        <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe · Secure checkout</p>
       </div>
-      <div className="flex items-center justify-between text-xl font-black mb-5 border-t border-zinc-700 pt-4">
-        <span>Total</span>
-        <span className="text-teal-400">${(packageTotal * 1.0825).toFixed(2)}</span>
-      </div>
-      <button
-        onClick={onSubmit}
-        disabled={loading}
-        className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
-      >
-        {loading ? "Redirecting to payment..." : label}
-      </button>
-    </div>
-  );
+    );
+  };
 
   return (
     <main className="bg-black text-white min-h-screen relative overflow-x-hidden">
-
-
 
       {/* Nav */}
       <NavBar active="Gift Cards" />
@@ -218,7 +251,6 @@ export default function GiftPage() {
       {/* Hero */}
       <section className="px-6 pt-12 pb-10 max-w-3xl mx-auto relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
-          {/* Text */}
           <div className="flex-1 text-center md:text-left">
             <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-3">The Hungry Rooster</p>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-white">
@@ -229,7 +261,6 @@ export default function GiftPage() {
               Fred-approved, every time.
             </p>
           </div>
-          {/* Fred */}
           <div className="shrink-0 w-52 md:w-56" aria-hidden="true">
             <img
               src="/fred%20flowers.png"
@@ -245,20 +276,23 @@ export default function GiftPage() {
       <div className="max-w-3xl mx-auto px-6 mb-8 relative z-10">
         <div className="flex rounded-xl overflow-hidden border border-zinc-800">
           <button
+            type="button"
             onClick={() => setTab("gift_card")}
-            className={`flex-1 py-3 text-sm font-bold transition-colors ${tab === "gift_card" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+            className={"flex-1 py-3 text-sm font-bold transition-colors " + (tab === "gift_card" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white")}
           >
             Gift Card
           </button>
           <button
+            type="button"
             onClick={() => setTab("scheduled")}
-            className={`flex-1 py-3 text-sm font-bold transition-colors border-l border-zinc-800 ${tab === "scheduled" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+            className={"flex-1 py-3 text-sm font-bold transition-colors border-l border-zinc-800 " + (tab === "scheduled" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white")}
           >
             Send a Dinner
           </button>
           <button
+            type="button"
             onClick={() => setTab("claim_code")}
-            className={`flex-1 py-3 text-sm font-bold transition-colors border-l border-zinc-800 ${tab === "claim_code" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+            className={"flex-1 py-3 text-sm font-bold transition-colors border-l border-zinc-800 " + (tab === "claim_code" ? "bg-teal-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white")}
           >
             Dinner Coupon
           </button>
@@ -277,16 +311,18 @@ export default function GiftPage() {
                 {GIFT_CARD_AMOUNTS.map((amt) => (
                   <button
                     key={amt}
+                    type="button"
                     onClick={() => { setGcAmount(amt); setGcCustom(""); }}
-                    className={`py-3 rounded-xl font-black text-lg transition-colors border-2 ${gcAmount === amt ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}
+                    className={"py-3 rounded-xl font-black text-lg transition-colors border-2 " + (gcAmount === amt ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-300 hover:border-zinc-500")}
                   >
                     ${amt}
                   </button>
                 ))}
               </div>
               <button
+                type="button"
                 onClick={() => setGcAmount("custom")}
-                className={`w-full py-3 rounded-xl font-bold text-sm border-2 transition-colors ${gcAmount === "custom" ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
+                className={"w-full py-3 rounded-xl font-bold text-sm border-2 transition-colors " + (gcAmount === "custom" ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500")}
               >
                 Custom Amount
               </button>
@@ -356,11 +392,12 @@ export default function GiftPage() {
                 <span className="font-black text-xl">{gcFinalAmount > 0 ? `$${gcFinalAmount.toFixed(2)}` : "—"}</span>
               </div>
               <button
+                type="button"
                 onClick={handleGiftCard}
                 disabled={loading || gcSingleAmount < 10}
                 className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
               >
-                {loading ? "Redirecting to payment..." : `Buy ${gcQty > 1 ? `${gcQty}× ` : ""}$${gcFinalAmount > 0 ? gcFinalAmount.toFixed(2) : "—"} Gift Card${gcQty > 1 ? "s" : ""}`}
+                {loading ? "Redirecting to payment..." : ("Buy " + (gcQty > 1 ? gcQty + "x " : "") + "$" + (gcFinalAmount > 0 ? gcFinalAmount.toFixed(2) : "—") + " Gift Card" + (gcQty > 1 ? "s" : ""))}
               </button>
             </div>
           </div>
@@ -381,10 +418,10 @@ export default function GiftPage() {
               <div>
                 <label className="text-xs text-zinc-400 font-semibold uppercase tracking-wide">Delivery Date</label>
                 <input type="date" min={today} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
-                  className={`mt-1 w-full bg-zinc-800 border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 ${deliveryDate && deliveryDateError() ? "border-red-500" : "border-zinc-700"}`} />
+                  className={"mt-1 w-full bg-zinc-800 border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 " + (deliveryDate && deliveryDateError() ? "border-red-500" : "border-zinc-700")} />
                 {deliveryDate && deliveryDateError()
                   ? <p className="text-red-400 text-xs mt-1">{deliveryDateError()}</p>
-                  : <p className="text-zinc-500 text-xs mt-1">{selectedPackage.fridayOnly ? "Friday delivery only" : "Available Mon, Tue, Thu & Fri"}</p>
+                  : <p className="text-zinc-500 text-xs mt-1">{hasFridayOnlyPkg ? "Friday delivery only (for Shabbat packages)" : "Available Mon, Tue, Thu & Fri"}</p>
                 }
               </div>
               <div>

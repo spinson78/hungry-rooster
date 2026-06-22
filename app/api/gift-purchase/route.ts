@@ -5,13 +5,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const TAX_RATE = 0.0825;
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
+type LineItem = {
+  price_data: {
+    currency: string;
+    product_data: { name: string; description?: string };
+    unit_amount: number;
+  };
+  quantity: number;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { giftType } = body;
 
     if (giftType === "gift_card") {
-      // Dollar-amount gift card
       const { amount, qty: gcQty, purchaserName, purchaserEmail, recipientName, recipientEmail, message } = body;
       const singleAmountCents = Math.round(parseFloat(amount) * 100);
       const cardQty = Math.max(1, parseInt(gcQty) || 1);
@@ -33,7 +41,7 @@ export async function POST(req: NextRequest) {
             },
             quantity: cardQty,
           },
-        ],
+        ] as LineItem[],
         mode: "payment",
         success_url: `${baseUrl}/gift/success?session_id={CHECKOUT_SESSION_ID}&type=gift_card`,
         cancel_url: `${baseUrl}/gift`,
@@ -54,13 +62,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (giftType === "dinner_gift") {
-      // Send a dinner -- scheduled OR claim code
       const {
-        dinnerGiftType,   // "scheduled" | "claim_code"
-        packageName,
-        packagePrice,
-        serves,
-        qty: dinnerQty,
+        dinnerGiftType,
+        packages,           // [{name, price, qty}]
         addCookies,
         purchaserName,
         purchaserEmail,
@@ -68,64 +72,66 @@ export async function POST(req: NextRequest) {
         recipientEmail,
         recipientPhone,
         message,
-        // scheduled only:
         deliveryDate,
         deliveryAddress,
         deliveryCityZip,
       } = body;
 
-      const dinnerCount = Math.max(1, parseInt(dinnerQty) || 1);
-      const priceCents = Math.round(parseFloat(packagePrice) * 100);
-      const cookieCents = addCookies ? 2400 : 0;
-      const subtotalCents = (priceCents + cookieCents) * dinnerCount;
+      if (!Array.isArray(packages) || packages.length === 0) {
+        return NextResponse.json({ error: "Please select at least one package" }, { status: 400 });
+      }
+
+      // Build line items from each package
+      const pkgLineItems: LineItem[] = packages.map((pkg: { name: string; price: number; qty: number }) => ({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Send a Dinner: ${pkg.name}`,
+            description: dinnerGiftType === "scheduled"
+              ? `Scheduled delivery to ${recipientName || "recipient"} on ${deliveryDate || "TBD"}`
+              : `Dinner coupon for ${recipientName || "recipient"} — they'll claim & schedule online`,
+          },
+          unit_amount: Math.round(pkg.price * 100),
+        },
+        quantity: Math.max(1, parseInt(String(pkg.qty)) || 1),
+      }));
+
+      const cookieLineItem: LineItem[] = addCookies ? [{
+        price_data: {
+          currency: "usd",
+          product_data: { name: "Add-on: A Dozen Mini Cookies", description: "Freshly baked cookies delivered with the dinner" },
+          unit_amount: 2400,
+        },
+        quantity: 1,
+      }] : [];
+
+      // Calculate tax on the subtotal
+      const subtotalCents = packages.reduce(
+        (s: number, p: { price: number; qty: number }) => s + Math.round(p.price * 100) * Math.max(1, parseInt(String(p.qty)) || 1),
+        0
+      ) + (addCookies ? 2400 : 0);
       const taxCents = Math.round(subtotalCents * TAX_RATE);
 
-      const lineItems = [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Send a Dinner: ${packageName}`,
-              description: dinnerGiftType === "scheduled"
-                ? `Scheduled delivery to ${recipientName} on ${deliveryDate}`
-                : `Dinner coupon for ${recipientName} — they'll claim & schedule online`,
-            },
-            unit_amount: priceCents,
-          },
-          quantity: dinnerCount,
+      const taxLineItem: LineItem[] = [{
+        price_data: {
+          currency: "usd",
+          product_data: { name: "Sales Tax (8.25%)" },
+          unit_amount: taxCents,
         },
-        ...(addCookies ? [{
-          price_data: {
-            currency: "usd" as const,
-            product_data: { name: "Add-on: A Dozen Mini Cookies", description: "Freshly baked cookies delivered with the dinner" },
-            unit_amount: 2400,
-          },
-          quantity: dinnerCount,
-        }] : []),
-        {
-          price_data: {
-            currency: "usd",
-            product_data: { name: "Sales Tax (8.25%)" },
-            unit_amount: taxCents,
-          },
-          quantity: 1,
-        },
-      ];
+        quantity: 1,
+      }];
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
-        line_items: lineItems,
+        line_items: [...pkgLineItems, ...cookieLineItem, ...taxLineItem],
         mode: "payment",
         success_url: `${baseUrl}/gift/success?session_id={CHECKOUT_SESSION_ID}&type=dinner_gift`,
         cancel_url: `${baseUrl}/gift`,
         metadata: {
           gift_type: "dinner_gift",
           dinner_gift_type: dinnerGiftType || "claim_code",
-          qty: String(dinnerCount),
-          package_name: packageName || "",
-          package_price_cents: String(priceCents),
+          packages: JSON.stringify(packages).slice(0, 490),
           add_cookies: addCookies ? "true" : "false",
-          serves: serves || "",
           purchaser_name: purchaserName || "",
           purchaser_email: purchaserEmail || "",
           recipient_name: recipientName || "",
