@@ -53,7 +53,7 @@ export default function GroupOrdersPage() {
       {/* HERO */}
       <section className="px-6 py-20 max-w-5xl mx-auto text-center">
         <div className="flex justify-center mb-6">
-          <img src="/group%20orders%20fred.png" alt="Group Orders Fred" className="h-48 w-auto" />
+          <img src="/group%20orders%20fred.png" alt="Group Orders Fred" className="h-72 w-auto" />
         </div>
         <p className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-4">Group Orders</p>
         <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-6">

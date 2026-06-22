@@ -97,20 +97,22 @@ export default function Home() {
             <img src="/esther.png" alt="Esther's Cart" className="w-36 mb-5" />
             <h3 className="text-xl font-black mb-2">Esther&apos;s Cart</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
-              Looking for Esther&apos;s location?{" "}
-              <a href="/esther-cart" className="text-yellow-400 font-bold hover:text-yellow-300 transition-colors">Click here.</a>
+              Esther&apos;s beloved food cart, roaming Dallas with fresh scratch-made bites.
             </p>
+            <a href="/esther-cart" className="inline-block bg-yellow-400 text-black font-black px-6 py-2 rounded-full text-sm hover:bg-yellow-300 transition-colors">Find Esther</a>
           </div>
           <div>
-            <div className="relative inline-block mb-5">
-              <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-36" />
-              <span className="absolute top-2 right-0 bg-yellow-400 text-black text-xs font-black px-3 py-1 rounded-full rotate-12 shadow-lg">Coming Soon</span>
+            <div className="relative w-36 mb-5">
+              <img src="/rico%20saucey.png" alt="Rico Saucey" className="w-full" />
+              <div className="absolute top-[45%] left-0 right-0 bg-white text-black text-xs font-black text-center py-1.5 uppercase tracking-widest shadow-md">
+                Coming Soon
+              </div>
             </div>
             <h3 className="text-xl font-black mb-2">Rico Saucey</h3>
             <p className="text-zinc-400 text-sm leading-relaxed mb-4">
               Order kiosk with dirty sodas and serious flavor. Plus signature sauces to take home.
             </p>
-            <a href="/rico" className="text-teal-400 text-sm font-bold hover:text-teal-300 transition-colors">Get saucy →</a>
+            <span className="inline-block bg-zinc-800 text-zinc-500 font-black px-6 py-2 rounded-full text-sm cursor-not-allowed">Coming Soon</span>
           </div>
         </div>
       </section>
