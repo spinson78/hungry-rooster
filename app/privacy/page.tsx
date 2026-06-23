@@ -32,8 +32,8 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-xl font-black text-white mb-3">3. Non-Sharing of Mobile Numbers</h2>
-            <p>We do not sell, rent, share, or disclose your mobile phone number to third parties for their marketing purposes. Your phone number is used exclusively for communications from The Hungry Rooster and will never be shared with outside marketing partners.</p>
+            <h2 className="text-xl font-black text-white mb-3">3. Non-Sharing of Mobile Information</h2>
+            <p>Mobile information and messaging consent are not shared with third parties or affiliates for marketing or promotional purposes. We do not sell, rent, share, or disclose your mobile phone number to any third party. Your phone number is used exclusively for communications from The Hungry Rooster.</p>
           </div>
 
           <div>

@@ -33,10 +33,21 @@ type Order = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  menu:    "bg-teal-400/20 text-teal-400 border-teal-400/30",
-  dinner:  "bg-teal-400/20 text-teal-400 border-teal-400/30",
-  shabbat: "bg-yellow-400/20 text-yellow-400 border-yellow-400/30",
-  bakery:  "bg-orange-400/20 text-orange-400 border-orange-400/30",
+  menu:     "bg-teal-400/20 text-teal-400 border-teal-400/30",
+  dinner:   "bg-teal-400/20 text-teal-400 border-teal-400/30",
+  shabbat:  "bg-yellow-400/20 text-yellow-400 border-yellow-400/30",
+  bakery:   "bg-orange-400/20 text-orange-400 border-orange-400/30",
+  doordash: "bg-red-500/20 text-red-400 border-red-400/30",
+  ubereats: "bg-green-500/20 text-green-400 border-green-400/30",
+  phone:    "bg-purple-400/20 text-purple-400 border-purple-400/30",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  doordash: "🚗 DoorDash",
+  ubereats: "🟢 Uber Eats",
+  phone:    "📞 Phone",
+  menu:     "🛒 Online",
+  dinner:   "🍽 Dinner",
 };
 
 function elapsed(created: string) {
@@ -257,6 +268,12 @@ function OrderCard({
 
 export default function KDSPage() {
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  const [showQuickOrder, setShowQuickOrder] = useState(false);
+  const [qSource, setQSource] = useState<"doordash"|"ubereats"|"phone">("doordash");
+  const [qName, setQName] = useState("");
+  const [qItems, setQItems] = useState([{ name: "", qty: 1 }]);
+  const [qNotes, setQNotes] = useState("");
+  const [qSubmitting, setQSubmitting] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [now, setNow] = useState(Date.now());
   const [muted, setMuted] = useState(false);
@@ -321,6 +338,30 @@ export default function KDSPage() {
 
   const handlePrint = (o: Order) => { setPrintOrder(o); setTimeout(() => window.print(), 100); };
 
+  const handleQuickOrder = async () => {
+    const validItems = qItems.filter(i => i.name.trim());
+    if (!qName.trim() || validItems.length === 0) return;
+    setQSubmitting(true);
+    const orderNum = `3P-${Date.now().toString().slice(-6)}`;
+    const items = validItems.map(i => ({ name: i.name.trim(), qty: i.qty, price: 0 }));
+    await supabase.from("orders").insert({
+      order_number: orderNum,
+      order_type: qSource,
+      customer_name: qName.trim(),
+      customer_phone: "",
+      customer_address: "Pickup",
+      fulfillment_type: "pickup",
+      items,
+      subtotal: 0, tax_amount: 0, tip_amount: 0, total: 0,
+      special_requests: qNotes.trim(),
+      status: "pending",
+    });
+    setQName(""); setQItems([{ name: "", qty: 1 }]); setQNotes("");
+    setShowQuickOrder(false);
+    setQSubmitting(false);
+    fetchOrders();
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
 
@@ -346,6 +387,12 @@ export default function KDSPage() {
             className="text-base font-black text-zinc-400 hover:text-white border border-zinc-700 px-5 py-2.5 rounded-full transition-colors"
           >
             ↻ Refresh
+          </button>
+          <button
+            onClick={() => setShowQuickOrder(true)}
+            className="text-base font-black bg-yellow-400 hover:bg-yellow-300 text-black px-5 py-2.5 rounded-full transition-colors"
+          >
+            + New Order
           </button>
         </div>
       </div>
@@ -386,7 +433,92 @@ export default function KDSPage() {
         </>
       )}
 
-      {/* Print ticket */}
+      {/* Quick Order Modal */}
+      {showQuickOrder && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-xl font-black text-white">New Order</h2>
+              <button onClick={() => setShowQuickOrder(false)} className="text-zinc-400 hover:text-white text-2xl leading-none">×</button>
+            </div>
+
+            {/* Source */}
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Order Source</p>
+              <div className="flex gap-2">
+                {(["doordash","ubereats","phone"] as const).map(s => (
+                  <button key={s} onClick={() => setQSource(s)}
+                    className={`flex-1 py-2.5 rounded-full font-black text-sm transition-colors ${qSource === s ? (s === "doordash" ? "bg-red-500 text-white" : s === "ubereats" ? "bg-green-500 text-black" : "bg-purple-500 text-white") : "bg-zinc-800 text-zinc-400 hover:text-white"}`}>
+                    {s === "doordash" ? "🚗 DoorDash" : s === "ubereats" ? "🟢 Uber Eats" : "📞 Phone"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Customer name */}
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Customer Name *</p>
+              <input
+                value={qName}
+                onChange={e => setQName(e.target.value)}
+                placeholder="e.g. John D."
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400"
+              />
+            </div>
+
+            {/* Items */}
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Items *</p>
+              <div className="space-y-2">
+                {qItems.map((item, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      value={item.name}
+                      onChange={e => setQItems(prev => prev.map((it, idx) => idx === i ? { ...it, name: e.target.value } : it))}
+                      placeholder="Item name"
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
+                    />
+                    <div className="flex items-center gap-1 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2">
+                      <button onClick={() => setQItems(prev => prev.map((it, idx) => idx === i ? { ...it, qty: Math.max(1, it.qty - 1) } : it))} className="text-zinc-400 hover:text-white font-black w-6 text-center">−</button>
+                      <span className="text-white font-black w-5 text-center text-sm">{item.qty}</span>
+                      <button onClick={() => setQItems(prev => prev.map((it, idx) => idx === i ? { ...it, qty: it.qty + 1 } : it))} className="text-zinc-400 hover:text-white font-black w-6 text-center">+</button>
+                    </div>
+                    {qItems.length > 1 && (
+                      <button onClick={() => setQItems(prev => prev.filter((_, idx) => idx !== i))} className="text-zinc-600 hover:text-red-400 text-lg leading-none">✕</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setQItems(prev => [...prev, { name: "", qty: 1 }])}
+                className="mt-3 text-xs font-black text-teal-400 hover:text-teal-300 transition-colors">
+                + Add another item
+              </button>
+            </div>
+
+            {/* Notes */}
+            <div className="mb-6">
+              <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Special Requests</p>
+              <textarea
+                value={qNotes}
+                onChange={e => setQNotes(e.target.value)}
+                rows={2}
+                placeholder="Allergies, mods, notes..."
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-yellow-400 resize-none"
+              />
+            </div>
+
+            <button
+              onClick={handleQuickOrder}
+              disabled={qSubmitting || !qName.trim() || qItems.every(i => !i.name.trim())}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-black font-black py-4 rounded-full text-lg transition-colors"
+            >
+              {qSubmitting ? "Sending to Kitchen…" : "Fire Order 🔥"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Print ticket */}}
       {printOrder && (
         <div id="kds-print-ticket">
           <div style={{ textAlign: "center", paddingBottom: "6px" }}>
