@@ -126,10 +126,16 @@ export default function StoryPage() {
               </div>
             </a>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 text-center">
-            <p className="text-5xl font-black text-yellow-400 leading-tight mb-2">Kosher?</p>
-            <p className="text-4xl font-black text-white leading-tight">You bet your<br />tail feathers<br />we are!</p>
-
+          <div className="flex flex-col items-center">
+            <img
+              src="/kosher%20fred.png"
+              alt="Kosher Fred"
+              className="w-full max-w-sm object-contain"
+              style={{ mixBlendMode: "screen" }}
+            />
+            <p className="text-zinc-500 text-sm italic mt-2 text-center">
+              Even Fred keeps it kosher.
+            </p>
           </div>
         </div>
       </section>
