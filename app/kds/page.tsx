@@ -518,7 +518,7 @@ export default function KDSPage() {
         </div>
       )}
 
-      {/* Print ticket */}}
+      {/* Print ticket */}
       {printOrder && (
         <div id="kds-print-ticket">
           <div style={{ textAlign: "center", paddingBottom: "6px" }}>
