@@ -59,7 +59,7 @@ export default function ReviewPage() {
       <main className="bg-black text-white min-h-screen">
         <NavBar />
         <div className="max-w-lg mx-auto px-6 py-32 text-center">
-          <div className="text-6xl mb-6">🐓</div>
+          <img src="/fred%20thumbs%20up.png" alt="Fred gives a thumbs up" className="w-40 h-40 object-contain mx-auto mb-6" />
           <h1 className="text-4xl font-black mb-4">Fred says thank you!</h1>
           <p className="text-zinc-400 text-lg mb-2">Your review has been received.</p>
           <p className="text-zinc-500 text-sm mb-10">We read every single one. It means the world to us.</p>
