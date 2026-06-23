@@ -284,7 +284,7 @@ export default function CateringPage() {
     setModalSize(item.sizes ? item.sizes[0] : null);
     const d: Record<string, string> = {};
     item.options?.forEach(o => { d[o.key] = o.choices[0]; });
-    setModalOptions(d); setModalQty(WRAP_MIN); setModalLbs(2);
+    setModalOptions(d); setModalQty(type === "wrap" ? WRAP_MIN : 1); setModalLbs(2);
   };
 
   const getModalPrice = () => {
@@ -304,7 +304,7 @@ export default function CateringPage() {
       itemName: modal.name + (Object.values(modalOptions).length ? ` (${Object.values(modalOptions).join(", ")})` : ""),
       size: modalCatType === "sized" ? modalSize?.label : modalCatType === "wrap" ? `${modalQty} wraps` : `${modalLbs} lbs`,
       serving: modalCatType === "sized" ? modalSize?.serving : undefined,
-      price: getModalPrice(), options: modalOptions, qty: 1, type: modalCatType,
+      price: getModalPrice(), options: modalOptions, qty: modalCatType === "sized" ? modalQty : 1, type: modalCatType,
     };
     setCart(prev => [...prev, entry]); setModal(null);
   };
@@ -876,6 +876,17 @@ export default function CateringPage() {
                 </div>
               ))}
 
+              {modalCatType === "sized" && (
+                <div className="mb-6">
+                  <p className="font-bold mb-3 text-sm uppercase tracking-wide text-zinc-300">Quantity</p>
+                  <div className="flex items-center gap-4 bg-zinc-800 rounded-full px-4 py-2 w-fit">
+                    <button onClick={() => setModalQty(Math.max(1, modalQty - 1))} className="text-xl font-bold text-zinc-400 hover:text-white">−</button>
+                    <span className="font-black w-8 text-center">{modalQty}</span>
+                    <button onClick={() => setModalQty(modalQty + 1)} className="text-xl font-bold text-zinc-400 hover:text-white">+</button>
+                  </div>
+                </div>
+              )}
+
               {modalCatType === "wrap" && (
                 <div className="mb-6">
                   <p className="font-bold mb-3 text-sm uppercase tracking-wide text-zinc-300">Quantity <span className="text-zinc-500 normal-case font-normal">(min 5)</span></p>
@@ -901,7 +912,8 @@ export default function CateringPage() {
               )}
 
               <button onClick={addToCart} className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-3 rounded-full transition-colors mt-2">
-                Add to Order — ${getModalPrice().toFixed(2)}
+                Add to Order — ${(getModalPrice() * (modalCatType === "sized" ? modalQty : 1)).toFixed(2)}
+                {modalCatType === "sized" && modalQty > 1 && <span className="font-normal text-sm opacity-80 ml-1">({modalQty}×)</span>}
               </button>
             </div>
           </div>
