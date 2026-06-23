@@ -28,6 +28,8 @@ export default function ReviewsTab() {
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -52,6 +54,14 @@ export default function ReviewsTab() {
       .update({ is_published: !review.is_published })
       .eq("id", review.id);
     if (!error) setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_published: !r.is_published } : r));
+  };
+
+  const deleteReview = async (id: string) => {
+    setDeleting(id);
+    const { error } = await supabase.from("reviews").delete().eq("id", id);
+    if (!error) setReviews(prev => prev.filter(r => r.id !== id));
+    setDeleting(null);
+    setConfirmDeleteId(null);
   };
 
   const saveResponse = async (review: Review) => {
@@ -124,19 +134,48 @@ export default function ReviewsTab() {
                 </div>
               </div>
 
-              {/* Publish toggle */}
-              <button
-                type="button"
-                onClick={() => togglePublished(review)}
-                className={"shrink-0 px-4 py-2 rounded-full font-black text-xs transition-colors " +
-                  (review.is_published
-                    ? "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
-                    : "bg-teal-500 text-black hover:bg-teal-400"
-                  )
-                }
-              >
-                {review.is_published ? "Unpublish" : "Post to Site"}
-              </button>
+              {/* Actions */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => togglePublished(review)}
+                  className={"px-4 py-2 rounded-full font-black text-xs transition-colors " +
+                    (review.is_published
+                      ? "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                      : "bg-teal-500 text-black hover:bg-teal-400"
+                    )
+                  }
+                >
+                  {review.is_published ? "Unpublish" : "Post to Site"}
+                </button>
+                {confirmDeleteId === review.id ? (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => deleteReview(review.id)}
+                      disabled={deleting === review.id}
+                      className="px-4 py-2 rounded-full font-black text-xs bg-red-500 text-white hover:bg-red-400 disabled:opacity-50 transition-colors"
+                    >
+                      {deleting === review.id ? "…" : "Confirm"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="px-4 py-2 rounded-full font-black text-xs bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(review.id)}
+                    className="px-4 py-2 rounded-full font-black text-xs bg-zinc-800 border border-zinc-700 text-zinc-600 hover:text-red-400 hover:border-red-400 transition-colors"
+                  >
+                    🗑 Delete
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Review body */}
