@@ -120,6 +120,7 @@ const WRAP_PRICE = 12;
 const WRAP_MIN = 5;
 
 type CartEntry = { id: string; categoryName: string; itemName: string; size?: string; serving?: string; price: number; options: Record<string, string>; qty: number; type: "sized" | "wrap" | "per_pound"; };
+type PkgCartEntry = { id: string; pkg: typeof PACKAGES[0]; size: typeof PACKAGE_SIZES[0]; choices: Record<string, string>; qty: number; };
 type Flow = "choose" | "package" | "alacarte" | "quote";
 
 const getMinDate = (hours: number) => {
@@ -133,9 +134,12 @@ export default function CateringPage() {
 
   // Package state
   const [pkgCatFilter, setPkgCatFilter] = useState("All");
-  const [selectedPkg, setSelectedPkg] = useState<typeof PACKAGES[0] | null>(null);
-  const [pkgSize, setPkgSize] = useState(PACKAGE_SIZES[0]);
-  const [pkgChoices, setPkgChoices] = useState<Record<string, string>>({});
+  const [pkgCart, setPkgCart] = useState<PkgCartEntry[]>([]);
+  const [pkgModal, setPkgModal] = useState<typeof PACKAGES[0] | null>(null);
+  const [pkgModalSize, setPkgModalSize] = useState(PACKAGE_SIZES[0]);
+  const [pkgModalChoices, setPkgModalChoices] = useState<Record<string, string>>({});
+  const [pkgModalQty, setPkgModalQty] = useState(1);
+  const [showPkgForm, setShowPkgForm] = useState(false);
 
   // À la carte state
   const [alcCat, setAlcCat] = useState(ALC_CATEGORIES[0].id);
@@ -241,15 +245,38 @@ export default function CateringPage() {
   const cartTotal = cartSubtotal + cartDelivFee;
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const meetsMin = cartSubtotal >= ORDER_MIN;
+  const pkgCartSubtotal = pkgCart.reduce((s, e) => s + e.size.price * e.qty, 0);
+  const pkgCartCount = pkgCart.reduce((s, e) => s + e.qty, 0);
 
   const filteredPkgs = pkgCatFilter === "All" ? PACKAGES : PACKAGES.filter(p => p.category === pkgCatFilter);
 
-  const selectPkg = (pkg: typeof PACKAGES[0]) => {
-    setSelectedPkg(pkg);
+  const openPkgModal = (pkg: typeof PACKAGES[0]) => {
+    setPkgModal(pkg);
     const d: Record<string, string> = {};
     pkg.choices.forEach(c => { d[c.key] = c.options[0]; });
-    setPkgChoices(d);
+    setPkgModalChoices(d);
+    setPkgModalSize(PACKAGE_SIZES[0]);
+    setPkgModalQty(1);
   };
+
+  const addPkgToCart = () => {
+    if (!pkgModal) return;
+    const entry: PkgCartEntry = {
+      id: `${pkgModal.id}-${Date.now()}`,
+      pkg: pkgModal,
+      size: pkgModalSize,
+      choices: pkgModalChoices,
+      qty: pkgModalQty,
+    };
+    setPkgCart(prev => [...prev, entry]);
+    setPkgModal(null);
+  };
+
+  const updatePkgQty = (id: string, delta: number) => {
+    setPkgCart(prev => prev.map(e => e.id === id ? { ...e, qty: Math.max(1, e.qty + delta) } : e));
+  };
+
+  const removePkgItem = (id: string) => setPkgCart(prev => prev.filter(e => e.id !== id));
 
   const openModal = (item: CateringItem, cat: CateringCategory) => {
     const type = cat.id === "wraps" ? "wrap" : cat.id === "per-pound" ? "per_pound" : "sized";
@@ -290,15 +317,17 @@ export default function CateringPage() {
 
   const handlePkgSubmit = async () => {
     const needsAddress = pkgFulfillment === "delivery";
-    if (!pkgForm.name || !pkgForm.phone || !pkgForm.event_date || !selectedPkg) { setError("Please fill in all required fields."); return; }
+    if (!pkgForm.name || !pkgForm.phone || !pkgForm.event_date || pkgCart.length === 0) { setError("Please fill in all required fields and add at least one package."); return; }
     if (needsAddress && (!pkgForm.address || !pkgForm.address_city)) { setError("Please enter your delivery address."); return; }
     if (needsAddress && pkgDelivErr) { setError(pkgDelivErr); return; }
     setSubmitting(true); setError("");
     const delivFee = needsAddress ? (pkgDelivFee ?? 0) : 0;
-    const total = pkgSize.price + delivFee;
+    const total = pkgCartSubtotal + delivFee;
     const fullPkgAddress = needsAddress ? `${pkgForm.address.trim()}, ${pkgForm.address_city.trim()}` : "Pickup";
-    const choicesSummary = Object.entries(pkgChoices).map(([k, v]) => `${selectedPkg.choices.find(c => c.key === k)?.label}: ${v}`);
-    const items = [{ name: selectedPkg.name, category: selectedPkg.category, size: pkgSize.label, includes: selectedPkg.items, choices: choicesSummary }];
+    const items = pkgCart.map(e => {
+      const choicesSummary = Object.entries(e.choices).map(([k, v]) => `${e.pkg.choices.find(c => c.key === k)?.label}: ${v}`);
+      return { name: e.pkg.name, category: e.pkg.category, size: e.size.label, qty: e.qty, includes: e.pkg.items, choices: choicesSummary };
+    });
     const res = await fetch("/api/catering-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -311,7 +340,7 @@ export default function CateringPage() {
         event_date: pkgForm.event_date,
         special_requests: pkgForm.special_requests,
         items,
-        subtotal: pkgSize.price,
+        subtotal: pkgCartSubtotal,
         delivery_fee: delivFee,
         delivery_distance_miles: needsAddress ? (pkgDelivDist ?? 0) : 0,
         total,
@@ -438,71 +467,103 @@ export default function CateringPage() {
         {/* ── PACKAGE FLOW ──────────────────────────────────────────────── */}
         {flow === "package" && (
           <div>
-            <button onClick={() => { setFlow("choose"); setSelectedPkg(null); }} className="text-zinc-400 hover:text-white text-sm mb-8 block">← Back</button>
-            <div className="flex gap-3 mb-4 items-center">
+            <button onClick={() => { setFlow("choose"); setPkgCart([]); setShowPkgForm(false); }} className="text-zinc-400 hover:text-white text-sm mb-8 block">← Back</button>
+            <div className="flex gap-3 mb-6 items-center">
               <span className="bg-teal-500/20 text-teal-400 text-xs font-bold px-3 py-1 rounded-full">24-hour notice</span>
               <span className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded-full">No order minimum</span>
             </div>
 
-            {!selectedPkg ? (
+            {!showPkgForm ? (
               <>
+                {/* Category filter */}
                 <div className="flex flex-wrap gap-2 mb-8">
                   {PKG_CATEGORIES.map(c => (
                     <button key={c} onClick={() => setPkgCatFilter(c)} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${pkgCatFilter === c ? "bg-teal-500 text-black" : "bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white"}`}>{c}</button>
                   ))}
                 </div>
-                <div className="space-y-4">
-                  {filteredPkgs.map(pkg => (
-                    <button key={pkg.id} onClick={() => selectPkg(pkg)} className="w-full bg-zinc-900 border border-zinc-700 hover:border-teal-500 rounded-2xl p-6 text-left transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <span className={`text-xs font-black uppercase tracking-widest ${pkg.color === "teal" ? "text-teal-400" : "text-yellow-400"}`}>{pkg.category}</span>
-                          <p className="font-black text-lg">{pkg.name}</p>
+
+                {/* Package cards */}
+                <div className="space-y-4 pb-32">
+                  {filteredPkgs.map(pkg => {
+                    const inCart = pkgCart.filter(e => e.pkg.id === pkg.id);
+                    const totalQty = inCart.reduce((s, e) => s + e.qty, 0);
+                    return (
+                      <div key={pkg.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <span className={`text-xs font-black uppercase tracking-widest ${pkg.color === "teal" ? "text-teal-400" : "text-yellow-400"}`}>{pkg.category}</span>
+                            <p className="font-black text-lg">{pkg.name}</p>
+                            <p className="text-zinc-400 text-sm mt-1 mb-2">{pkg.description}</p>
+                            <p className="text-zinc-500 text-xs">{pkg.items.join(" · ")}</p>
+                          </div>
                         </div>
-                        <span className="text-white font-black text-sm whitespace-nowrap ml-4">from $115</span>
+                        <div className="flex items-center justify-between mt-4">
+                          <span className="text-white font-black">from $115</span>
+                          <button
+                            onClick={() => openPkgModal(pkg)}
+                            className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2 rounded-full text-sm transition-colors"
+                          >
+                            + Add to Order
+                          </button>
+                        </div>
+                        {totalQty > 0 && (
+                          <div className="mt-3 pt-3 border-t border-zinc-800 space-y-2">
+                            {inCart.map(e => (
+                              <div key={e.id} className="flex items-center justify-between text-sm">
+                                <span className="text-zinc-300">{e.size.label} · ${e.size.price}</span>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => updatePkgQty(e.id, -1)} className="w-7 h-7 rounded-full border border-zinc-600 text-zinc-300 flex items-center justify-center hover:border-teal-500 hover:text-teal-400 transition-colors font-black">−</button>
+                                  <span className="font-black text-white w-4 text-center">{e.qty}</span>
+                                  <button onClick={() => updatePkgQty(e.id, 1)} className="w-7 h-7 rounded-full border border-zinc-600 text-zinc-300 flex items-center justify-center hover:border-teal-500 hover:text-teal-400 transition-colors font-black">+</button>
+                                  <button onClick={() => removePkgItem(e.id)} className="text-zinc-600 hover:text-red-400 text-xs ml-1">✕</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-zinc-400 text-sm mb-3">{pkg.description}</p>
-                      <p className="text-zinc-500 text-xs">{pkg.items.join(" · ")}</p>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
+
+                {/* Sticky bottom bar */}
+                {pkgCartCount > 0 && (
+                  <div className="fixed bottom-0 left-0 right-0 p-4 bg-black border-t border-zinc-800 z-30">
+                    <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-black text-lg">${pkgCartSubtotal.toFixed(2)}</p>
+                        <p className="text-zinc-500 text-xs">{pkgCartCount} package{pkgCartCount !== 1 ? "s" : ""} selected</p>
+                      </div>
+                      <button
+                        onClick={() => setShowPkgForm(true)}
+                        className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-3 rounded-full transition-colors"
+                      >
+                        Continue to Event Info →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="space-y-6">
-                <button onClick={() => setSelectedPkg(null)} className="text-zinc-400 hover:text-white text-sm">← Choose a different package</button>
-                <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-                  <span className={`text-xs font-black uppercase tracking-widest ${selectedPkg.color === "teal" ? "text-teal-400" : "text-yellow-400"}`}>{selectedPkg.category}</span>
-                  <h2 className="text-2xl font-black mb-1">{selectedPkg.name}</h2>
-                  <p className="text-zinc-400 text-sm mb-4">{selectedPkg.description}</p>
-                  <ul className="space-y-1">{selectedPkg.items.map(item => <li key={item} className="text-sm text-zinc-300">• {item}</li>)}</ul>
-                </div>
+                <button onClick={() => setShowPkgForm(false)} className="text-zinc-400 hover:text-white text-sm">← Back to packages</button>
 
-                {selectedPkg.choices.map(choice => (
-                  <div key={choice.key} className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-                    <p className="font-bold mb-4 text-sm uppercase tracking-wide text-zinc-300">{choice.label}</p>
-                    <div className="flex flex-wrap gap-3">
-                      {choice.options.map(opt => (
-                        <button key={opt} onClick={() => setPkgChoices({ ...pkgChoices, [choice.key]: opt })}
-                          className={`px-6 py-3 rounded-full font-bold text-sm border transition-colors ${pkgChoices[choice.key] === opt ? "border-teal-500 bg-teal-500/20 text-teal-300" : "border-zinc-600 text-zinc-400 hover:border-zinc-400"}`}>
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
+                {/* Order summary */}
                 <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-                  <p className="font-bold mb-4 text-sm uppercase tracking-wide text-zinc-300">Choose your size</p>
+                  <h2 className="font-black text-lg mb-4">Your Packages</h2>
                   <div className="space-y-3">
-                    {PACKAGE_SIZES.map(size => (
-                      <label key={size.label} className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${pkgSize.label === size.label ? "border-teal-500 bg-zinc-800" : "border-zinc-700 hover:border-teal-500"}`}>
-                        <div className="flex items-center gap-3">
-                          <input type="radio" checked={pkgSize.label === size.label} onChange={() => setPkgSize(size)} className="accent-teal-500" />
-                          <span className="font-bold text-sm">{size.label}</span>
+                    {pkgCart.map(e => (
+                      <div key={e.id} className="flex justify-between items-start text-sm">
+                        <div>
+                          <p className="font-bold">{e.pkg.name}</p>
+                          <p className="text-zinc-500">{e.size.label} · qty {e.qty}</p>
                         </div>
-                        <span className="font-black">${size.price}</span>
-                      </label>
+                        <span className="font-black">${(e.size.price * e.qty).toFixed(2)}</span>
+                      </div>
                     ))}
+                  </div>
+                  <div className="border-t border-zinc-700 mt-4 pt-3 flex justify-between font-black">
+                    <span>Packages Subtotal</span><span>${pkgCartSubtotal.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -524,31 +585,8 @@ export default function CateringPage() {
                     {pkgFulfillment === "delivery" && (
                       <div className="space-y-2">
                         <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Delivery Address *</label>
-                        <input
-                          type="text"
-                          placeholder="Street address (e.g. 1234 Main St, Suite 100)"
-                          value={pkgForm.address}
-                          onChange={e => {
-                            setPkgForm({ ...pkgForm, address: e.target.value });
-                            setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
-                          }}
-                          className={inputCls()}
-                        />
-                        <input
-                          type="text"
-                          placeholder="City, State, ZIP (e.g. Dallas, TX 75201)"
-                          value={pkgForm.address_city}
-                          onChange={e => {
-                            setPkgForm({ ...pkgForm, address_city: e.target.value });
-                            setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr("");
-                          }}
-                          onBlur={e => {
-                            if (pkgForm.address.trim() && e.target.value.trim()) {
-                              checkDeliveryFee(`${pkgForm.address.trim()}, ${e.target.value.trim()}`, "pkg");
-                            }
-                          }}
-                          className={inputCls()}
-                        />
+                        <input type="text" placeholder="Street address (e.g. 1234 Main St, Suite 100)" value={pkgForm.address} onChange={e => { setPkgForm({ ...pkgForm, address: e.target.value }); setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr(""); }} className={inputCls()} />
+                        <input type="text" placeholder="City, State, ZIP (e.g. Dallas, TX 75201)" value={pkgForm.address_city} onChange={e => { setPkgForm({ ...pkgForm, address_city: e.target.value }); setPkgDelivFee(null); setPkgDelivDist(null); setPkgDelivMsg(""); setPkgDelivErr(""); }} onBlur={e => { if (pkgForm.address.trim() && e.target.value.trim()) checkDeliveryFee(`${pkgForm.address.trim()}, ${e.target.value.trim()}`, "pkg"); }} className={inputCls()} />
                         {checkingPkgDeliv && <p className="text-zinc-500 text-xs">Checking delivery range...</p>}
                         {!checkingPkgDeliv && pkgDelivMsg && <p className="text-teal-400 text-xs">✓ {pkgDelivMsg}</p>}
                         {!checkingPkgDeliv && pkgDelivErr && <p className="text-red-400 text-xs">✗ {pkgDelivErr}</p>}
@@ -560,21 +598,12 @@ export default function CateringPage() {
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
                   {pkgDelivErr && <p className="text-red-400 text-sm mt-3">✗ {pkgDelivErr}</p>}
                   <div className="mt-6 mb-3 space-y-1 text-sm">
-                    <div className="flex justify-between"><span className="text-zinc-400">Package</span><span>${pkgSize.price}</span></div>
-                    {pkgFulfillment === "delivery" && (
-                      pkgDelivFee !== null ? (
-                        <div className="flex justify-between"><span className="text-zinc-400">Delivery fee</span><span>${pkgDelivFee.toFixed(2)}</span></div>
-                      ) : (
-                        <div className="flex justify-between text-zinc-600"><span>Delivery fee</span><span>enter address above</span></div>
-                      )
-                    )}
-                    <div className="flex justify-between font-black text-xl border-t border-zinc-700 pt-2 mt-1">
-                      <span>Total</span>
-                      <span>${(pkgSize.price + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}</span>
-                    </div>
+                    <div className="flex justify-between"><span className="text-zinc-400">Packages</span><span>${pkgCartSubtotal.toFixed(2)}</span></div>
+                    {pkgFulfillment === "delivery" && (pkgDelivFee !== null ? <div className="flex justify-between"><span className="text-zinc-400">Delivery fee</span><span>${pkgDelivFee.toFixed(2)}</span></div> : <div className="flex justify-between text-zinc-600"><span>Delivery fee</span><span>enter address above</span></div>)}
+                    <div className="flex justify-between font-black text-xl border-t border-zinc-700 pt-2 mt-1"><span>Total</span><span>${(pkgCartSubtotal + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}</span></div>
                   </div>
                   <button onClick={handlePkgSubmit} disabled={submitting || (pkgFulfillment === "delivery" && !!pkgDelivErr)} className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50">
-                    {submitting ? "Redirecting to payment..." : `Pay Now — $${(pkgSize.price + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}`}
+                    {submitting ? "Redirecting to payment..." : `Pay Now — $${(pkgCartSubtotal + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}`}
                   </button>
                   <p className="text-zinc-600 text-xs text-center mt-3">Secure payment via Stripe. Fred&apos;s crew will confirm by phone within 24 hours.</p>
                 </div>
@@ -853,6 +882,63 @@ export default function CateringPage() {
                 Add to Order — ${getModalPrice().toFixed(2)}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PACKAGE CONFIG MODAL ───────────────────────────────────────────── */}
+      {pkgModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <span className={`text-xs font-black uppercase tracking-widest ${pkgModal.color === "teal" ? "text-teal-400" : "text-yellow-400"}`}>{pkgModal.category}</span>
+                <h2 className="text-xl font-black">{pkgModal.name}</h2>
+              </div>
+              <button onClick={() => setPkgModal(null)} className="text-zinc-400 hover:text-white text-2xl leading-none">x</button>
+            </div>
+
+            {pkgModal.choices.map(choice => (
+              <div key={choice.key} className="mb-5">
+                <p className="font-bold mb-3 text-sm uppercase tracking-wide text-zinc-300">{choice.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {choice.options.map(opt => (
+                    <button key={opt} onClick={() => setPkgModalChoices({ ...pkgModalChoices, [choice.key]: opt })}
+                      className={`px-4 py-2 rounded-full font-bold text-sm border transition-colors ${pkgModalChoices[choice.key] === opt ? "border-teal-500 bg-teal-500/20 text-teal-300" : "border-zinc-600 text-zinc-400 hover:border-zinc-400"}`}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div className="mb-5">
+              <p className="font-bold mb-3 text-sm uppercase tracking-wide text-zinc-300">Choose size</p>
+              <div className="space-y-2">
+                {PACKAGE_SIZES.map(size => (
+                  <label key={size.label} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${pkgModalSize.label === size.label ? "border-teal-500 bg-zinc-800" : "border-zinc-700 hover:border-teal-500"}`}>
+                    <div className="flex items-center gap-3">
+                      <input type="radio" checked={pkgModalSize.label === size.label} onChange={() => setPkgModalSize(size)} className="accent-teal-500" />
+                      <span className="font-bold text-sm">{size.label}</span>
+                    </div>
+                    <span className="font-black text-sm">${size.price}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="font-bold mb-3 text-sm uppercase tracking-wide text-zinc-300">Quantity</p>
+              <div className="flex items-center gap-4 bg-zinc-800 rounded-full px-5 py-2 w-fit">
+                <button onClick={() => setPkgModalQty(Math.max(1, pkgModalQty - 1))} className="text-xl font-bold text-zinc-400 hover:text-white">-</button>
+                <span className="font-black text-white w-5 text-center">{pkgModalQty}</span>
+                <button onClick={() => setPkgModalQty(pkgModalQty + 1)} className="text-xl font-bold text-zinc-400 hover:text-white">+</button>
+              </div>
+            </div>
+
+            <button onClick={addPkgToCart} className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-3 rounded-full text-lg transition-colors">
+              Add to Order
+            </button>
           </div>
         </div>
       )}

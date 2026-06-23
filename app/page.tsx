@@ -139,6 +139,23 @@ export default function Home() {
         </div>
       </section>
 
+      {/* REVIEW BANNER */}
+      <section className="px-6 py-12 bg-zinc-900 border-t border-zinc-800">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mb-1">Share Your Experience</p>
+            <p className="text-2xl font-black">Loved your order? Fred wants to know.</p>
+            <p className="text-zinc-400 text-sm mt-1">Your review helps other hungry people find us.</p>
+          </div>
+          <a
+            href="/review"
+            className="shrink-0 bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg transition-colors"
+          >
+            Leave a Review ⭐
+          </a>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="border-t border-zinc-800 px-6 py-12">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">

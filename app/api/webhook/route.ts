@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
         .select("id, status")
         .eq("id", preOrderId)
         .single();
-      if (!presaved || presaved.status === "paid") {
+      if (!presaved || presaved.status !== "pending_payment") {
         return NextResponse.json({ received: true });
       }
       await supabase
         .from("orders")
-        .update({ status: "paid", stripe_session_id: session.id })
+        .update({ status: "pending", stripe_session_id: session.id })
         .eq("id", preOrderId);
       // Add to SMS subscribers if opted in
       if ((session.metadata ?? {}).sms_opted_in === "true" && (session.metadata ?? {}).customer_phone) {
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
         tip_amount:        tipAmount,
         total,
         fulfillment_type:  fulfillment,
-        status:            "paid",
+        status:            "pending",
         stripe_session_id: session.id,
       });
 
