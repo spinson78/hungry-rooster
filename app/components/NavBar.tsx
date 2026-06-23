@@ -26,9 +26,9 @@ export default function NavBar({ active }: { active?: string }) {
           </a>
         ))}
       </div>
-      <span className="bg-zinc-700 text-zinc-400 font-black px-5 py-2 rounded-full text-sm cursor-not-allowed">
-        Coming Soon
-      </span>
+      <a href="/menu" className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-5 py-2 rounded-full text-sm transition-colors">
+        Order Now
+      </a>
     </nav>
   );
 }

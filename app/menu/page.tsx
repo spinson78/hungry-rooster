@@ -989,6 +989,20 @@ export default function MenuPage() {
         </div>
       )}
 
+      {/* FLOATING CART BUTTON */}
+      {cartCount > 0 && !cartOpen && !upsellOpen && !checkoutOpen && !confirmed && (
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-40 px-6">
+          <button
+            onClick={() => setCartOpen(true)}
+            className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-8 py-4 rounded-full text-lg shadow-2xl transition-all flex items-center gap-4"
+          >
+            <span className="bg-black text-yellow-400 rounded-full w-7 h-7 flex items-center justify-center text-sm font-black">{cartCount}</span>
+            View Cart
+            <span className="text-black/70">${cartSubtotal.toFixed(2)}</span>
+          </button>
+        </div>
+      )}
+
       {/* ORDER CONFIRMED */}
       {confirmed && (
         <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
