@@ -6,10 +6,19 @@ type OrderLogItem = {
   id: string;
   order_number?: string;
   customer_name: string;
+  customer_email?: string;
   customer_phone?: string;
   customer_address?: string;
   fulfillment_type?: string;
-  items: Array<{ name: string; qty: number; size?: string }>;
+  items: Array<{
+    name: string;
+    qty: number;
+    size?: string;
+    addons?: string[];
+    mods?: string;
+    unit_price?: number;
+    price?: number;
+  }>;
   subtotal?: number;
   tax_amount?: number;
   delivery_fee?: number;
@@ -24,7 +33,7 @@ type OrderLogItem = {
 };
 
 const ORDER_TYPES = ["all", "menu", "dinner", "shabbat", "bakery", "catering"];
-const STATUSES = ["all", "pending", "in_progress", "complete", "cancelled"];
+const STATUSES = ["all", "pending", "in_progress", "complete", "cancelled", "paid", "pending_payment"];
 
 const TYPE_LABELS: Record<string, string> = {
   menu: "Walk-in / Delivery",
@@ -35,10 +44,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending:     "bg-yellow-400/20 text-yellow-400",
-  in_progress: "bg-teal-400/20 text-teal-400",
-  complete:    "bg-green-500/20 text-green-400",
-  cancelled:   "bg-red-500/20 text-red-400",
+  pending:         "bg-yellow-400/20 text-yellow-400",
+  in_progress:     "bg-teal-400/20 text-teal-400",
+  complete:        "bg-green-500/20 text-green-400",
+  cancelled:       "bg-red-500/20 text-red-400",
+  paid:            "bg-blue-400/20 text-blue-400",
+  pending_payment: "bg-zinc-500/20 text-zinc-400",
 };
 
 function itemsSummary(items: OrderLogItem["items"]): string {
@@ -105,6 +116,7 @@ export default function OrdersLogTab() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -289,103 +301,132 @@ export default function OrdersLogTab() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map(order => (
-            <div
-              key={order.id}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 flex items-start gap-4 hover:border-zinc-700 transition-colors"
-            >
-              {/* Order info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 flex-wrap mb-2">
-                  <span className="font-black text-white text-base">{order.customer_name}</span>
-                  {order.order_number && (
-                    <span className="font-mono text-xs text-zinc-500">{order.order_number}</span>
-                  )}
-                  <span className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-zinc-700 text-zinc-400"}`}>
-                    {order.status.replace("_", " ")}
-                  </span>
-                  {order.fulfillment_type === "delivery" && (
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">
-                      🚗 Delivery
-                    </span>
-                  )}
-                  {order.scheduled_for && (
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300">
-                      📅 {new Date(order.scheduled_for).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                    </span>
-                  )}
-                </div>
+          {filtered.map(order => {
+            const isExpanded = expandedId === order.id;
+            return (
+              <div key={order.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors">
 
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-400 mb-2">
-                  {order.customer_phone && <span>📞 {order.customer_phone}</span>}
-                  <span className="text-zinc-600">
-                    {TYPE_LABELS[order.order_type] || order.order_type}
-                  </span>
-                  <span className="text-zinc-600">{formatDate(order.created_at)}</span>
-                </div>
-
-                {order.fulfillment_type === "delivery" && order.customer_address && order.customer_address !== "Pickup" && (
-                  <p className="text-sm text-blue-300 mb-2">📍 {order.customer_address}</p>
-                )}
-
-                <p className="text-sm text-zinc-500 truncate">{itemsSummary(order.items)}</p>
-
-                {order.special_requests && (
-                  <p className="text-xs text-orange-400 mt-1">⚠ {order.special_requests}</p>
-                )}
-              </div>
-
-              {/* Totals */}
-              <div className="text-right shrink-0">
-                <p className="font-black text-white text-lg">${Number(order.total).toFixed(2)}</p>
-                {(order.delivery_fee ?? 0) > 0 && (
-                  <p className="text-xs text-blue-300 mt-0.5">
-                    +${Number(order.delivery_fee).toFixed(2)} delivery
-                    {(order.delivery_distance_miles ?? 0) > 0 && ` (${Number(order.delivery_distance_miles).toFixed(1)}mi)`}
-                  </p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="shrink-0 flex flex-col gap-2 items-end">
-                {/* Cancel order */}
-                {order.status !== "cancelled" && (
-                  <button
-                    onClick={() => handleCancel(order.id)}
-                    disabled={cancellingId === order.id}
-                    className="text-xs font-black px-3 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-orange-400 hover:border-orange-400 disabled:opacity-50 transition-colors"
-                  >
-                    {cancellingId === order.id ? "…" : "Cancel Order"}
-                  </button>
-                )}
-                {/* Delete */}
-                {confirmDeleteId === order.id ? (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleDelete(order.id)}
-                      disabled={deletingId === order.id}
-                      className="text-xs font-black px-3 py-1.5 rounded-full bg-red-500 text-white hover:bg-red-400 disabled:opacity-50 transition-colors"
-                    >
-                      {deletingId === order.id ? "…" : "Yes, delete"}
-                    </button>
-                    <button
-                      onClick={() => setConfirmDeleteId(null)}
-                      className="text-xs font-black px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-                    >
-                      Keep
-                    </button>
+                {/* Summary row — click to expand */}
+                <div
+                  className="px-5 py-4 flex items-start gap-4 cursor-pointer"
+                  onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap mb-1">
+                      <span className="font-black text-white text-base">{order.customer_name}</span>
+                      {order.order_number && <span className="font-mono text-xs text-zinc-500">{order.order_number}</span>}
+                      <span className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-zinc-700 text-zinc-400"}`}>
+                        {order.status.replace(/_/g, " ")}
+                      </span>
+                      {order.fulfillment_type === "delivery" && (
+                        <span className="text-xs font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">🚗 Delivery</span>
+                      )}
+                      {order.scheduled_for && (
+                        <span className="text-xs font-black px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300">
+                          📅 {new Date(order.scheduled_for).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-zinc-500">
+                      {order.customer_phone && <span>📞 {order.customer_phone}</span>}
+                      <span>{TYPE_LABELS[order.order_type] || order.order_type}</span>
+                      <span>{formatDate(order.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-zinc-500 mt-1 truncate">{itemsSummary(order.items)}</p>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDeleteId(order.id)}
-                    className="text-xs font-black px-3 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-600 hover:text-red-400 hover:border-red-400 transition-colors"
-                  >
-                    🗑 Delete
-                  </button>
+                  <div className="text-right shrink-0">
+                    <p className="font-black text-white text-lg">${Number(order.total).toFixed(2)}</p>
+                    <p className="text-xs text-zinc-600 mt-0.5">{isExpanded ? "▲ collapse" : "▼ details"}</p>
+                  </div>
+                </div>
+
+                {/* Expanded detail */}
+                {isExpanded && (
+                  <div className="border-t border-zinc-800 px-5 py-5 space-y-5">
+
+                    {/* Items */}
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Items</p>
+                      <div className="space-y-2">
+                        {(order.items || []).map((item, i) => (
+                          <div key={i} className="flex justify-between items-start text-sm">
+                            <div>
+                              <span className="font-bold text-white">{item.qty > 1 ? `${item.qty}× ` : ""}{item.name}</span>
+                              {item.size && <span className="text-zinc-500 ml-2 text-xs">{item.size}</span>}
+                              {item.addons && item.addons.length > 0 && (
+                                <p className="text-zinc-500 text-xs mt-0.5">+ {item.addons.join(", ")}</p>
+                              )}
+                              {item.mods && <p className="text-orange-400 text-xs mt-0.5">⚠ {item.mods}</p>}
+                            </div>
+                            <span className="font-black text-white ml-4 shrink-0">${(item.unit_price ? item.unit_price * item.qty : item.price ?? 0).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Totals */}
+                    <div className="bg-zinc-800 rounded-xl p-4 space-y-1 text-sm">
+                      <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${Number(order.subtotal ?? 0).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-zinc-400"><span>Tax</span><span>${Number(order.tax_amount ?? 0).toFixed(2)}</span></div>
+                      {(order.delivery_fee ?? 0) > 0 && (
+                        <div className="flex justify-between text-blue-300">
+                          <span>Delivery{(order.delivery_distance_miles ?? 0) > 0 ? ` (${Number(order.delivery_distance_miles).toFixed(1)}mi)` : ""}</span>
+                          <span>${Number(order.delivery_fee).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {(order.tip_amount ?? 0) > 0 && (
+                        <div className="flex justify-between text-teal-400"><span>Tip</span><span>${Number(order.tip_amount).toFixed(2)}</span></div>
+                      )}
+                      <div className="flex justify-between font-black text-white border-t border-zinc-700 pt-2 mt-1"><span>Total</span><span>${Number(order.total).toFixed(2)}</span></div>
+                    </div>
+
+                    {/* Customer info */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {order.customer_phone && <div><p className="text-zinc-500 text-xs uppercase tracking-wide mb-0.5">Phone</p><p className="text-white">{order.customer_phone}</p></div>}
+                      {order.customer_email && <div><p className="text-zinc-500 text-xs uppercase tracking-wide mb-0.5">Email</p><p className="text-white">{order.customer_email}</p></div>}
+                      {order.customer_address && order.customer_address !== "Pickup" && (
+                        <div className="col-span-2"><p className="text-zinc-500 text-xs uppercase tracking-wide mb-0.5">Delivery Address</p><p className="text-blue-300">{order.customer_address}</p></div>
+                      )}
+                    </div>
+
+                    {order.special_requests && (
+                      <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
+                        <p className="text-xs font-black text-orange-400 uppercase tracking-wide mb-1">Special Requests</p>
+                        <p className="text-orange-300 text-sm">{order.special_requests}</p>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-1">
+                      {order.status !== "cancelled" && (
+                        <button onClick={e => { e.stopPropagation(); handleCancel(order.id); }} disabled={cancellingId === order.id}
+                          className="text-xs font-black px-4 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-orange-400 hover:border-orange-400 disabled:opacity-50 transition-colors">
+                          {cancellingId === order.id ? "…" : "Cancel Order"}
+                        </button>
+                      )}
+                      {confirmDeleteId === order.id ? (
+                        <div className="flex gap-2">
+                          <button onClick={e => { e.stopPropagation(); handleDelete(order.id); }} disabled={deletingId === order.id}
+                            className="text-xs font-black px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-400 disabled:opacity-50 transition-colors">
+                            {deletingId === order.id ? "…" : "Yes, delete"}
+                          </button>
+                          <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                            className="text-xs font-black px-4 py-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
+                            Keep
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(order.id); }}
+                          className="text-xs font-black px-4 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-600 hover:text-red-400 hover:border-red-400 transition-colors">
+                          🗑 Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

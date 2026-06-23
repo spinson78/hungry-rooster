@@ -119,7 +119,7 @@ const ORDER_MIN = 100;
 const WRAP_PRICE = 12;
 const WRAP_MIN = 5;
 
-type CartEntry = { id: string; categoryName: string; itemName: string; size?: string; serving?: string; price: number; options: Record<string, string>; qty: number; type: "sized" | "wrap" | "per_pound"; };
+type CartEntry = { id: string; itemId: string; categoryName: string; itemName: string; size?: string; serving?: string; price: number; options: Record<string, string>; qty: number; type: "sized" | "wrap" | "per_pound"; };
 type PkgCartEntry = { id: string; pkg: typeof PACKAGES[0]; size: typeof PACKAGE_SIZES[0]; choices: Record<string, string>; qty: number; };
 type Flow = "choose" | "package" | "alacarte" | "quote";
 
@@ -300,7 +300,7 @@ export default function CateringPage() {
   const addToCart = () => {
     if (!modal) return;
     const entry: CartEntry = {
-      id: `${modal.id}-${Date.now()}`, categoryName: modalCatName,
+      id: `${modal.id}-${Date.now()}`, itemId: modal.id, categoryName: modalCatName,
       itemName: modal.name + (Object.values(modalOptions).length ? ` (${Object.values(modalOptions).join(", ")})` : ""),
       size: modalCatType === "sized" ? modalSize?.label : modalCatType === "wrap" ? `${modalQty} wraps` : `${modalLbs} lbs`,
       serving: modalCatType === "sized" ? modalSize?.serving : undefined,
@@ -310,6 +310,8 @@ export default function CateringPage() {
   };
 
   const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
+  const updateCartQty = (id: string, delta: number) =>
+    setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
 
   const submitNotify = async (payload: object) => {
     await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -646,22 +648,42 @@ export default function CateringPage() {
             {alcCategory.note && <p className="text-zinc-500 text-sm mb-6">{alcCategory.note}</p>}
 
             <div className="grid md:grid-cols-2 gap-4 mb-32">
-              {alcCategory.items.map(item => (
-                <button key={item.id} onClick={() => openModal(item, alcCategory)}
-                  className="bg-zinc-900 border border-zinc-800 hover:border-teal-500 rounded-2xl p-6 text-left transition-colors w-full">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                      {item.tag && <p className="text-yellow-400 text-xs font-bold uppercase tracking-wide mb-1">{item.tag}</p>}
-                      <p className="font-black text-lg mb-2">{item.name}</p>
-                      <p className="text-zinc-400 text-sm leading-relaxed">{item.description}</p>
+              {alcCategory.items.map(item => {
+                const inCart = cart.filter(e => e.itemId === item.id);
+                const totalQty = inCart.reduce((s, e) => s + e.qty, 0);
+                return (
+                  <div key={item.id} className={`bg-zinc-900 border rounded-2xl p-6 transition-colors ${totalQty > 0 ? "border-teal-500/50" : "border-zinc-800 hover:border-teal-500"}`}>
+                    <div className="flex justify-between items-start gap-4 cursor-pointer" onClick={() => openModal(item, alcCategory)}>
+                      <div className="flex-1">
+                        {item.tag && <p className="text-yellow-400 text-xs font-bold uppercase tracking-wide mb-1">{item.tag}</p>}
+                        <p className="font-black text-lg mb-2">{item.name}</p>
+                        <p className="text-zinc-400 text-sm leading-relaxed">{item.description}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        {item.priceNote ? <p className="text-white font-bold text-sm">{item.priceNote}</p> : item.sizes ? <p className="text-white font-bold text-sm">from ${item.sizes[0].price}</p> : null}
+                        <div className={`mt-3 font-black w-9 h-9 rounded-full text-xl flex items-center justify-center transition-colors ${totalQty > 0 ? "bg-teal-500/20 text-teal-400 text-base" : "bg-teal-500 hover:bg-teal-400 text-black"}`}>
+                          {totalQty > 0 ? `+${totalQty}` : "+"}
+                        </div>
+                      </div>
                     </div>
-                    <div className="shrink-0 text-right">
-                      {item.priceNote ? <p className="text-white font-bold text-sm">{item.priceNote}</p> : item.sizes ? <p className="text-white font-bold text-sm">from ${item.sizes[0].price}</p> : null}
-                      <div className="mt-3 bg-teal-500 hover:bg-teal-400 text-black font-black w-9 h-9 rounded-full text-xl flex items-center justify-center">+</div>
-                    </div>
+                    {totalQty > 0 && (
+                      <div className="mt-4 pt-3 border-t border-zinc-800 space-y-2">
+                        {inCart.map(e => (
+                          <div key={e.id} className="flex items-center justify-between text-sm">
+                            <span className="text-zinc-300 text-xs">{e.size || e.itemName}</span>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => updateCartQty(e.id, -1)} className="w-7 h-7 rounded-full border border-zinc-600 text-zinc-300 flex items-center justify-center hover:border-teal-500 hover:text-teal-400 transition-colors font-black text-base leading-none">−</button>
+                              <span className="font-black text-white w-4 text-center">{e.qty}</span>
+                              <button onClick={() => updateCartQty(e.id, 1)} className="w-7 h-7 rounded-full border border-zinc-600 text-zinc-300 flex items-center justify-center hover:border-teal-500 hover:text-teal-400 transition-colors font-black text-base leading-none">+</button>
+                              <button onClick={() => removeFromCart(e.id)} className="text-zinc-600 hover:text-red-400 text-xs ml-1">✕</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
 
             {cart.length > 0 && (
