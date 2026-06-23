@@ -133,9 +133,7 @@ export default function StoryPage() {
               className="w-full max-w-sm object-contain"
               style={{ mixBlendMode: "screen" }}
             />
-            <p className="text-zinc-500 text-sm italic mt-2 text-center">
-              Even Fred keeps it kosher.
-            </p>
+
           </div>
         </div>
       </section>

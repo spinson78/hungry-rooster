@@ -5,6 +5,7 @@ import InvoiceTab from "@/app/components/InvoiceTab";
 import ReportsTab from "@/app/components/ReportsTab";
 import OrdersLogTab from "@/app/components/OrdersLogTab";
 import GiftsTab from "@/app/components/GiftsTab";
+import ReviewsTab from "@/app/components/ReviewsTab";
 
 function BannerTab() {
   const [weekDate, setWeekDate] = useState("");
@@ -716,6 +717,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("orders-log")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "orders-log" ? "bg-white text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📋 Orders Log
           </button>
+          <button onClick={() => setTab("reviews")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "reviews" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            ⭐ Reviews
+          </button>
         </div>
 
         {/* MENUS TAB */}
@@ -1291,6 +1295,9 @@ This cannot be undone.`);
 
         {/* ORDERS LOG TAB */}
         {tab === "orders-log" && <OrdersLogTab />}
+
+        {/* REVIEWS TAB */}
+        {tab === "reviews" && <ReviewsTab />}
 
         {/* ORDER TABS */}
         {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}
