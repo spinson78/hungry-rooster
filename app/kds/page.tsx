@@ -291,7 +291,7 @@ export default function KDSPage() {
       .from("orders")
       .select("*")
       .in("status", ["pending", "in_progress", "complete"])
-      .not("order_type", "in", '("shabbat","bakery")')
+      .in("order_type", ["menu", "doordash", "ubereats", "phone"])
       .order("created_at", { ascending: true });
     const all = (data as Order[]) || [];
 
@@ -344,18 +344,21 @@ export default function KDSPage() {
     setQSubmitting(true);
     const orderNum = `3P-${Date.now().toString().slice(-6)}`;
     const items = validItems.map(i => ({ name: i.name.trim(), qty: i.qty, price: 0 }));
-    await supabase.from("orders").insert({
+    const { error } = await supabase.from("orders").insert({
       order_number: orderNum,
       order_type: qSource,
       customer_name: qName.trim(),
+      customer_email: "",
       customer_phone: "",
       customer_address: "Pickup",
       fulfillment_type: "pickup",
+      sms_opted_in: false,
       items,
       subtotal: 0, tax_amount: 0, tip_amount: 0, total: 0,
       special_requests: qNotes.trim(),
       status: "pending",
     });
+    if (error) { alert("Error: " + error.message); setQSubmitting(false); return; }
     setQName(""); setQItems([{ name: "", qty: 1 }]); setQNotes("");
     setShowQuickOrder(false);
     setQSubmitting(false);
