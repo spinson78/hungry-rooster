@@ -3,9 +3,39 @@ import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  name: "The Hungry Rooster",
+  description: "Dallas's premier kosher kitchen and catering company offering online ordering, weekly dinner drops, Shabbat meals, bakery items, and full-service kosher catering.",
+  url: "https://thehungryroostertx.com",
+  telephone: "+19452157907",
+  email: "chef@thehungryroostertx.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "1499 Regal Row, Suite 206",
+    addressLocality: "Dallas",
+    addressRegion: "TX",
+    postalCode: "75247",
+    addressCountry: "US",
+  },
+  geo: { "@type": "GeoCoordinates", latitude: 32.8141, longitude: -96.8781 },
+  servesCuisine: ["Kosher", "Jewish", "American"],
+  priceRange: "$$",
+  openingHours: ["Mo-Th 10:00-20:00", "Su 10:00-18:00"],
+  hasMenu: "https://thehungryroostertx.com/menu",
+  acceptsReservations: false,
+  image: "https://thehungryroostertx.com/THR%20hor%20logo%20final.png",
+  sameAs: [
+    "https://www.facebook.com/thehungryrooster",
+    "https://www.instagram.com/thehungryroostertx",
+  ],
+};
+
 export default function Home() {
   return (
     <main className="bg-black text-white min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* NAVBAR */}
       <NavBar />
@@ -50,14 +80,17 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { name: "Cauliflower Salad", tag: "Fresh + Light" },
-            { name: "Fish Sandwich", tag: "Fred Approved" },
-            { name: "Caesar Salmon Wrap", tag: "Fresh Daily" },
-            { name: "Chicken Strip Dinner", tag: "Fred Approved" },
+            { name: "Cauliflower Salad", tag: "Fresh + Light", img: "/Hungry%20Rooster%20Food%20Photos/Cauliflower%20Menu.jpeg" },
+            { name: "Fish Sandwich", tag: "Fred Approved", img: "/fish%20sanwich%20Menu.jpeg" },
+            { name: "Caesar Salmon Wrap", tag: "Fresh Daily", img: "/Hungry%20Rooster%20Food%20Photos/Caesar%20Salmon%20Wrap%20Menu.jpeg" },
+            { name: "Chicken Strip Dinner", tag: "Fred Approved", img: "/Hungry%20Rooster%20Food%20Photos/ck%20tender%20bucket%20menu.png" },
           ].map((item) => (
             <div key={item.name} className="bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-teal-500 transition-colors group cursor-pointer">
-              <div className="aspect-square bg-zinc-800 flex items-center justify-center text-5xl">
-                🍽️
+              <div className="aspect-square bg-zinc-800 flex items-center justify-center text-5xl overflow-hidden">
+                {item.img
+                  ? <img src={item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  : "🍽️"
+                }
               </div>
               <div className="p-4">
                 <span className="text-yellow-400 text-xs font-bold uppercase tracking-wide">{item.tag}</span>
@@ -68,7 +101,16 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="border-t border-zinc-800" />
+      {/* SPOILER CALLOUT */}
+      <section className="bg-zinc-900 border-y border-zinc-800 px-6 py-16 text-center">
+        <p className="text-4xl md:text-6xl font-black tracking-tight">
+          Spoiler: kosher food is just{" "}
+          <span className="text-teal-400">really good food.</span>
+        </p>
+        <p className="text-zinc-400 mt-5 text-lg max-w-xl mx-auto leading-relaxed">
+          Scratch-made, chef-driven kitchen out of Dallas — kosher certified, no membership required.
+        </p>
+      </section>
 
       {/* SHABBAT — dynamic */}
       <ShabbatSection />

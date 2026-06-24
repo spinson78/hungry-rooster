@@ -7,6 +7,7 @@ export default function NavBar({ active }: { active?: string }) {
     { label: "Gift Cards", href: "/gift" },
     { label: "Group Orders", href: "/group" },
     { label: "Our Concepts", href: "/#concepts" },
+    { label: "Gallery", href: "/gallery" },
     { label: "Our Story", href: "/story" },
   ];
 
