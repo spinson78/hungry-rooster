@@ -76,6 +76,10 @@ const PHOTOS: Photo[] = [
   p(F2, "Pecan Pie Bakery.JPG",             "Pecan Pie"),
   p(F2, "Pineapple Upside Down Bakery.jpeg","Pineapple Upside Down Cake"),
   p(F2, "Esther Event.jpeg",                "Esther's Cart at an Event"),
+
+  // ── Public folder extras ──
+  p("", "Lox Catering Display.jpeg",        "Lox Catering Display"),
+  p("", "Artisan Bagels.jpeg",              "Artisan Bagels"),
 ];
 
 export default function GalleryPage() {
