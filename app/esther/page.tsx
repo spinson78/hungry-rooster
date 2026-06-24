@@ -24,7 +24,7 @@ const MIN_ORDER = 50;
 const SHABBAT_ADDONS = [
   { name: "House Greens Salad", price: 15, description: "Romaine or Kale" },
   { name: "Roasted Salmon (6 pcs)", price: 48, description: "6 pieces of roasted salmon" },
-  { name: "Roasted Chicken", price: 36, description: "Whole roasted chicken" },
+  { name: "6pc Grilled Chicken", price: 36, description: "6 pieces of grilled chicken" },
   { name: "Chicken Nuggets", price: 28, description: "Crispy chicken nuggets" },
   { name: "Bourekas", price: 18, description: "Freshly baked bourekas" },
 ];
