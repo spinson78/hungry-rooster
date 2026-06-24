@@ -5,7 +5,7 @@ import NavBar from "@/app/components/NavBar";
 // ─── Photo lists ──────────────────────────────────────────────────────────────
 // To add more photos: drop them in Folder 1 or Folder 2 and add the filename below
 const F1 = "/Hungry%20Rooster%20Food%20Photos";
-const F2 = "/Hungry%20Rooster%20Food%20Photos%202"; // uncomment entries when folder is ready
+const F2 = "/Hungry%20Rooster%20Food%20Pics%202";
 
 type Photo = { src: string; alt: string };
 
@@ -53,8 +53,29 @@ const PHOTOS: Photo[] = [
   p(F1, "house dough bakery.jpeg",                     "House Dough"),
   p(F1, "Esther first outing.JPEG",                    "Esther's Cart — First Outing"),
 
-  // ── Folder 2 — add filenames here when ready ──
-  // p(F2, "example.jpg", "Description"),
+  // ── Folder 2 ──
+  p(F2, "Freds Chicken Sandwich.jpg",       "Fred's Chicken Sandwich"),
+  p(F2, "Fish Taco 2 Menu.jpeg",            "Fish Tacos"),
+  p(F2, "fish sanwich Menu.jpeg",           "Fish Sandwich"),
+  p(F2, "Roasted Salmon Dinner.jpeg",       "Roasted Salmon"),
+  p(F2, "Bourekas Catering.jpeg",           "Bourekas"),
+  p(F2, "Mezza Platter Catering.jpeg",      "Mezza Platter"),
+  p(F2, "Catering Platters.jpeg",           "Catering Platters"),
+  p(F2, "Morning Tea Platter Catering.jpeg","Morning Tea Platter"),
+  p(F2, "French Toast Catering.jpeg",       "French Toast"),
+  p(F2, "SMU catering 1.jpeg",              "SMU Catering"),
+  p(F2, "SMU Catering2.jpeg",               "SMU Catering Spread"),
+  p(F2, "Private Catering 1.jpeg",          "Private Event Catering"),
+  p(F2, "Private Catering 2.jpeg",          "Private Event Spread"),
+  p(F2, "Lunch Box.jpg",                    "Lunch Box"),
+  p(F2, "Lunchboxes 3 Catering.jpeg",       "Lunch Boxes"),
+  p(F2, "Packed Lunchbox.jpg",              "Packed Lunch Box"),
+  p(F2, "Challah Bakery.jpeg",              "Fresh Challah"),
+  p(F2, "Challah Dough Bakery.jpeg",        "Challah Dough"),
+  p(F2, "Brownie Box Bakery.jpg",           "Brownie Box"),
+  p(F2, "Pecan Pie Bakery.JPG",             "Pecan Pie"),
+  p(F2, "Pineapple Upside Down Bakery.jpeg","Pineapple Upside Down Cake"),
+  p(F2, "Esther Event.jpeg",                "Esther's Cart at an Event"),
 ];
 
 export default function GalleryPage() {

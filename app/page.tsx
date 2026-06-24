@@ -108,7 +108,7 @@ export default function Home() {
           <span className="text-teal-400">really good food.</span>
         </p>
         <p className="text-zinc-400 mt-5 text-lg max-w-xl mx-auto leading-relaxed">
-          Scratch-made, chef-driven kitchen out of Dallas — kosher certified, no membership required.
+          Scratch-made, chef-driven kitchen — kosher certified, no membership required.
         </p>
       </section>
 
