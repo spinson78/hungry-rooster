@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   for (let i = 0; i < emails.length; i += BATCH_SIZE) {
     const chunk = emails.slice(i, i + BATCH_SIZE);
     const batchPayload = chunk.map((email) => ({
-      from: "The Hungry Rooster <onboarding@resend.dev>",
+      from: "The Hungry Rooster <sales@thehungryroostertx.com>",
       to: [email],
       subject,
       html: fullHtml,

@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "The Hungry Rooster <onboarding@resend.dev>",
+      from: "The Hungry Rooster <sales@thehungryroostertx.com>",
       to: [inv.customer_email],
       bcc: ["sales@thehungryroostertx.com"],
       subject: `Invoice ${inv.invoice_number} — $${inv.total.toFixed(2)} — The Hungry Rooster`,

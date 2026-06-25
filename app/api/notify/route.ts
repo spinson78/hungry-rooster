@@ -43,7 +43,7 @@ Sent automatically by The Hungry Rooster ordering system.
 
   const htmlBody = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #ffffff; padding: 32px; border-radius: 12px;">
-      <img src="https://hungry-rooster.vercel.app/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 48px; margin-bottom: 24px;" />
+      <img src="https://thehungryroostertx.com/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 48px; margin-bottom: 24px;" />
       <h1 style="color: #2dd4bf; font-size: 24px; margin-bottom: 4px;">${typeLabel}</h1>
       <p style="color: #71717a; font-size: 14px; margin-bottom: 24px;">New order received — review and confirm with the customer.</p>
 
@@ -93,7 +93,7 @@ Sent automatically by The Hungry Rooster ordering system.
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "The Hungry Rooster <onboarding@resend.dev>",
+      from: "The Hungry Rooster <sales@thehungryroostertx.com>",
       to: ["sales@thehungryroostertx.com"],
       subject: `${typeLabel} — ${customer_name} — $${total}`,
       text: emailBody,
@@ -130,7 +130,7 @@ Sent automatically by The Hungry Rooster ordering system.
 
     const confirmHtml = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #ffffff; padding: 32px; border-radius: 12px;">
-        <img src="https://hungry-rooster.vercel.app/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 48px; margin-bottom: 24px;" />
+        <img src="https://thehungryroostertx.com/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 48px; margin-bottom: 24px;" />
         <h1 style="color: #2dd4bf; font-size: 28px; margin-bottom: 8px;">${confirmHeadline}</h1>
         <p style="color: #a1a1aa; font-size: 16px; margin-bottom: 28px;">${confirmSubline}</p>
 
@@ -178,7 +178,7 @@ Sent automatically by The Hungry Rooster ordering system.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "The Hungry Rooster <onboarding@resend.dev>",
+        from: "The Hungry Rooster <sales@thehungryroostertx.com>",
         to: [customer_email],
         subject: confirmSubject,
         html: confirmHtml,
