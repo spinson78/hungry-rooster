@@ -330,9 +330,11 @@ export default function KDSPage() {
   void now;
 
   const active = orders.filter(o => o.status === "pending" || o.status === "in_progress");
-  // Completed: show last 15, most recent first for the backlog
+  // Completed: today only — auto-clears at midnight
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
   const completed = orders
-    .filter(o => o.status === "complete")
+    .filter(o => o.status === "complete" && new Date(o.created_at) >= todayMidnight)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 15);
 
