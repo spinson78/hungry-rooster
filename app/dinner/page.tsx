@@ -352,7 +352,10 @@ export default function DinnerPage() {
               </div>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.sms_opted_in} onChange={(e) => setForm({ ...form, sms_opted_in: e.target.checked })} className="mt-1 w-4 h-4 accent-teal-500 cursor-pointer" />
-                <span className="text-sm text-zinc-400">Text me order updates and weekly specials</span>
+                <span className="text-sm text-zinc-400">
+                  Yes, send me order confirmations &amp; special offers via text. Msg frequency varies. Reply STOP to cancel. Msg &amp; data rates may apply.{" "}
+                  <a href="/privacy" className="underline text-teal-400">Privacy Policy</a>
+                </span>
               </label>
             </div>
 
