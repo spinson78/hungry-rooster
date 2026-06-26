@@ -85,26 +85,29 @@ Sent automatically by The Hungry Rooster ordering system.
     </div>
   `;
 
-  // Internal notification to THR team
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "The Hungry Rooster <sales@thehungryroostertx.com>",
-      to: ["sales@thehungryroostertx.com"],
-      subject: `${typeLabel} — ${customer_name} — $${total}`,
-      text: emailBody,
-      html: htmlBody,
-    }),
-  });
+  // Internal notification to THR team — catering and group orders only
+  const needsInternalNotify = order_type === "catering" || order_type === "catering_inquiry" || order_type === "group_order";
+  if (needsInternalNotify) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "The Hungry Rooster <sales@thehungryroostertx.com>",
+        to: ["sales@thehungryroostertx.com"],
+        subject: `${typeLabel} — ${customer_name} — $${total}`,
+        text: emailBody,
+        html: htmlBody,
+      }),
+    });
 
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("Resend error:", err);
-    return NextResponse.json({ error: err }, { status: 500 });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Resend error:", err);
+      return NextResponse.json({ error: err }, { status: 500 });
+    }
   }
 
   // Customer confirmation email (only if we have their email)
