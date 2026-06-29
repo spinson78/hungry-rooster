@@ -606,19 +606,42 @@ export default function AdminPage() {
                   </div>
                 </div>
                 {order.items && order.items.length > 0 && (
-                  <div className="border-t border-zinc-700 pt-3 mb-3 space-y-1">
-                    {order.items.map((item, idx) => (
-                      <p key={idx} className="text-sm">
-                        {item.quantity && item.quantity > 1 && (
-                          <span className="text-yellow-400 font-black mr-1">{item.quantity}×</span>
-                        )}
-                        <span className="text-white font-bold">{item.name}</span>
-                        {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
-                        {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
-                        {item.side2 && <span className="text-zinc-400">, {item.side2}</span>}
-                        {item.extra && <span className="text-zinc-400">, {item.extra}</span>}
-                      </p>
-                    ))}
+                  <div className="border-t border-zinc-700 pt-3 mb-3 space-y-2">
+                    {order.items.map((item, idx) => {
+                      const qty = item.qty || item.quantity || 1;
+                      if (tab === "catering-orders") {
+                        // Package or a-la-carte catering item
+                        return (
+                          <div key={idx} className="text-sm">
+                            <p>
+                              {qty > 1 && <span className="text-purple-400 font-black mr-1">{qty}×</span>}
+                              <span className="text-white font-bold">{item.name}</span>
+                              {item.size && <span className="text-zinc-400"> · {item.size}</span>}
+                              {item.serving && <span className="text-zinc-500"> ({item.serving})</span>}
+                              {item.price != null && <span className="text-zinc-400"> · ${item.price}</span>}
+                            </p>
+                            {item.includes && item.includes.length > 0 && (
+                              <p className="text-zinc-500 text-xs ml-3 mt-0.5">{item.includes.join(" · ")}</p>
+                            )}
+                            {item.choices && item.choices.length > 0 && (
+                              <p className="text-yellow-400 text-xs ml-3">{item.choices.join(" · ")}</p>
+                            )}
+                          </div>
+                        );
+                      }
+                      return (
+                        <p key={idx} className="text-sm">
+                          {qty > 1 && (
+                            <span className="text-yellow-400 font-black mr-1">{qty}×</span>
+                          )}
+                          <span className="text-white font-bold">{item.name}</span>
+                          {item.protein && <span className="text-zinc-400"> · {item.protein}</span>}
+                          {item.side1 && <span className="text-zinc-400">, {item.side1}</span>}
+                          {item.side2 && <span className="text-zinc-400">, {item.side2}</span>}
+                          {item.extra && <span className="text-zinc-400">, {item.extra}</span>}
+                        </p>
+                      );
+                    })}
                   </div>
                 )}
                 {order.special_requests && (

@@ -332,7 +332,7 @@ export default function CateringPage() {
     const pkgFinalRequests = [pkgRecipientNote, pkgForm.special_requests].filter(Boolean).join(" · ");
     const items = pkgCart.map(e => {
       const choicesSummary = Object.entries(e.choices).map(([k, v]) => `${e.pkg.choices.find(c => c.key === k)?.label}: ${v}`);
-      return { name: e.pkg.name, category: e.pkg.category, size: e.size.label, qty: e.qty, includes: e.pkg.items, choices: choicesSummary };
+      return { name: e.pkg.name, category: e.pkg.category, size: e.size.label, price: e.size.price, qty: e.qty, includes: e.pkg.items, choices: choicesSummary };
     });
     const res = await fetch("/api/catering-checkout", {
       method: "POST",
