@@ -23,7 +23,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com";
+
+  // Strip angle brackets from email if present e.g. <user@domain.com>
+  const cleanEmail = inv.customer_email
+    ? inv.customer_email.replace(/^[<\s]+|[>\s]+$/g, "").trim() || undefined
+    : undefined;
 
   const lineItems: { price_data: { currency: string; product_data: { name: string }; unit_amount: number }; quantity: number }[] = [];
 
@@ -95,7 +100,7 @@ export async function POST(req: NextRequest) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    customer_email: inv.customer_email || undefined,
+    customer_email: cleanEmail,
     line_items: lineItems,
     success_url: `${baseUrl}/invoice/${inv.id}/paid`,
     cancel_url: `${baseUrl}/invoice/${inv.id}`,
