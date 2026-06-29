@@ -179,7 +179,7 @@ type Order = {
   customer_phone: string;
   customer_email: string;
   customer_address: string;
-  items: { name: string; quantity?: number; protein?: string; side1?: string; side2?: string; extra?: string }[];
+  items: { name: string; quantity?: number; qty?: number; protein?: string; side1?: string; side2?: string; extra?: string; size?: string; serving?: string; price?: number; includes?: string[]; choices?: string[] }[];
   total: number;
   special_requests: string;
   status: string;
