@@ -166,6 +166,7 @@ export default function CateringPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [tipAmount, setTipAmount] = useState(0);
 
   // Delivery fee state — à la carte
   const [alcDelivFee, setAlcDelivFee] = useState<number | null>(null);
@@ -324,7 +325,8 @@ export default function CateringPage() {
     if (needsAddress && pkgDelivErr) { setError(pkgDelivErr); return; }
     setSubmitting(true); setError("");
     const delivFee = needsAddress ? (pkgDelivFee ?? 0) : 0;
-    const total = pkgCartSubtotal + delivFee;
+    const tip = tipAmount || 0;
+    const total = pkgCartSubtotal + Math.round(pkgCartSubtotal * 0.0825 * 100) / 100 + delivFee + tip;
     const fullPkgAddress = needsAddress ? `${pkgForm.address.trim()}, ${pkgForm.address_city.trim()}` : "Pickup";
     const pkgRecipientNote = pkgForm.different_contact && pkgForm.recipient_name
       ? `Event Contact: ${pkgForm.recipient_name}${pkgForm.recipient_phone ? " / " + pkgForm.recipient_phone : ""}`
@@ -349,6 +351,7 @@ export default function CateringPage() {
         subtotal: pkgCartSubtotal,
         delivery_fee: delivFee,
         delivery_distance_miles: needsAddress ? (pkgDelivDist ?? 0) : 0,
+        tip,
         total,
       }),
     });
@@ -368,7 +371,8 @@ export default function CateringPage() {
     if (needsAddress && alcDelivErr) { setError(alcDelivErr); return; }
     setSubmitting(true); setError("");
     const delivFee = needsAddress ? cartDelivFee : 0;
-    const total = cartSubtotal + delivFee;
+    const tip = tipAmount || 0;
+    const total = cartSubtotal + Math.round(cartSubtotal * 0.0825 * 100) / 100 + delivFee + tip;
     const fullAlcAddress = needsAddress ? `${alcForm.address.trim()}, ${alcForm.address_city.trim()}` : "Pickup";
     const alcRecipientNote = alcForm.different_contact && alcForm.recipient_name
       ? `Event Contact: ${alcForm.recipient_name}${alcForm.recipient_phone ? " / " + alcForm.recipient_phone : ""}`
@@ -389,6 +393,7 @@ export default function CateringPage() {
         subtotal: cartSubtotal,
         delivery_fee: delivFee,
         delivery_distance_miles: needsAddress ? (alcDelivDist ?? 0) : 0,
+        tip,
         total,
       }),
     });
@@ -621,13 +626,22 @@ export default function CateringPage() {
                   </div>
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
                   {pkgDelivErr && <p className="text-red-400 text-sm mt-3">✗ {pkgDelivErr}</p>}
-                  <div className="mt-6 mb-3 space-y-1 text-sm">
+                  <div className="mt-6 mb-4">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Driver Tip (optional)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">$</span>
+                      <input type="number" min="0" step="0.01" placeholder="0.00" value={tipAmount || ""} onChange={e => setTipAmount(parseFloat(e.target.value) || 0)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+                    </div>
+                  </div>
+                  <div className="mb-3 space-y-1 text-sm">
                     <div className="flex justify-between"><span className="text-zinc-400">Packages</span><span>${pkgCartSubtotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span className="text-zinc-400">Tax (8.25%)</span><span>${(pkgCartSubtotal * 0.0825).toFixed(2)}</span></div>
                     {pkgFulfillment === "delivery" && (pkgDelivFee !== null ? <div className="flex justify-between"><span className="text-zinc-400">Delivery fee</span><span>${pkgDelivFee.toFixed(2)}</span></div> : <div className="flex justify-between text-zinc-600"><span>Delivery fee</span><span>enter address above</span></div>)}
-                    <div className="flex justify-between font-black text-xl border-t border-zinc-700 pt-2 mt-1"><span>Total</span><span>${(pkgCartSubtotal + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}</span></div>
+                    {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+                    <div className="flex justify-between font-black text-xl border-t border-zinc-700 pt-2 mt-1"><span>Total</span><span>${(pkgCartSubtotal * 1.0825 + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0) + (tipAmount || 0)).toFixed(2)}</span></div>
                   </div>
                   <button onClick={handlePkgSubmit} disabled={submitting || (pkgFulfillment === "delivery" && !!pkgDelivErr)} className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50">
-                    {submitting ? "Redirecting to payment..." : `Pay Now — $${(pkgCartSubtotal + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0)).toFixed(2)}`}
+                    {submitting ? "Redirecting to payment..." : `Pay Now — $${(pkgCartSubtotal * 1.0825 + (pkgFulfillment === "delivery" ? (pkgDelivFee ?? 0) : 0) + (tipAmount || 0)).toFixed(2)}`}
                   </button>
                   <p className="text-zinc-600 text-xs text-center mt-3">Secure payment via Stripe. Fred&apos;s crew will confirm by phone within 24 hours.</p>
                 </div>
@@ -820,12 +834,26 @@ export default function CateringPage() {
               </div>
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
               {alcFulfillment === "delivery" && alcDelivErr && <p className="text-red-400 text-sm mt-3">✗ {alcDelivErr}</p>}
+              <div className="mt-6 mb-4">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Driver Tip (optional)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">$</span>
+                  <input type="number" min="0" step="0.01" placeholder="0.00" value={tipAmount || ""} onChange={e => setTipAmount(parseFloat(e.target.value) || 0)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
+                </div>
+              </div>
+              <div className="mb-3 space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-zinc-400">Items</span><span>${cartSubtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-zinc-400">Tax (8.25%)</span><span>${(cartSubtotal * 0.0825).toFixed(2)}</span></div>
+                {alcFulfillment === "delivery" && (cartDelivFee > 0 ? <div className="flex justify-between"><span className="text-zinc-400">Delivery fee</span><span>${cartDelivFee.toFixed(2)}</span></div> : <div className="flex justify-between text-zinc-600"><span>Delivery fee</span><span>enter address above</span></div>)}
+                {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+                <div className="flex justify-between font-black text-xl border-t border-zinc-700 pt-2 mt-1"><span>Total</span><span>${(cartSubtotal * 1.0825 + (alcFulfillment === "delivery" ? cartDelivFee : 0) + (tipAmount || 0)).toFixed(2)}</span></div>
+              </div>
               <button
                 onClick={handleAlcSubmit}
                 disabled={submitting || (alcFulfillment === "delivery" && !!alcDelivErr)}
-                className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50"
+                className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50"
               >
-                {submitting ? "Redirecting to payment..." : `Pay Now — $${(cartSubtotal + (alcFulfillment === "delivery" ? cartDelivFee : 0)).toFixed(2)}`}
+                {submitting ? "Redirecting to payment..." : `Pay Now — $${(cartSubtotal * 1.0825 + (alcFulfillment === "delivery" ? cartDelivFee : 0) + (tipAmount || 0)).toFixed(2)}`}
               </button>
               <p className="text-zinc-600 text-xs text-center mt-3">Secure payment via Stripe. We&apos;ll confirm by phone within 24 hours.</p>
             </div>

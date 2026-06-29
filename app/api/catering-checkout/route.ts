@@ -8,6 +8,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const TAX_RATE = 0.0825;
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
@@ -21,10 +23,14 @@ export async function POST(req: NextRequest) {
     delivery_fee,
     delivery_distance_miles,
     event_date,
+    tip,
   } = body;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
-  const total = subtotal + (delivery_fee || 0);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com";
+  const taxCents = Math.round(subtotal * TAX_RATE * 100);
+  const taxAmount = taxCents / 100;
+  const tipAmount = tip || 0;
+  const total = subtotal + taxAmount + (delivery_fee || 0) + tipAmount;
   const orderNum = `THR-${Date.now().toString().slice(-6)}`;
 
   // Pre-save order to DB
@@ -38,10 +44,10 @@ export async function POST(req: NextRequest) {
     special_requests: `Event: ${event_date}${special_requests ? " · " + special_requests : ""}`,
     items,
     subtotal,
-    tax_amount: 0,
+    tax_amount: taxAmount,
     delivery_fee: delivery_fee || 0,
     delivery_distance_miles: delivery_distance_miles || 0,
-    tip_amount: 0,
+    tip_amount: tipAmount,
     total,
     sms_opted_in: false,
     fulfillment_type: fulfillment_type || "delivery",
@@ -77,12 +83,33 @@ export async function POST(req: NextRequest) {
     quantity: item.qty || 1,
   }));
 
+  // Tax line item (on subtotal only, not delivery)
+  lineItems.push({
+    price_data: {
+      currency: "usd",
+      product_data: { name: "Sales Tax (8.25%)", description: "Texas state & local sales tax" },
+      unit_amount: taxCents,
+    },
+    quantity: 1,
+  });
+
   if ((delivery_fee || 0) > 0) {
     lineItems.push({
       price_data: {
         currency: "usd",
         product_data: { name: "Delivery Fee" },
         unit_amount: Math.round(delivery_fee * 100),
+      },
+      quantity: 1,
+    });
+  }
+
+  if (tipAmount > 0) {
+    lineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Driver Tip", description: "100% goes to your driver" },
+        unit_amount: Math.round(tipAmount * 100),
       },
       quantity: 1,
     });
