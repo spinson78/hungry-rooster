@@ -16,12 +16,17 @@ export async function POST(req: NextRequest) {
   const { data: inv, error } = await supabase.from("invoices").select("*").eq("id", invoice_id).single();
   if (error || !inv) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com";
+
+  // Strip angle brackets from email if present e.g. <user@domain.com>
+  const cleanEmail = inv.customer_email
+    ? inv.customer_email.replace(/^[<\s]+|[>\s]+$/g, "").trim() || undefined
+    : undefined;
 
   // Create Stripe checkout session
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    customer_email: inv.customer_email,
+    customer_email: cleanEmail,
     line_items: (inv.line_items as LineItem[]).map(item => ({
       price_data: {
         currency: "usd",
@@ -57,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   const htmlBody = `
     <div style="font-family: sans-serif; max-width: 620px; margin: 0 auto; background: #0a0a0a; color: #ffffff; padding: 40px 32px; border-radius: 12px;">
-      <img src="https://hungry-rooster.vercel.app/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 44px; margin-bottom: 32px;" />
+      <img src="https://thehungryroostertx.com/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" style="height: 44px; margin-bottom: 32px;" />
 
       <h1 style="color: #ffffff; font-size: 26px; font-weight: 900; margin-bottom: 4px;">Invoice ${inv.invoice_number}</h1>
       <p style="color: #71717a; font-size: 14px; margin-bottom: 6px;">Prepared for ${inv.customer_name}${inv.customer_company ? ` · ${inv.customer_company}` : ""}</p>
@@ -81,10 +86,13 @@ export async function POST(req: NextRequest) {
 
       ${inv.notes ? `<div style="background: #18181b; border-radius: 10px; padding: 16px; margin-bottom: 24px;"><p style="color: #71717a; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Notes</p><p style="color: #d4d4d8; font-size: 14px; margin: 0;">${inv.notes}</p></div>` : ""}
 
-      <a href="${session.url}" style="display: block; background: #2dd4bf; color: #000000; font-weight: 900; font-size: 18px; text-align: center; padding: 18px 32px; border-radius: 50px; text-decoration: none; margin-bottom: 16px;">
+      <a href="${session.url}" style="display: block; background: #2dd4bf; color: #000000; font-weight: 900; font-size: 18px; text-align: center; padding: 18px 32px; border-radius: 50px; text-decoration: none; margin-bottom: 12px;">
         Pay Invoice — $${inv.total.toFixed(2)} →
       </a>
-      <p style="color: #52525b; font-size: 12px; text-align: center; margin-bottom: 32px;">Secure payment via Stripe. You'll receive a receipt upon completion.</p>
+      <p style="color: #52525b; font-size: 12px; text-align: center; margin-bottom: 16px;">Secure payment via Stripe. You'll receive a receipt upon completion.</p>
+      <a href="${baseUrl}/invoice/${inv.id}" style="display: block; background: transparent; color: #a1a1aa; font-size: 14px; text-align: center; padding: 12px; border-radius: 50px; text-decoration: none; border: 1px solid #3f3f46; margin-bottom: 32px;">
+        View &amp; Print Invoice →
+      </a>
 
       <p style="color: #3f3f46; font-size: 12px; text-align: center;">The Hungry Rooster · 1499 Regal Row, Suite 206, Dallas TX</p>
       <p style="color: #3f3f46; font-size: 12px; text-align: center; margin-top: 4px;">Questions? Reply to this email or call us.</p>
@@ -99,7 +107,7 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       from: "The Hungry Rooster <sales@thehungryroostertx.com>",
-      to: [inv.customer_email],
+      to: [cleanEmail].filter(Boolean) as string[],
       bcc: ["sales@thehungryroostertx.com"],
       subject: `Invoice ${inv.invoice_number} — $${inv.total.toFixed(2)} — The Hungry Rooster`,
       html: htmlBody,
