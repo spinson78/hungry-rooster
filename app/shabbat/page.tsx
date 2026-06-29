@@ -354,10 +354,7 @@ export default function ShabbatPage() {
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, gate codes, anything we should know..." value={form.special_requests} onChange={(e) => setForm({ ...form, special_requests: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 resize-none h-20" /></div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={form.sms_opted_in} onChange={(e) => setForm({ ...form, sms_opted_in: e.target.checked })} className="mt-1 w-4 h-4 accent-yellow-400 cursor-pointer" />
-                  <span className="text-sm text-zinc-400">
-                    Yes, send me order confirmations &amp; special offers via text. Msg frequency varies. Reply STOP to cancel. Msg &amp; data rates may apply.{" "}
-                    <a href="/privacy" className="underline text-yellow-400">Privacy Policy</a>
-                  </span>
+                  <span className="text-sm text-zinc-400">Yes, send me order confirmations and special offers via text. Msg frequency varies. Reply STOP to cancel. Msg and data rates may apply. <a href="/privacy" className="underline text-yellow-400">Privacy Policy</a></span>
                 </label>
               </div>
 
@@ -450,4 +447,12 @@ export default function ShabbatPage() {
                 </button>
               )}
             </div>
-            <button onClick={() => { setShowUpsell(false); handleSubmit(); }} className="w-full border-
+            <button onClick={() => { setShowUpsell(false); handleSubmit(); }} className="w-full border-2 border-zinc-600 hover:border-zinc-400 text-zinc-300 font-bold py-3 rounded-full text-sm transition-colors">
+              No thanks — proceed to payment
+            </button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

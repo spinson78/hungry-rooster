@@ -916,10 +916,7 @@ export default function MenuPage() {
               </div>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={smsOptIn} onChange={e => setSmsOptIn(e.target.checked)} className="mt-1 w-4 h-4 accent-teal-500 cursor-pointer" />
-                <span className="text-sm text-zinc-400">
-                  Yes, send me order confirmations &amp; special offers via text. Msg frequency varies. Reply STOP to cancel. Msg &amp; data rates may apply.{" "}
-                  <a href="/privacy" className="underline text-teal-400">Privacy Policy</a>
-                </span>
+                <span className="text-sm text-zinc-400">Yes, send me order confirmations and special offers via text. Msg frequency varies. Reply STOP to cancel. Msg and data rates may apply. <a href="/privacy" className="underline text-teal-400">Privacy Policy</a></span>
               </label>
             </div>
 
@@ -1014,4 +1011,13 @@ export default function MenuPage() {
             <h2 className="text-3xl font-black mb-2">Order Placed!</h2>
             <p className="text-teal-400 font-black text-xl mb-2">{confirmed.order_number}</p>
             <p className="text-zinc-400 mb-8">Your order is in the kitchen. We&apos;ll have it ready shortly.</p>
-            <button onClick={() => { setConfirmed(null); setCartOpen(false); setUpsellShown(f
+            <button onClick={() => { setConfirmed(null); setCartOpen(false); setUpsellShown(false); }} className="bg-yellow-400 hover:bg-yellow-300 text-black font-black px-10 py-4 rounded-full text-lg transition-colors">
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
+    </main>
+  );
+}

@@ -157,8 +157,8 @@ export default function CateringPage() {
   const [modalLbs, setModalLbs] = useState(2);
 
   // Forms
-  const [pkgForm, setPkgForm] = useState({ name: "", phone: "", email: "", address: "", address_city: "", event_date: "", special_requests: "" });
-  const [alcForm, setAlcForm] = useState({ name: "", phone: "", email: "", address: "", address_city: "", event_date: "", special_requests: "" });
+  const [pkgForm, setPkgForm] = useState({ name: "", phone: "", email: "", recipient_name: "", recipient_phone: "", different_contact: false, address: "", address_city: "", event_date: "", special_requests: "" });
+  const [alcForm, setAlcForm] = useState({ name: "", phone: "", email: "", recipient_name: "", recipient_phone: "", different_contact: false, address: "", address_city: "", event_date: "", special_requests: "" });
   const [quoteForm, setQuoteForm] = useState({ name: "", phone: "", email: "", event_date: "", headcount: "", event_type: "", location: "", budget: "", notes: "" });
 
   const [pkgFulfillment, setPkgFulfillment] = useState<"pickup" | "delivery">("delivery");
@@ -326,6 +326,10 @@ export default function CateringPage() {
     const delivFee = needsAddress ? (pkgDelivFee ?? 0) : 0;
     const total = pkgCartSubtotal + delivFee;
     const fullPkgAddress = needsAddress ? `${pkgForm.address.trim()}, ${pkgForm.address_city.trim()}` : "Pickup";
+    const pkgRecipientNote = pkgForm.different_contact && pkgForm.recipient_name
+      ? `Event Contact: ${pkgForm.recipient_name}${pkgForm.recipient_phone ? " / " + pkgForm.recipient_phone : ""}`
+      : "";
+    const pkgFinalRequests = [pkgRecipientNote, pkgForm.special_requests].filter(Boolean).join(" · ");
     const items = pkgCart.map(e => {
       const choicesSummary = Object.entries(e.choices).map(([k, v]) => `${e.pkg.choices.find(c => c.key === k)?.label}: ${v}`);
       return { name: e.pkg.name, category: e.pkg.category, size: e.size.label, qty: e.qty, includes: e.pkg.items, choices: choicesSummary };
@@ -340,7 +344,7 @@ export default function CateringPage() {
         customer_phone: pkgForm.phone,
         customer_address: fullPkgAddress,
         event_date: pkgForm.event_date,
-        special_requests: pkgForm.special_requests,
+        special_requests: pkgFinalRequests,
         items,
         subtotal: pkgCartSubtotal,
         delivery_fee: delivFee,
@@ -366,6 +370,10 @@ export default function CateringPage() {
     const delivFee = needsAddress ? cartDelivFee : 0;
     const total = cartSubtotal + delivFee;
     const fullAlcAddress = needsAddress ? `${alcForm.address.trim()}, ${alcForm.address_city.trim()}` : "Pickup";
+    const alcRecipientNote = alcForm.different_contact && alcForm.recipient_name
+      ? `Event Contact: ${alcForm.recipient_name}${alcForm.recipient_phone ? " / " + alcForm.recipient_phone : ""}`
+      : "";
+    const alcFinalRequests = [alcRecipientNote, alcForm.special_requests].filter(Boolean).join(" · ");
     const res = await fetch("/api/catering-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -376,7 +384,7 @@ export default function CateringPage() {
         customer_phone: alcForm.phone,
         customer_address: fullAlcAddress,
         event_date: alcForm.event_date,
-        special_requests: alcForm.special_requests,
+        special_requests: alcFinalRequests,
         items: cart,
         subtotal: cartSubtotal,
         delivery_fee: delivFee,
@@ -572,11 +580,25 @@ export default function CateringPage() {
                 <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
                   <h2 className="text-xl font-black mb-6">Event Info</h2>
                   <div className="space-y-4">
+                    <p className="text-teal-400 font-bold text-xs uppercase tracking-widest">Your Contact Info</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label><input type="text" placeholder="Jane Smith" value={pkgForm.name} onChange={e => setPkgForm({ ...pkgForm, name: e.target.value })} className={inputCls()} /></div>
-                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone *</label><input type="tel" placeholder="(214) 555-0100" value={pkgForm.phone} onChange={e => setPkgForm({ ...pkgForm, phone: e.target.value })} className={inputCls()} /></div>
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Your Name *</label><input type="text" placeholder="Jane Smith" value={pkgForm.name} onChange={e => setPkgForm({ ...pkgForm, name: e.target.value })} className={inputCls()} /></div>
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Your Phone *</label><input type="tel" placeholder="(214) 555-0100" value={pkgForm.phone} onChange={e => setPkgForm({ ...pkgForm, phone: e.target.value })} className={inputCls()} /></div>
                     </div>
-                    <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label><input type="email" placeholder="jane@email.com" value={pkgForm.email} onChange={e => setPkgForm({ ...pkgForm, email: e.target.value })} className={inputCls()} /></div>
+                    <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Your Email <span className="normal-case font-normal text-zinc-500">(confirmation sent here)</span></label><input type="email" placeholder="jane@email.com" value={pkgForm.email} onChange={e => setPkgForm({ ...pkgForm, email: e.target.value })} className={inputCls()} /></div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={pkgForm.different_contact} onChange={e => setPkgForm({ ...pkgForm, different_contact: e.target.checked })} className="w-4 h-4 accent-teal-500" />
+                      <span className="text-sm text-zinc-400">The event contact / recipient is a different person</span>
+                    </label>
+                    {pkgForm.different_contact && (
+                      <div className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-4 space-y-3">
+                        <p className="text-zinc-400 font-bold text-xs uppercase tracking-wide">Event Contact</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Their Name</label><input type="text" placeholder="John Doe" value={pkgForm.recipient_name} onChange={e => setPkgForm({ ...pkgForm, recipient_name: e.target.value })} className={inputCls()} /></div>
+                          <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Their Phone</label><input type="tel" placeholder="(214) 555-0101" value={pkgForm.recipient_phone} onChange={e => setPkgForm({ ...pkgForm, recipient_phone: e.target.value })} className={inputCls()} /></div>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Pickup or Delivery? *</label>
                       <div className="flex gap-3">
@@ -734,11 +756,25 @@ export default function CateringPage() {
             <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
               <h2 className="text-xl font-black mb-6">Event Info</h2>
               <div className="space-y-4">
+                <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest">Your Contact Info</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Full Name *</label><input type="text" placeholder="Jane Smith" value={alcForm.name} onChange={e => setAlcForm({ ...alcForm, name: e.target.value })} className={inputCls()} /></div>
-                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Phone *</label><input type="tel" placeholder="(214) 555-0100" value={alcForm.phone} onChange={e => setAlcForm({ ...alcForm, phone: e.target.value })} className={inputCls()} /></div>
+                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Your Name *</label><input type="text" placeholder="Jane Smith" value={alcForm.name} onChange={e => setAlcForm({ ...alcForm, name: e.target.value })} className={inputCls()} /></div>
+                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Your Phone *</label><input type="tel" placeholder="(214) 555-0100" value={alcForm.phone} onChange={e => setAlcForm({ ...alcForm, phone: e.target.value })} className={inputCls()} /></div>
                 </div>
-                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Email</label><input type="email" placeholder="jane@email.com" value={alcForm.email} onChange={e => setAlcForm({ ...alcForm, email: e.target.value })} className={inputCls()} /></div>
+                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Your Email <span className="normal-case font-normal text-zinc-500">(confirmation sent here)</span></label><input type="email" placeholder="jane@email.com" value={alcForm.email} onChange={e => setAlcForm({ ...alcForm, email: e.target.value })} className={inputCls()} /></div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={alcForm.different_contact} onChange={e => setAlcForm({ ...alcForm, different_contact: e.target.checked })} className="w-4 h-4 accent-yellow-400" />
+                  <span className="text-sm text-zinc-400">The event contact / recipient is a different person</span>
+                </label>
+                {alcForm.different_contact && (
+                  <div className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-4 space-y-3">
+                    <p className="text-zinc-400 font-bold text-xs uppercase tracking-wide">Event Contact</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Their Name</label><input type="text" placeholder="John Doe" value={alcForm.recipient_name} onChange={e => setAlcForm({ ...alcForm, recipient_name: e.target.value })} className={inputCls()} /></div>
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Their Phone</label><input type="tel" placeholder="(214) 555-0101" value={alcForm.recipient_phone} onChange={e => setAlcForm({ ...alcForm, recipient_phone: e.target.value })} className={inputCls()} /></div>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Pickup or Delivery? *</label>
                   <div className="flex gap-3">

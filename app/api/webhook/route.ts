@@ -55,6 +55,33 @@ export async function POST(req: NextRequest) {
           { onConflict: "phone" }
         );
       }
+      // Fire internal + customer notification for pre-saved orders (menu & catering)
+      const { data: savedOrder } = await supabase
+        .from("orders")
+        .select("customer_name, customer_phone, customer_email, customer_address, special_requests, items, total")
+        .eq("id", preOrderId)
+        .single();
+      if (savedOrder) {
+        const notifyBase = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+        try {
+          await fetch(`${notifyBase}/api/notify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order_type: earlyOrderType,
+              customer_name: savedOrder.customer_name,
+              customer_phone: savedOrder.customer_phone,
+              customer_email: savedOrder.customer_email,
+              customer_address: savedOrder.customer_address,
+              special_requests: savedOrder.special_requests,
+              items: savedOrder.items,
+              total: savedOrder.total,
+            }),
+          });
+        } catch (notifyErr) {
+          console.error(`${earlyOrderType} notify failed:`, notifyErr);
+        }
+      }
       console.log(`Pre-saved ${earlyOrderType} order ${preOrderId} marked paid`);
       return NextResponse.json({ received: true });
     }
