@@ -2,6 +2,7 @@ import DinnerDropSection from "./components/DinnerDropSection";
 import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
+import JoinListSection from "./components/JoinListSection";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -199,6 +200,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
+      <JoinListSection />
       <footer className="border-t border-zinc-800 px-6 py-12">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
