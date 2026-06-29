@@ -31,6 +31,9 @@ export default function ReviewPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submittedRating, setSubmittedRating] = useState(0);
+
+  const GOOGLE_REVIEW_URL = "https://g.page/r/CelZGPN-7w0SEBM/review";
 
   const handleSubmit = async () => {
     setError("");
@@ -45,7 +48,7 @@ export default function ReviewPage() {
         body: JSON.stringify({ ...form, rating }),
       });
       const data = await res.json();
-      if (data.success) setSubmitted(true);
+      if (data.success) { setSubmitted(true); setSubmittedRating(rating); }
       else setError(data.error || "Something went wrong.");
     } catch {
       setError("Network error. Please try again.");
@@ -62,8 +65,17 @@ export default function ReviewPage() {
           <img src="/fred%20thumbs%20up.png" alt="Fred gives a thumbs up" className="w-40 h-40 object-contain mx-auto mb-6" />
           <h1 className="text-4xl font-black mb-4">Fred says thank you!</h1>
           <p className="text-zinc-400 text-lg mb-2">Your review has been received.</p>
-          <p className="text-zinc-500 text-sm mb-10">We read every single one. It means the world to us.</p>
-          <a href="/" className="bg-yellow-400 text-black font-black px-8 py-4 rounded-full text-lg hover:bg-yellow-300 transition-colors">
+          <p className="text-zinc-500 text-sm mb-8">We read every single one. It means the world to us.</p>
+          {submittedRating >= 4 && (
+            <div className="bg-zinc-900 border border-yellow-400/30 rounded-2xl p-6 mb-8 text-left">
+              <p className="text-yellow-400 font-black text-sm uppercase tracking-widest mb-2">One more thing 🙏</p>
+              <p className="text-zinc-300 text-sm mb-4 leading-relaxed">Would you mind sharing that on Google too? It helps more people in Dallas find us and takes about 30 seconds.</p>
+              <a href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer" className="block bg-yellow-400 hover:bg-yellow-300 text-black font-black px-6 py-3 rounded-full text-sm text-center transition-colors">
+                Post on Google →
+              </a>
+            </div>
+          )}
+          <a href="/" className="bg-zinc-800 hover:bg-zinc-700 text-white font-black px-8 py-4 rounded-full text-lg transition-colors">
             Back to Home
           </a>
         </div>
@@ -121,26 +133,4 @@ export default function ReviewPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 block mb-2">Your Review *</label>
             <textarea
-              value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
-              rows={5}
-              placeholder="Tell us what you ordered, what you loved, what we can improve..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400 resize-none"
-            />
-          </div>
-
-          {error && <p className="text-red-400 text-sm font-semibold">{error}</p>}
-
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
-          >
-            {loading ? "Submitting..." : "Submit Review"}
-          </button>
-        </div>
-      </section>
-    </main>
-  );
-}
+         
