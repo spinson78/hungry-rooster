@@ -133,4 +133,26 @@ export default function ReviewPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 block mb-2">Your Review *</label>
             <textarea
-         
+              value={form.body}
+              onChange={(e) => setForm({ ...form, body: e.target.value })}
+              rows={5}
+              placeholder="Tell us what you ordered, what you loved, what we can improve..."
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400 resize-none"
+            />
+          </div>
+
+          {error && <p className="text-red-400 text-sm font-semibold">{error}</p>}
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-4 rounded-full text-lg transition-colors"
+          >
+            {loading ? "Submitting..." : "Submit Review"}
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
