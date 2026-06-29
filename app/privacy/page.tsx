@@ -53,7 +53,7 @@ export default function PrivacyPage() {
               <p className="font-black text-white">The Hungry Rooster</p>
               <p>1499 Regal Row, Suite 206, Dallas, TX 75247</p>
               <p>Phone: <a href="tel:9452157907" className="text-yellow-400 hover:underline">945-215-7907</a></p>
-              <p>Email: <a href="mailto:spinson78@gmail.com" className="text-yellow-400 hover:underline">spinson78@gmail.com</a></p>
+              <p>Email: <a href="mailto:chef@thehungryroostertx.com" className="text-yellow-400 hover:underline">chef@thehungryroostertx.com</a></p>
             </div>
           </div>
 
