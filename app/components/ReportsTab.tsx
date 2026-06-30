@@ -47,23 +47,25 @@ const RANGE_OPTIONS = [
 type Range = typeof RANGE_OPTIONS[number]["value"];
 
 const TYPE_LABELS: Record<string, string> = {
-  menu:    "Menu (Walk-in)",
-  dinner:  "Dinner Drop",
-  shabbat: "Shabbat Box",
-  bakery:  "Fred's Fixins'",
-  invoice: "Catering / Invoices",
+  menu:        "Menu (Walk-in)",
+  dinner:      "Dinner Drop",
+  shabbat:     "Shabbat Box",
+  bakery:      "Fred's Fixins'",
+  invoice:     "Invoice",
   group_order: "Group Order",
-  catering: "Catering (Direct)",
+  catering:    "Catering",
+  gift_dinner: "Gift — Dinner",
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  menu:    "text-teal-400",
-  dinner:  "text-teal-400",
-  shabbat: "text-yellow-400",
-  bakery:  "text-orange-400",
-  invoice: "text-purple-400",
+  menu:        "text-teal-400",
+  dinner:      "text-teal-400",
+  shabbat:     "text-yellow-400",
+  bakery:      "text-orange-400",
+  invoice:     "text-purple-400",
   group_order: "text-blue-400",
-  catering: "text-purple-400",
+  catering:    "text-pink-400",
+  gift_dinner: "text-rose-400",
 };
 
 function getWeekStart(date: Date): string {
