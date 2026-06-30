@@ -14,10 +14,18 @@ type OrderLogItem = {
     name: string;
     qty: number;
     size?: string;
+    serving?: string;
+    category?: string;
     addons?: string[];
     mods?: string;
     unit_price?: number;
     price?: number;
+    protein?: string;
+    side1?: string;
+    side2?: string;
+    extra?: string;
+    includes?: string[];
+    choices?: string[];
   }>;
   subtotal?: number;
   tax_amount?: number;
@@ -350,9 +358,23 @@ export default function OrdersLogTab() {
                       <div className="space-y-2">
                         {(order.items || []).map((item, i) => (
                           <div key={i} className="flex justify-between items-start text-sm">
-                            <div>
+                            <div className="flex-1 min-w-0">
                               <span className="font-bold text-white">{item.qty > 1 ? `${item.qty}× ` : ""}{item.name}</span>
                               {item.size && <span className="text-zinc-500 ml-2 text-xs">{item.size}</span>}
+                              {item.serving && <span className="text-zinc-600 ml-1 text-xs">({item.serving})</span>}
+                              {/* Menu item customizations */}
+                              {item.protein && <p className="text-zinc-400 text-xs mt-0.5">Protein: {item.protein}</p>}
+                              {item.side1 && <p className="text-zinc-400 text-xs">Side 1: {item.side1}</p>}
+                              {item.side2 && <p className="text-zinc-400 text-xs">Side 2: {item.side2}</p>}
+                              {item.extra && <p className="text-zinc-400 text-xs">Side 3: {item.extra}</p>}
+                              {/* Catering package contents */}
+                              {item.includes && item.includes.length > 0 && (
+                                <p className="text-zinc-500 text-xs mt-0.5">{item.includes.join(" · ")}</p>
+                              )}
+                              {item.choices && item.choices.length > 0 && (
+                                <p className="text-yellow-400 text-xs mt-0.5">{item.choices.join(" · ")}</p>
+                              )}
+                              {/* Add-ons and mods */}
                               {item.addons && item.addons.length > 0 && (
                                 <p className="text-zinc-500 text-xs mt-0.5">+ {item.addons.join(", ")}</p>
                               )}
