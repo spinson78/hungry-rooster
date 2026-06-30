@@ -197,7 +197,7 @@ export default function AdminPage() {
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
   const [cateringOrders, setCateringOrders] = useState<Order[]>([]);
-  const [groupOrders, setGroupOrders] = useState<{id: string; location_slug: string; person_name: string; items: {name: string; qty?: number}[]; total: number; special_requests: string; delivery_date: string | null; status: string; created_at: string}[]>([]);
+  const [groupOrders, setGroupOrders] = useState<{id: string; location_slug: string; person_name: string; items: {name: string; qty?: number; price?: number; description?: string}[]; total: number; special_requests: string; delivery_date: string | null; status: string; created_at: string}[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
 
@@ -1165,8 +1165,14 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
-                      {(o.items as {name: string; qty?: number}[]).map((item, i) => (
-                        <p key={i} className="text-zinc-300 text-sm">{item.qty && item.qty > 1 ? `${item.qty}x ` : ""}{item.name}</p>
+                      {(o.items as {name: string; qty?: number; price?: number; description?: string}[]).map((item, i) => (
+                        <div key={i} className="py-1 border-b border-zinc-700 last:border-0">
+                          <div className="flex justify-between items-baseline gap-2">
+                            <p className="text-zinc-200 text-sm font-bold">{item.qty && item.qty > 1 ? `${item.qty}x ` : ""}{item.name}</p>
+                            {item.price != null && <p className="text-zinc-400 text-xs shrink-0">${(item.price * (item.qty || 1)).toFixed(2)}</p>}
+                          </div>
+                          {item.description && <p className="text-zinc-500 text-xs mt-0.5">{item.description}</p>}
+                        </div>
                       ))}
                     </div>
                     {o.special_requests && <p className="text-yellow-400 text-xs mb-3">Note: {o.special_requests}</p>}

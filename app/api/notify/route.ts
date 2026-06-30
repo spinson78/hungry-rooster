@@ -79,7 +79,7 @@ Sent automatically by The Hungry Rooster ordering system.
 
       <div style="background: #2dd4bf; border-radius: 8px; padding: 16px; text-align: center;">
         <p style="margin: 0; color: #000000; font-weight: 900; font-size: 20px;">Total: $${total}</p>
-        <p style="margin: 4px 0 0; color: #00403a; font-size: 12px;">Payment collected on delivery</p>
+        <p style="margin: 4px 0 0; color: #00403a; font-size: 12px;">${order_type === "group_order" || order_type === "catering" ? "Paid online via Stripe" : "Payment collected on delivery"}</p>
       </div>
 
       <p style="color: #3f3f46; font-size: 12px; text-align: center; margin-top: 24px;">The Hungry Rooster · 1499 Regal Row, Suite 206, Dallas TX</p>
@@ -116,6 +116,7 @@ Sent automatically by The Hungry Rooster ordering system.
     const isShabbat = order_type === "shabbat";
     const isDinner = order_type === "dinner";
     const isBakery = order_type === "bakery";
+    const isGroup = order_type === "group_order";
 
     const confirmSubject = isShabbat
       ? "Shabbat Shalom! Your order is confirmed 🕯️"
@@ -123,12 +124,16 @@ Sent automatically by The Hungry Rooster ordering system.
       ? "Order confirmed — Fred's on it 🐓"
       : isBakery
       ? "Your Fred's Fixins' order is confirmed 🥐"
+      : isGroup
+      ? "You're in! Group order confirmed 🐓"
       : "Your order is confirmed — The Hungry Rooster";
 
     const confirmHeadline = isShabbat
       ? "Shabbat Shalom!"
       : isBakery
       ? "Fresh from Fred's!"
+      : isGroup
+      ? `You're in, ${customer_name.split(" ")[0]}!`
       : `You're confirmed, ${customer_name.split(" ")[0]}!`;
 
     const confirmSubline = isShabbat
@@ -137,6 +142,8 @@ Sent automatically by The Hungry Rooster ordering system.
       ? "Your Dinner Drop is confirmed. Fred's already thinking about it."
       : isBakery
       ? "Your Fred's Fixins' order is confirmed. We'll have it fresh and ready for you."
+      : isGroup
+      ? `Your order is paid and locked in for delivery to ${customer_address || "your office"}. Fred's crew will have it fresh and bagged with your name on it.`
       : "Your order is confirmed and paid. We'll be in touch with details.";
 
     const confirmHtml = `
