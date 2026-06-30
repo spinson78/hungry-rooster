@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
     order_type === "dinner" ? "🍽️ Dinner Drop Order" :
     order_type === "catering" ? "🍽️ Catering Package Order" :
     order_type === "catering_inquiry" ? "📋 Catering Inquiry" :
+    order_type === "bakery" ? "🥐 Fred's Fixins' Order" :
     "📦 New Order";
 
   const itemsList = Array.isArray(items)
@@ -114,21 +115,28 @@ Sent automatically by The Hungry Rooster ordering system.
   if (customer_email) {
     const isShabbat = order_type === "shabbat";
     const isDinner = order_type === "dinner";
+    const isBakery = order_type === "bakery";
 
     const confirmSubject = isShabbat
       ? "Shabbat Shalom! Your order is confirmed 🕯️"
       : isDinner
       ? "Order confirmed — Fred's on it 🐓"
+      : isBakery
+      ? "Your Fred's Fixins' order is confirmed 🥐"
       : "Your order is confirmed — The Hungry Rooster";
 
     const confirmHeadline = isShabbat
       ? "Shabbat Shalom!"
+      : isBakery
+      ? "Fresh from Fred's!"
       : `You're confirmed, ${customer_name.split(" ")[0]}!`;
 
     const confirmSubline = isShabbat
       ? "Your Shabbat box is locked in. Fred will have it ready for Friday delivery."
       : isDinner
       ? "Your Dinner Drop is confirmed. Fred's already thinking about it."
+      : isBakery
+      ? "Your Fred's Fixins' order is confirmed. We'll have it fresh and ready for you."
       : "Your order is confirmed and paid. We'll be in touch with details.";
 
     const confirmHtml = `
