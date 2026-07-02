@@ -57,6 +57,13 @@ function elapsed(created: string) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
+function scheduledCountdown(scheduledFor: string) {
+  const minsUntil = Math.floor((new Date(scheduledFor).getTime() - Date.now()) / 60000);
+  if (minsUntil <= 0) return `${Math.abs(minsUntil)}m overdue`;
+  if (minsUntil < 60) return `in ${minsUntil}m`;
+  return `in ${Math.floor(minsUntil / 60)}h ${minsUntil % 60}m`;
+}
+
 let sharedCtx: AudioContext | null = null;
 function getAudioContext() {
   if (!sharedCtx) sharedCtx = new AudioContext();
@@ -101,8 +108,15 @@ function OrderCard({
     ? new Date(order.scheduled_for).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
     : null;
   const isStarted = order.status === "in_progress";
-  const mins = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
-  const urgent = mins >= 10 && !isCompleted;
+  // For scheduled orders: urgent when ≤10 min until scheduled time (or overdue)
+  // For ASAP orders: urgent when waiting 10+ min since created
+  const minsUntilScheduled = order.scheduled_for
+    ? Math.floor((new Date(order.scheduled_for).getTime() - Date.now()) / 60000)
+    : null;
+  const minsElapsed = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
+  const urgent = !isCompleted && (
+    minsUntilScheduled !== null ? minsUntilScheduled <= 10 : minsElapsed >= 10
+  );
 
   const updateStatus = async (status: string) => {
     setUpdating(true);
@@ -145,7 +159,7 @@ function OrderCard({
         <div className="text-right shrink-0">
           {order.order_number && <p className="text-zinc-400 font-mono text-sm">{order.order_number}</p>}
           <p className={`text-sm font-black mt-0.5 ${urgent ? "text-red-400" : isCompleted ? "text-zinc-500" : isStarted ? "text-teal-400" : "text-yellow-400"}`}>
-            {elapsed(order.created_at)}
+            {order.scheduled_for ? scheduledCountdown(order.scheduled_for) : elapsed(order.created_at)}
           </p>
         </div>
       </div>
