@@ -86,7 +86,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Idempotency — if webhook fires twice or success page already wrote, skip
+    // Idempotency — check processed_sessions table (survives order deletion)
+    const { data: processedSession } = await supabase
+      .from("processed_sessions")
+      .select("id")
+      .eq("stripe_session_id", session.id)
+      .maybeSingle();
+
+    if (processedSession) {
+      console.log(`Session ${session.id} already processed — skipping`);
+      return NextResponse.json({ received: true });
+    }
+
+    // Also check orders table as fallback for existing records
     const { data: existing } = await supabase
       .from("orders")
       .select("id")
@@ -94,9 +106,14 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (existing) {
+      // Backfill processed_sessions so future retries are caught
+      await supabase.from("processed_sessions").insert({ stripe_session_id: session.id, order_type: meta.order_type }).then(() => {});
       console.log(`Order already recorded for session ${session.id} — skipping`);
       return NextResponse.json({ received: true });
     }
+
+    // Mark session as processed immediately before inserting order
+    await supabase.from("processed_sessions").insert({ stripe_session_id: session.id, order_type: meta.order_type });
 
     // ── Invoice payment ──────────────────────────────────────────
     if (meta.invoice_id) {
