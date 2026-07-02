@@ -35,7 +35,7 @@ type Invoice = {
 
 const REPS = [
   { value: "house", label: "House Account", rate: 0 },
-  { value: "abigayle", label: "Abigayle Pinson", rate: 5 },
+  { value: "abigayle", label: "Abigayle Pinson", rate: 10 },
   { value: "jordona", label: "Jordona Kohn", rate: 10 },
 ];
 
