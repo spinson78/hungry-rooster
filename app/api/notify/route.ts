@@ -113,10 +113,11 @@ Sent automatically by The Hungry Rooster ordering system.
 
   // Customer confirmation email (only if we have their email)
   if (customer_email) {
-    const isShabbat = order_type === "shabbat";
-    const isDinner = order_type === "dinner";
-    const isBakery = order_type === "bakery";
-    const isGroup = order_type === "group_order";
+    const isShabbat  = order_type === "shabbat";
+    const isDinner   = order_type === "dinner";
+    const isBakery   = order_type === "bakery";
+    const isGroup    = order_type === "group_order";
+    const isInquiry  = order_type === "catering_inquiry";
 
     const confirmSubject = isShabbat
       ? "Shabbat Shalom! Your order is confirmed 🕯️"
@@ -126,6 +127,8 @@ Sent automatically by The Hungry Rooster ordering system.
       ? "Your Fred's Fixins' order is confirmed 🥐"
       : isGroup
       ? "You're in! Group order confirmed 🐓"
+      : isInquiry
+      ? "We got your catering inquiry — The Hungry Rooster 🍽️"
       : "Your order is confirmed — The Hungry Rooster";
 
     const confirmHeadline = isShabbat
@@ -134,6 +137,8 @@ Sent automatically by The Hungry Rooster ordering system.
       ? "Fresh from Fred's!"
       : isGroup
       ? `You're in, ${customer_name.split(" ")[0]}!`
+      : isInquiry
+      ? `Got it, ${customer_name.split(" ")[0]}!`
       : `You're confirmed, ${customer_name.split(" ")[0]}!`;
 
     const confirmSubline = isShabbat
@@ -142,6 +147,8 @@ Sent automatically by The Hungry Rooster ordering system.
       ? "Your Dinner Drop is confirmed. Fred's already thinking about it."
       : isBakery
       ? "Your Fred's Fixins' order is confirmed. We'll have it fresh and ready for you."
+      : isInquiry
+      ? "We received your catering inquiry and our team will be in touch within 24 hours to talk through your event."
       : isGroup
       ? `Your order is paid and locked in for delivery to ${customer_address || "your office"}. Fred's crew will have it fresh and bagged with your name on it.`
       : "Your order is confirmed and paid. We'll be in touch with details.";
