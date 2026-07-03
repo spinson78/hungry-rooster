@@ -27,6 +27,7 @@ const SHABBAT_ADDONS = [
   { name: "6pc Grilled Chicken", price: 36, description: "6 pieces of grilled chicken" },
   { name: "Chicken Nuggets", price: 28, description: "Crispy chicken nuggets" },
   { name: "Bourekas", price: 18, description: "Freshly baked bourekas" },
+  { name: "Classic Egg Challah", price: 6.50, description: "Freshly baked classic egg challah" },
 ];
 
 export default function EstherPage() {
