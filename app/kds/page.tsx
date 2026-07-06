@@ -301,12 +301,17 @@ export default function KDSPage() {
   };
 
   const fetchOrders = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("orders")
       .select("*")
       .in("status", ["pending", "in_progress", "complete"])
       .in("order_type", ["menu", "doordash", "ubereats", "phone"])
       .order("created_at", { ascending: true });
+    // If Supabase returns an error (outage, network issue), don't update display
+    if (error) {
+      console.error("KDS fetch error:", error.message);
+      return;
+    }
     const all = (data as Order[]) || [];
 
     // Only surface orders that are ASAP or within 20 min of their scheduled time

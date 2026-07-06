@@ -14,16 +14,21 @@ type ShabbatMenu = {
   is_active: boolean;
 };
 
+type Props = {
+  initialMenu?: ShabbatMenu | null;
+  initialIsOpen?: boolean;
+};
+
 const SIZES = [
   { label: "2 Person", price: 65, description: "Protein + 3 sides, serves 2" },
   { label: "4-6 Person", price: 115, description: "Protein + 3 sides, serves 4–6" },
   { label: "10-12 Person", price: 225, description: "Protein + 3 sides, serves 10–12" },
 ];
 
-export default function ShabbatCheckout() {
-  const [menu, setMenu] = useState<ShabbatMenu | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
+  const [menu, setMenu] = useState<ShabbatMenu | null>(initialMenu ?? null);
+  const [isOpen, setIsOpen] = useState(initialIsOpen ?? false);
+  const [loading, setLoading] = useState(!initialMenu);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showUpsell, setShowUpsell] = useState(false);
