@@ -1,97 +1,98 @@
 {
-  "generated_at": "2026-06-29T13:47:19Z",
-  "week": "Week of Jun 29, 2026",
+  "generated_at": "2026-07-06T13:12:04Z",
+  "week": "Week of Jul 6, 2026",
+  "data_quality_note": "WebSearch was intermittently unavailable during this run (roughly 4 of ~15 queries returned). Keyword rankings measured this run come from successful searches for 'kosher delivery Dallas', 'kosher catering Dallas reviews', and 'kosher Dallas site:yelp.com'. Keywords that could not be re-measured this run are labeled as such and reference the prior week (Jun 29) as baseline. Site audit was completed in full via direct page fetches.",
   "keyword_rankings": [
     {
       "keyword": "kosher food Dallas",
-      "our_position": "not found (not in top organic results)",
-      "top_competitor": "Dallas Kosher (https://www.dallaskosher.org/restaurants); also Milk and Honey (https://www.milkhoneydallas.com/) and Meat Point (https://www.meatpointdallas.com/)"
+      "our_position": "not re-measured this run (search tool degraded); prior week: not found in top organic results",
+      "top_competitor": "Dallas Kosher (https://www.dallaskosher.org/restaurants), Meat Point (https://www.meatpointdallas.com/), Milk and Honey (via Yelp)"
     },
     {
       "keyword": "kosher catering Dallas",
-      "our_position": "position ~5 (thehungryroostertx.com listed)",
-      "top_competitor": "A Taste of the World Kosher Catering (https://atasteoftheworld.com/) and Simcha Kosher Catering (https://www.simchakosher.com/)"
+      "our_position": "appears in the catering results this run (thehungryroostertx.com surfaced in the 'kosher catering Dallas reviews' SERP)",
+      "top_competitor": "A Taste of the World Kosher Catering (https://atasteoftheworld.com/reviews/) and Simcha Kosher Catering (https://www.yelp.com/biz/simcha-kosher-catering-dallas, 11 Yelp reviews); also A Kosher Catering of Dallas (https://www.akoshercateringdallas.com/) and Meat Point (https://www.meatpointdallas.com/a-kosher-catering)"
     },
     {
       "keyword": "kosher delivery Dallas",
-      "our_position": "not found (page dominated by delivery aggregators)",
-      "top_competitor": "DoorDash (https://www.doordash.com/food-delivery/dallas-tx-restaurants/kosher/) and Uber Eats (https://www.ubereats.com/category/dallas-tx/kosher)"
+      "our_position": "mentioned in results this run (surfaced as an in-house + delivery-app kosher option), but page is dominated by aggregators — not a top organic result",
+      "top_competitor": "DoorDash (https://www.doordash.com/food-delivery/dallas-tx-restaurants/kosher/) and Uber Eats (https://www.ubereats.com/category/dallas-tx/kosher); also Kosher Palate, Midtown Pizza, and Shef (https://shef.com/homemade-food-delivery/dallas-tx/kosher-indian-food)"
     },
     {
       "keyword": "kosher restaurant Dallas",
-      "our_position": "not found (we are a ghost kitchen, not listed as a restaurant)",
-      "top_competitor": "Dallas Kosher (https://www.dallaskosher.org/restaurants), Meat Point (https://www.meatpointdallas.com/), Aderet Grill & Salad (https://aderetrestaurant.com/)"
+      "our_position": "not re-measured this run (search tool degraded); prior week: not found (we are a ghost kitchen, not listed as a sit-down restaurant)",
+      "top_competitor": "Dallas Kosher (https://www.dallaskosher.org/restaurants), Meat Point (https://www.meatpointdallas.com/), Aderet (via Yelp)"
     },
     {
       "keyword": "Shabbat meals Dallas",
-      "our_position": "not found (our /shabbat page is client-rendered and not crawlable)",
-      "top_competitor": "Dallas Kosher (https://www.dallaskosher.org/restaurants) and A Taste of the World (https://atasteoftheworld.com/shabbat/) which has a dedicated, indexable Shabbat page"
+      "our_position": "not re-measured this run (search tool degraded); prior week: not found — our /shabbat page is client-rendered and shows only 'Loading...' to crawlers (STILL true this week, see audit)",
+      "top_competitor": "Dallas Kosher (https://www.dallaskosher.org/) and A Taste of the World, which has a dedicated indexable Shabbat/catering presence"
     },
     {
       "keyword": "kosher meal delivery Texas",
-      "our_position": "not found (statewide term dominated by marketplaces)",
-      "top_competitor": "Shef (https://shef.com/homemade-food-delivery/austin-tx/78701/kosher-food), Uber Eats, and Mom's Meals (https://www.momsmeals.com/our-food-programs/kosher-meals/)"
+      "our_position": "not re-measured this run (search tool degraded); prior week: not found — statewide term dominated by marketplaces",
+      "top_competitor": "Shef (https://shef.com/homemade-food-delivery/dallas-tx/kosher-indian-food), Uber Eats, Grubhub, Postmates"
     },
     {
       "keyword": "Jewish catering Dallas",
-      "our_position": "position ~2 (thehungryroostertx.com listed near top)",
-      "top_competitor": "Gourmet Palate (https://www.thegourmetpalate.com/) branding as 'Texas #1 Kosher Catering'; also JGourmet (https://www.jccdallas.org/jgourmet)"
+      "our_position": "not re-measured this run (search tool degraded); prior week: position ~2 (thehungryroostertx.com near the top)",
+      "top_competitor": "A Taste of the World Kosher Catering and Simcha Kosher Catering; prior week also noted Gourmet Palate ('Texas #1 Kosher Catering')"
     }
   ],
   "competitor_alerts": [
-    "A Taste of the World has a dedicated, server-rendered /shabbat page (atasteoftheworld.com/shabbat) that ranks for 'Shabbat meals Dallas' and 'kosher catering Dallas' plus a reviews page full of testimonials. Our /shabbat page only shows 'Loading this week's Shabbat menu...' to crawlers, so we are invisible for our own Shabbat keyword.",
-    "Gourmet Palate aggressively positions itself as 'Texas #1 Kosher Catering' and ranks for 'Jewish catering Dallas' — the one head term where we currently do well. Expect direct competition on that query.",
-    "Delivery marketplaces (DoorDash, Uber Eats, Postmates, Grubhub) own every 'kosher delivery' query in Dallas. We are not surfaced in their kosher category listings, so we capture none of that high-intent delivery traffic.",
-    "Dallas Kosher (dallaskosher.org) is the default authority and appears in the top 3 for nearly every kosher keyword. Getting The Hungry Rooster listed on its Restaurants and Catering directory pages would be a high-value backlink and referral source.",
-    "Simcha Kosher Catering and A Taste of the World both have established third-party review profiles (Yelp, WeddingWire, on-site testimonials). We have no dedicated reviews/testimonials page — only a /review submission link."
+    "The 'kosher catering Dallas' SERP is crowded with review-rich, established competitors: A Taste of the World has a full reviews page (atasteoftheworld.com/reviews), and Simcha Kosher Catering has Yelp (11 reviews) and WeddingWire profiles. The Hungry Rooster still has no public reviews/testimonials page — only a /review submission form — which is a trust-signal and long-tail gap.",
+    "Meat Point (meatpointdallas.com/a-kosher-catering) and A Kosher Catering of Dallas (akoshercateringdallas.com) both actively market kosher catering and appear in the same results we want to own.",
+    "Kosher directories dominate discovery: Dallas Kosher (dallaskosher.org) and DOJLife.com (dojlife.com/kosher-dallas/catering/) surface across kosher catering/restaurant/delivery queries. The Hungry Rooster does not appear to be listed on either — this remains an unclaimed authority backlink + referral source.",
+    "Delivery marketplaces (DoorDash, Uber Eats, Grubhub, Postmates) own essentially every 'kosher delivery Dallas' result. The brand is at least mentioned in this run's delivery search, but capturing that high-intent traffic still depends on strong aggregator listings and a Google Business Profile map-pack presence.",
+    "Yelp's kosher-Dallas landscape (Aderet, Meat Point, Milk and Honey, Weinberger's Deli, Cindi's NY Deli, CCCP Market, Benny's Bagels) shows a dense field of established names with review counts we should be actively building against."
   ],
   "recommendations": [
     {
       "priority": "high",
-      "action": "Server-render or statically pre-render the /shabbat page so the weekly Shabbat menu and the phrase 'Shabbat meals Dallas' appear in the raw HTML, not behind a 'Loading...' client fetch.",
-      "reason": "Our /shabbat page currently returns only 'Loading this week's Shabbat menu...' to crawlers, so we rank nowhere for 'Shabbat meals Dallas' while A Taste of the World's indexable /shabbat page does rank. This is the single biggest fixable gap."
+      "action": "Server-render or statically pre-render the /shabbat page so the weekly Shabbat menu and the phrase 'Shabbat meals Dallas' are in the raw HTML instead of behind a client-side 'Loading this week's Shabbat menu...' fetch.",
+      "reason": "Confirmed again this run: fetching /shabbat returns only 'Loading this week's Shabbat menu...' — no crawlable content. This is unchanged from last week and is the single biggest fixable reason we rank nowhere for our own 'Shabbat meals Dallas' term while competitors with indexable Shabbat pages do."
     },
     {
       "priority": "high",
-      "action": "Add Restaurant/LocalBusiness JSON-LD structured data (name, address 1499 Regal Row Suite 206, hours Mon-Fri 9am-2pm, phone 945-215-7907, servesCuisine 'Kosher', priceRange, and aggregateRating) to the homepage and key pages.",
-      "reason": "No JSON-LD structured data was detectable on the site. Structured data drives rich results and helps Google associate us with 'kosher restaurant/catering Dallas' — terms where we currently do not appear at all."
+      "action": "Fix the self-canonicalization problem: every subpage (/menu, /catering, /shabbat, /review) sets its canonical tag to the homepage (https://thehungryroostertx.com), not to itself.",
+      "reason": "Verified on all four pages this run. Pointing every subpage's canonical at the homepage tells Google not to index those pages independently, so /catering can't rank for 'kosher catering Dallas' and /menu can't rank on its own. Set self-referencing canonicals per page."
     },
     {
       "priority": "high",
-      "action": "Get listed on the Dallas Kosher directory (dallaskosher.org Restaurants and Catering pages) and the DOJLife.com Dallas kosher catering list.",
-      "reason": "Dallas Kosher ranks in the top 3 for almost every target keyword and is the trusted local authority. A listing there is an authoritative backlink plus direct referral traffic from people already searching kosher Dallas."
+      "action": "Claim/optimize a Google Business Profile (address 1499 Regal Row Suite 206, hours Mon-Fri 9am-2pm, phone 945-215-7907) and confirm strong kosher-category listings on DoorDash, Uber Eats, and Grubhub.",
+      "reason": "Every 'kosher delivery Dallas' result this run was an aggregator or map-pack listing. We're only faintly surfaced there, so we capture little of the highest-intent 'order now' traffic. A GBP also feeds reviews and local map ranking."
     },
     {
       "priority": "high",
-      "action": "Claim and optimize a Google Business Profile and get listed in the kosher categories on DoorDash, Uber Eats, and Grubhub.",
-      "reason": "Every 'kosher delivery Dallas' and 'kosher meal delivery Texas' result is owned by delivery marketplaces and map-pack listings. We are not surfaced in any of them, so we capture none of the highest-intent 'order now' delivery searches."
+      "action": "Get The Hungry Rooster listed on the Dallas Kosher directory (dallaskosher.org restaurants + catering pages) and DOJLife.com's Dallas kosher catering list.",
+      "reason": "These directories appear across nearly every kosher-Dallas query this run and are the trusted local authorities. A listing is both an authoritative backlink and direct referral traffic from people already searching kosher Dallas."
     },
     {
       "priority": "medium",
-      "action": "Build a dedicated, indexable reviews/testimonials page (e.g. /reviews) that aggregates customer quotes and links to Google/Yelp, instead of only the current /review submission link.",
-      "reason": "Competitors like Simcha and A Taste of the World rank partly on review content and third-party profiles. We have no public review page, which costs us trust signals and long-tail ranking."
+      "action": "Build a dedicated, indexable /reviews page with real customer testimonials and links to Google/Yelp, instead of the current submission-only /review form.",
+      "reason": "A Taste of the World and Simcha both rank partly on review content and third-party profiles. We display no public reviews, costing us trust signals and long-tail ranking on 'kosher catering Dallas reviews'-type queries."
     },
     {
       "priority": "medium",
-      "action": "Publish a blog/landing post targeting 'kosher Shabbat delivery Dallas' and 'weekly kosher dinner drops Dallas' — long-tail terms with weak, fragmented competition.",
-      "reason": "No single strong result owns these specific phrases, and they match exactly what we offer (weekly dinner drops + Shabbat meals + delivery). Easier to win than the saturated head terms."
+      "action": "Give each page unique, keyword-targeted title tags and meta descriptions (e.g. 'Kosher Catering Dallas | The Hungry Rooster' on /catering, a Shabbat-specific title on /shabbat) instead of reusing the identical homepage title/description sitewide.",
+      "reason": "Confirmed this run: /menu, /catering, /shabbat, and /review all share the exact same homepage title and meta description, weakening page-specific relevance for queries like 'kosher catering Dallas'."
     },
     {
       "priority": "medium",
-      "action": "Fix the canonical/host inconsistency: pages are served on www.thehungryroostertx.com but the canonical tag points to the non-www https://thehungryroostertx.com. Pick one host, 301-redirect the other, and make canonicals match.",
-      "reason": "Mismatched canonical vs. served host can split ranking signals and dilute link equity between the www and non-www versions of the domain."
+      "action": "Publish a blog/landing page targeting weak-competition long-tail terms like 'kosher Shabbat delivery Dallas' and 'weekly kosher dinner drops Dallas', which map exactly to the weekly dinner drops + Shabbat + delivery offering.",
+      "reason": "No single strong result owns these specific phrases, and they match our actual product better than the saturated head terms — an easier win than out-ranking Dallas Kosher or the aggregators."
     },
     {
       "priority": "low",
-      "action": "Add unique title tags and meta descriptions per page (e.g. a Shabbat-specific title on /shabbat, a catering-specific title on /catering) rather than reusing the same homepage title/description sitewide.",
-      "reason": "Every page currently shares the identical homepage title and meta description, which weakens topical relevance for page-specific queries like 'kosher catering Dallas' on the /catering page."
+      "action": "Standardize on one host: the site serves on www.thehungryroostertx.com but the canonical tag points to non-www https://thehungryroostertx.com. Pick one, 301-redirect the other, and make canonicals match.",
+      "reason": "Unchanged from last week. The www vs non-www mismatch between served host and canonical can split link equity and ranking signals across two versions of the domain."
     }
   ],
   "quick_wins": [
+    "Set self-referencing canonical tags on /menu, /catering, and /shabbat (they currently all canonical to the homepage).",
     "Pre-render the /shabbat page so its content is crawlable instead of showing 'Loading...' to Google.",
-    "Add LocalBusiness/Restaurant JSON-LD to the homepage with address, hours, phone, and cuisine.",
-    "Submit The Hungry Rooster to the Dallas Kosher (dallaskosher.org) restaurants and catering directory.",
-    "Give /catering and /shabbat their own unique title tags and meta descriptions."
+    "Write unique title tags and meta descriptions for /catering and /shabbat.",
+    "Submit The Hungry Rooster to the Dallas Kosher (dallaskosher.org) and DOJLife.com kosher catering directories."
   ],
-  "summary": "The Hungry Rooster ranks well for 'Jewish catering Dallas' (~#2) and shows up for 'kosher catering Dallas' (~#5), but is invisible for 'kosher food Dallas', 'kosher restaurant Dallas', 'kosher delivery Dallas', 'kosher meal delivery Texas', and even its own 'Shabbat meals Dallas'. The biggest technical problem is that the /shabbat page renders client-side and shows only 'Loading...' to crawlers, and the site has no detectable structured data. Quickest gains this week: pre-render /shabbat, add Restaurant JSON-LD, claim Google Business + delivery-app listings, and get listed on the Dallas Kosher directory."
+  "summary": "Search data was thin this run because WebSearch was mostly unavailable, but the successful queries confirm The Hungry Rooster surfaces for kosher catering and is at least mentioned for kosher delivery, while the 'kosher catering Dallas' field stays crowded with review-heavy competitors (A Taste of the World, Simcha, Meat Point). The full site audit found the same core technical issues as last week, still unfixed: the /shabbat page is client-rendered ('Loading...') and invisible to crawlers, and every subpage canonicalizes to the homepage, blocking /menu, /catering, and /shabbat from ranking on their own. Top priorities remain pre-rendering /shabbat, fixing self-referencing canonicals, claiming Google Business + delivery listings, and getting listed on the Dallas Kosher directory."
 }

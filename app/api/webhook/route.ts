@@ -10,6 +10,28 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Send SMS opt-in confirmation via Twilio
+async function sendOptInConfirmation(toE164: string) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken  = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+  if (!accountSid || !authToken || !fromNumber) return;
+  try {
+    const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+    await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        To:   toE164,
+        From: fromNumber,
+        Body: "The Hungry Rooster: You're subscribed! Expect weekly specials & updates from us. Reply STOP to unsubscribe. Msg & data rates may apply.",
+      }).toString(),
+    });
+  } catch (err) {
+    console.error("Opt-in confirmation SMS failed:", err);
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
@@ -50,10 +72,13 @@ export async function POST(req: NextRequest) {
       if ((session.metadata ?? {}).sms_opted_in === "true" && (session.metadata ?? {}).customer_phone) {
         const digits = ((session.metadata ?? {}).customer_phone || "").replace(/\D/g, "");
         const e164 = "+" + (digits.length === 10 ? "1" + digits : digits);
+        const { data: existingSub } = await supabase.from("sms_subscribers").select("phone").eq("phone", e164).maybeSingle();
         await supabase.from("sms_subscribers").upsert(
           { phone: e164, name: (session.metadata ?? {}).customer_name || "", source: "order", opted_in_at: new Date().toISOString(), active: true },
           { onConflict: "phone" }
         );
+        // Only send confirmation to new subscribers (not existing ones re-opting in)
+        if (!existingSub) await sendOptInConfirmation(e164);
       }
       // Fire internal + customer notification for pre-saved orders (menu & catering)
       const { data: savedOrder } = await supabase
@@ -217,10 +242,13 @@ export async function POST(req: NextRequest) {
       if (meta.sms_opted_in === "true" && meta.customer_phone) {
         const digits = meta.customer_phone.replace(/\D/g, "");
         const e164 = "+" + (digits.length === 10 ? "1" + digits : digits);
+        const { data: existingSub } = await supabase.from("sms_subscribers").select("phone").eq("phone", e164).maybeSingle();
         await supabase.from("sms_subscribers").upsert(
           { phone: e164, name: meta.customer_name || "", source: "order", opted_in_at: new Date().toISOString(), active: true },
           { onConflict: "phone" }
         );
+        // Only send confirmation to new subscribers (not existing ones re-opting in)
+        if (!existingSub) await sendOptInConfirmation(e164);
       }
 
       // Decrement quantity remaining
