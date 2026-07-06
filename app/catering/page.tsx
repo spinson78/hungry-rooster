@@ -157,8 +157,8 @@ export default function CateringPage() {
   const [modalLbs, setModalLbs] = useState(2);
 
   // Forms
-  const [pkgForm, setPkgForm] = useState({ name: "", phone: "", email: "", recipient_name: "", recipient_phone: "", different_contact: false, address: "", address_city: "", event_date: "", special_requests: "" });
-  const [alcForm, setAlcForm] = useState({ name: "", phone: "", email: "", recipient_name: "", recipient_phone: "", different_contact: false, address: "", address_city: "", event_date: "", special_requests: "" });
+  const [pkgForm, setPkgForm] = useState({ name: "", phone: "", email: "", recipient_name: "", recipient_phone: "", different_contact: false, address: "", address_city: "", event_date: "", drop_off_time: "", special_requests: "" });
+  const [alcForm, setAlcForm] = useState({ name: "", phone: "", email: "", recipient_name: "", recipient_phone: "", different_contact: false, address: "", address_city: "", event_date: "", drop_off_time: "", special_requests: "" });
   const [quoteForm, setQuoteForm] = useState({ name: "", phone: "", email: "", event_date: "", headcount: "", event_type: "", location: "", budget: "", notes: "" });
 
   const [pkgFulfillment, setPkgFulfillment] = useState<"pickup" | "delivery">("delivery");
@@ -331,7 +331,8 @@ export default function CateringPage() {
     const pkgRecipientNote = pkgForm.different_contact && pkgForm.recipient_name
       ? `Event Contact: ${pkgForm.recipient_name}${pkgForm.recipient_phone ? " / " + pkgForm.recipient_phone : ""}`
       : "";
-    const pkgFinalRequests = [pkgRecipientNote, pkgForm.special_requests].filter(Boolean).join(" · ");
+    const pkgTimeNote = pkgForm.drop_off_time ? `Drop-off time: ${pkgForm.drop_off_time}` : "";
+    const pkgFinalRequests = [pkgTimeNote, pkgRecipientNote, pkgForm.special_requests].filter(Boolean).join(" · ");
     const items = pkgCart.map(e => {
       const choicesSummary = Object.entries(e.choices).map(([k, v]) => `${e.pkg.choices.find(c => c.key === k)?.label}: ${v}`);
       return { name: e.pkg.name, category: e.pkg.category, size: e.size.label, price: e.size.price, qty: e.qty, includes: e.pkg.items, choices: choicesSummary };
@@ -377,7 +378,8 @@ export default function CateringPage() {
     const alcRecipientNote = alcForm.different_contact && alcForm.recipient_name
       ? `Event Contact: ${alcForm.recipient_name}${alcForm.recipient_phone ? " / " + alcForm.recipient_phone : ""}`
       : "";
-    const alcFinalRequests = [alcRecipientNote, alcForm.special_requests].filter(Boolean).join(" · ");
+    const alcTimeNote = alcForm.drop_off_time ? `Drop-off time: ${alcForm.drop_off_time}` : "";
+    const alcFinalRequests = [alcTimeNote, alcRecipientNote, alcForm.special_requests].filter(Boolean).join(" · ");
     const res = await fetch("/api/catering-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -621,7 +623,10 @@ export default function CateringPage() {
                         {!checkingPkgDeliv && pkgDelivErr && <p className="text-red-400 text-xs">✗ {pkgDelivErr}</p>}
                       </div>
                     )}
-                    <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice)</span></label><input type="date" min={getMinDate(24)} value={pkgForm.event_date} onChange={e => setPkgForm({ ...pkgForm, event_date: e.target.value })} className={inputCls()} /></div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice)</span></label><input type="date" min={getMinDate(24)} value={pkgForm.event_date} onChange={e => setPkgForm({ ...pkgForm, event_date: e.target.value })} className={inputCls()} /></div>
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Drop-off Time *</label><input type="time" value={pkgForm.drop_off_time} onChange={e => setPkgForm({ ...pkgForm, drop_off_time: e.target.value })} className={inputCls()} /></div>
+                    </div>
                     <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, setup notes, gate codes..." value={pkgForm.special_requests} onChange={e => setPkgForm({ ...pkgForm, special_requests: e.target.value })} className={`${inputCls()} resize-none h-20`} /></div>
                   </div>
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
@@ -829,7 +834,10 @@ export default function CateringPage() {
                     {!checkingAlcDeliv && alcDelivErr && <p className="text-red-400 text-xs">✗ {alcDelivErr}</p>}
                   </div>
                 )}
-                <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice required)</span></label><input type="date" min={getMinDate(24)} value={alcForm.event_date} onChange={e => setAlcForm({ ...alcForm, event_date: e.target.value })} className={inputCls()} /></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice)</span></label><input type="date" min={getMinDate(24)} value={alcForm.event_date} onChange={e => setAlcForm({ ...alcForm, event_date: e.target.value })} className={inputCls()} /></div>
+                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Drop-off Time *</label><input type="time" value={alcForm.drop_off_time} onChange={e => setAlcForm({ ...alcForm, drop_off_time: e.target.value })} className={inputCls()} /></div>
+                </div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, setup notes, gate codes..." value={alcForm.special_requests} onChange={e => setAlcForm({ ...alcForm, special_requests: e.target.value })} className={`${inputCls()} resize-none h-20`} /></div>
               </div>
               {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
