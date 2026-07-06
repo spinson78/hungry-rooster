@@ -652,7 +652,11 @@ export default function AdminPage() {
                 )}
                 {order.status !== "complete" && (
                   <button
-                    onClick={() => markOrderComplete(order.id, clearType)}
+                    onClick={() => {
+                      if (window.confirm(`Mark ${order.customer_name}'s order as complete?`)) {
+                        markOrderComplete(order.id, clearType);
+                      }
+                    }}
                     className="text-green-400 hover:text-green-300 font-bold text-sm border border-green-400/30 px-4 py-2 rounded-full transition-colors"
                   >
                     ✓ Mark Complete
@@ -1179,6 +1183,7 @@ export default function AdminPage() {
                     {o.status !== "complete" && (
                       <button
                         onClick={async () => {
+                          if (!window.confirm(`Mark ${o.person_name}'s group order as complete?`)) return;
                           await supabase.from("group_orders").update({ status: "complete" }).eq("id", o.id);
                           setGroupOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: "complete" } : x));
                         }}
