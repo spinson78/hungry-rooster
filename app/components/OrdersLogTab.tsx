@@ -44,7 +44,7 @@ const ORDER_TYPES = ["all", "menu", "dinner", "shabbat", "bakery", "catering"];
 const STATUSES = ["all", "pending", "in_progress", "complete", "cancelled", "paid", "pending_payment"];
 
 const TYPE_LABELS: Record<string, string> = {
-  menu: "Walk-in / Delivery",
+  menu: "Online Order",
   dinner: "Dinner Drop",
   shabbat: "Shabbat",
   bakery: "Bakery",

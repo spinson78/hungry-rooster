@@ -139,10 +139,19 @@ function OrderCard({
   return (
     <div className={`rounded-2xl border-2 p-3 flex flex-col gap-2 transition-all ${
       isCompleted ? "border-zinc-700 bg-zinc-900/60 opacity-70" :
+      order.fulfillment_type === "delivery" && !isCompleted ? (urgent ? "border-red-500 bg-red-500/10" : "border-blue-500 bg-blue-500/5") :
       isNew ? (urgent ? "border-red-500 bg-red-500/10" : "border-yellow-400 bg-yellow-400/5") :
       isStarted ? (allItemsDone ? "border-green-500 bg-green-500/10" : "border-teal-500 bg-teal-500/5") :
       "border-zinc-700 bg-zinc-900"
     }`}>
+
+      {/* Delivery banner — top of card so it's impossible to miss */}
+      {order.fulfillment_type === "delivery" && !isCompleted && order.customer_address && order.customer_address !== "Pickup" && (
+        <div className="bg-blue-600 rounded-xl px-3 py-2 -mx-0 flex items-center gap-2">
+          <span className="text-white font-black text-sm">🚗 DELIVERY</span>
+          <span className="text-blue-100 text-xs font-bold truncate">{order.customer_address}</span>
+        </div>
+      )}
 
       {scheduledLabel && (
         <div className="bg-yellow-400/20 text-yellow-300 text-xs font-black px-2 py-0.5 rounded-full inline-block self-start">
@@ -556,13 +565,15 @@ export default function KDSPage() {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
             <span style={{ fontWeight: "bold", fontSize: "13px" }}>{printOrder.customer_name}</span>
-            <span style={{ fontSize: "10px", textTransform: "uppercase" }}>{printOrder.order_type === "menu" ? "Walk-in" : printOrder.order_type}</span>
+            <span style={{ fontSize: "10px", textTransform: "uppercase", fontWeight: "bold", color: printOrder.fulfillment_type === "delivery" ? "#1d4ed8" : "#000" }}>
+              {printOrder.fulfillment_type === "delivery" ? "🚗 DELIVERY" : (printOrder.order_type === "menu" ? "Walk-in" : printOrder.order_type)}
+            </span>
           </div>
           {printOrder.customer_phone && <p style={{ fontSize: "10px" }}>{printOrder.customer_phone}</p>}
           {printOrder.fulfillment_type === "delivery" && printOrder.customer_address && printOrder.customer_address !== "Pickup" && (
             <>
-              <p style={{ fontWeight: "bold", fontSize: "11px", marginTop: "3px" }}>🚗 DELIVER TO:</p>
-              <p style={{ fontSize: "11px" }}>{printOrder.customer_address}</p>
+              <p style={{ fontWeight: "bold", fontSize: "12px", marginTop: "4px", borderTop: "2px solid #1d4ed8", paddingTop: "4px" }}>🚗 DELIVER TO:</p>
+              <p style={{ fontSize: "12px", fontWeight: "bold" }}>{printOrder.customer_address}</p>
             </>
           )}
           <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
