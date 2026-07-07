@@ -8,7 +8,21 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+function isBusinessHours(): boolean {
+  // Mon–Fri, 9am–2pm Dallas (America/Chicago)
+  const dallas = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const day = dallas.getDay(); // 0=Sun, 6=Sat
+  const mins = dallas.getHours() * 60 + dallas.getMinutes();
+  return day >= 1 && day <= 5 && mins >= 9 * 60 && mins < 14 * 60;
+}
+
 export async function POST(req: NextRequest) {
+  if (!isBusinessHours()) {
+    return NextResponse.json(
+      { error: "Online ordering is only available Mon–Fri, 9 am – 2 pm (Central Time)." },
+      { status: 403 }
+    );
+  }
   const body = await req.json();
   const {
     customer_name, customer_email, customer_phone,

@@ -225,6 +225,19 @@ type MenuItem = {
   sizes?: { label: string; price: number }[];
 };
 
+function getDallasBusinessStatus() {
+  const now = new Date();
+  // Dallas = Central Time (America/Chicago)
+  const dallas = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const day = dallas.getDay(); // 0=Sun, 1=Mon … 5=Fri, 6=Sat
+  const mins = dallas.getHours() * 60 + dallas.getMinutes();
+  const isWeekday = day >= 1 && day <= 5;
+  if (!isWeekday) return { open: false, msg: "Online ordering is available Mon–Fri, 9 am – 2 pm. We're closed on weekends." };
+  if (mins < 9 * 60)  return { open: false, msg: "We open at 9 am today. Online ordering will be available then." };
+  if (mins >= 14 * 60) return { open: false, msg: "Online ordering has closed for today (2 pm cutoff). We'll be back tomorrow at 9 am!" };
+  return { open: true, msg: "" };
+}
+
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState("Breakfast");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -266,6 +279,7 @@ export default function MenuPage() {
   const [giftCodeMsg, setGiftCodeMsg] = useState("");
   const [giftCodeErr, setGiftCodeErr] = useState("");
   const [checkingGift, setCheckingGift] = useState(false);
+  const [bizStatus, setBizStatus] = useState(() => getDallasBusinessStatus());
 
   const categories = Object.keys(menu);
 
@@ -367,6 +381,13 @@ export default function MenuPage() {
     }
     setCheckingDelivery(false);
   };
+
+  // Refresh business-hours status every minute
+  useEffect(() => {
+    setBizStatus(getDallasBusinessStatus());
+    const t = setInterval(() => setBizStatus(getDallasBusinessStatus()), 60000);
+    return () => clearInterval(t);
+  }, []);
 
   // Auto-calculate delivery fee whenever both address fields are populated.
   // Fires on typing, paste, AND browser autofill — no manual blur needed.
@@ -972,10 +993,21 @@ export default function MenuPage() {
             {fulfillment === "delivery" && deliveryFeeErr && (
               <p className="text-red-400 text-xs mb-3">✗ {deliveryFeeErr}</p>
             )}
+
+            {/* Closed banner — shows when outside Mon–Fri 9am–2pm CT */}
+            {!bizStatus.open && (
+              <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 mb-3 text-center">
+                <p className="text-white font-black text-sm mb-1">🕑 Kitchen is Closed</p>
+                <p className="text-zinc-400 text-xs">{bizStatus.msg}</p>
+                <p className="text-zinc-500 text-xs mt-1">Hours: Mon–Fri · 9 am – 2 pm</p>
+              </div>
+            )}
+
             <button
               onClick={submitOrder}
               disabled={
                 submitting ||
+                !bizStatus.open ||
                 !checkoutName.trim() ||
                 (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) ||
                 (fulfillment === "delivery" && !!deliveryFeeErr) ||
@@ -983,7 +1015,7 @@ export default function MenuPage() {
               }
               className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors disabled:opacity-50"
             >
-              {checkingDelivery ? "Checking delivery..." : submitting ? "Placing order..." : `Place Order — $${cartTotal.toFixed(2)}`}
+              {!bizStatus.open ? "Kitchen is Closed" : checkingDelivery ? "Checking delivery..." : submitting ? "Placing order..." : `Place Order — $${cartTotal.toFixed(2)}`}
             </button>
           </div>
         </div>

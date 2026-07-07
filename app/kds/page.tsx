@@ -298,6 +298,7 @@ export default function KDSPage() {
   const [qNotes, setQNotes] = useState("");
   const [qSubmitting, setQSubmitting] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [connectionError, setConnectionError] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [muted, setMuted] = useState(false);
   const knownOrderIds = useRef<Set<string>>(new Set());
@@ -319,8 +320,10 @@ export default function KDSPage() {
     // If Supabase returns an error (outage, network issue), don't update display
     if (error) {
       console.error("KDS fetch error:", error.message);
+      setConnectionError(true);
       return;
     }
+    setConnectionError(false);
     const all = (data as Order[]) || [];
 
     // Only surface orders that are ASAP or within 20 min of their scheduled time
@@ -429,6 +432,20 @@ export default function KDSPage() {
           </button>
         </div>
       </div>
+
+      {/* Connection error banner */}
+      {connectionError && (
+        <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-xl px-4 py-3 mb-4 flex items-center gap-3">
+          <span className="text-yellow-400 text-xl">⚠️</span>
+          <div>
+            <p className="text-yellow-400 font-black text-sm">Database connection issue — retrying…</p>
+            <p className="text-yellow-300/70 text-xs">Orders shown are your last known state. New orders may be delayed.</p>
+          </div>
+          <button onClick={fetchOrders} className="ml-auto text-xs font-black text-yellow-400 hover:text-yellow-300 border border-yellow-500/40 px-3 py-1.5 rounded-full transition-colors">
+            Retry Now
+          </button>
+        </div>
+      )}
 
       {/* Active Orders */}
       {active.length === 0 && completed.length === 0 ? (
