@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-square-hmacsha256-signature") || "";
   const webhookKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY || "";
 
-  // Verify signature if key is configured
+  // Verify signature — use the actual request URL so it always matches Square's
+  // notification_url exactly, regardless of env var settings
   if (webhookKey && signature) {
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com"}/api/square-webhook`;
-    if (!verifySignature(body, signature, webhookKey, url)) {
-      console.error("Square webhook: invalid signature");
+    const webhookUrl = new URL(req.url).origin + "/api/square-webhook";
+    if (!verifySignature(body, signature, webhookKey, webhookUrl)) {
+      console.error("Square webhook: invalid signature, url used:", webhookUrl);
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
   }
@@ -46,10 +47,47 @@ export async function POST(req: NextRequest) {
   }
 
   const eventData = event.data as Record<string, unknown> | undefined;
-  const orderObj = (eventData?.object as Record<string, unknown> | undefined)?.order as Record<string, unknown> | undefined;
+  // Square's order.created webhook only sends the order_id, not the full order.
+  // We grab the ID from event.data.id (most reliable) and fetch the full order via API.
+  const squareOrderId = (eventData?.id as string) ||
+    ((eventData?.object as Record<string, unknown> | undefined)?.order as Record<string, unknown> | undefined)?.id as string;
 
-  if (!orderObj) {
+  if (!squareOrderId) {
+    console.error("Square webhook: no order ID found in payload");
     return NextResponse.json({ received: true });
+  }
+
+  // Idempotency check first — before any API calls
+  const { data: existing } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("stripe_session_id", `square_${squareOrderId}`)
+    .maybeSingle();
+
+  if (existing) {
+    console.log(`Square order ${squareOrderId} already recorded — skipping`);
+    return NextResponse.json({ received: true });
+  }
+
+  // Fetch the full order from Square's API
+  const accessToken = process.env.SQUARE_ACCESS_TOKEN || "";
+  let orderObj: Record<string, unknown> = { id: squareOrderId };
+
+  if (accessToken) {
+    try {
+      const squareRes = await fetch(
+        `https://connect.squareup.com/v2/orders/${squareOrderId}`,
+        { headers: { "Authorization": `Bearer ${accessToken}`, "Square-Version": "2024-01-18" } }
+      );
+      if (squareRes.ok) {
+        const squareData = await squareRes.json();
+        orderObj = squareData.order || orderObj;
+      } else {
+        console.error("Square API error:", squareRes.status, await squareRes.text());
+      }
+    } catch (err) {
+      console.error("Square API fetch failed:", err);
+    }
   }
 
   // Determine if this is a DoorDash or Uber Eats order
@@ -62,20 +100,7 @@ export async function POST(req: NextRequest) {
     orderType = "ubereats";
   } else {
     // Not a delivery app order — ignore (Square POS orders go through existing flow)
-    return NextResponse.json({ received: true });
-  }
-
-  const squareOrderId = orderObj.id as string;
-
-  // Idempotency — use stripe_session_id field to store Square order ID
-  const { data: existing } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("stripe_session_id", `square_${squareOrderId}`)
-    .maybeSingle();
-
-  if (existing) {
-    console.log(`Square order ${squareOrderId} already recorded — skipping`);
+    console.log(`Square order ${squareOrderId} source "${sourceName}" — not a delivery app order, skipping`);
     return NextResponse.json({ received: true });
   }
 
@@ -88,15 +113,15 @@ export async function POST(req: NextRequest) {
   }));
 
   // Parse totals
-  const total    = ((orderObj.total_money    as Record<string, number> | undefined)?.amount || 0) / 100;
-  const subtotal = ((orderObj.total_money    as Record<string, number> | undefined)?.amount || 0) / 100;
-  const taxAmt   = ((orderObj.total_tax_money as Record<string, number> | undefined)?.amount || 0) / 100;
-  const tipAmt   = ((orderObj.total_tip_money as Record<string, number> | undefined)?.amount || 0) / 100;
+  const total    = ((orderObj.total_money     as Record<string, number> | undefined)?.amount || 0) / 100;
+  const subtotal = ((orderObj.net_amount_due_money as Record<string, number> | undefined)?.amount || total * 100) / 100;
+  const taxAmt   = ((orderObj.total_tax_money  as Record<string, number> | undefined)?.amount || 0) / 100;
+  const tipAmt   = ((orderObj.total_tip_money  as Record<string, number> | undefined)?.amount || 0) / 100;
 
   // Get customer name from fulfillment details
   const fulfillments = (orderObj.fulfillments as Array<Record<string, unknown>> | undefined) || [];
   const fulfillment  = fulfillments[0] as Record<string, unknown> | undefined;
-  const pickupRecipient   = (fulfillment?.pickup_details   as Record<string, unknown> | undefined)?.recipient   as Record<string, string> | undefined;
+  const pickupRecipient   = (fulfillment?.pickup_details   as Record<string, unknown> | undefined)?.recipient as Record<string, string> | undefined;
   const deliveryRecipient = (fulfillment?.delivery_details as Record<string, unknown> | undefined)?.recipient as Record<string, string> | undefined;
   const customerName = pickupRecipient?.display_name || deliveryRecipient?.display_name
     || (orderType === "doordash" ? "DoorDash Order" : "Uber Eats Order");
