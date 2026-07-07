@@ -118,13 +118,30 @@ export async function POST(req: NextRequest) {
   const taxAmt   = ((orderObj.total_tax_money  as Record<string, number> | undefined)?.amount || 0) / 100;
   const tipAmt   = ((orderObj.total_tip_money  as Record<string, number> | undefined)?.amount || 0) / 100;
 
-  // Get customer name from fulfillment details
+  // Get customer name and delivery address from fulfillment details
   const fulfillments = (orderObj.fulfillments as Array<Record<string, unknown>> | undefined) || [];
   const fulfillment  = fulfillments[0] as Record<string, unknown> | undefined;
-  const pickupRecipient   = (fulfillment?.pickup_details   as Record<string, unknown> | undefined)?.recipient as Record<string, string> | undefined;
-  const deliveryRecipient = (fulfillment?.delivery_details as Record<string, unknown> | undefined)?.recipient as Record<string, string> | undefined;
-  const customerName = pickupRecipient?.display_name || deliveryRecipient?.display_name
+  const pickupDetails   = fulfillment?.pickup_details   as Record<string, unknown> | undefined;
+  const deliveryDetails = fulfillment?.delivery_details as Record<string, unknown> | undefined;
+  const pickupRecipient   = pickupDetails?.recipient   as Record<string, unknown> | undefined;
+  const deliveryRecipient = deliveryDetails?.recipient as Record<string, unknown> | undefined;
+  const customerName = (pickupRecipient?.display_name as string) || (deliveryRecipient?.display_name as string)
     || (orderType === "doordash" ? "DoorDash Order" : "Uber Eats Order");
+
+  // Extract delivery address from fulfillment
+  const addrObj = (deliveryDetails?.deliver_to_address || deliveryRecipient?.address || pickupDetails?.location_address) as Record<string, string> | undefined;
+  let customerAddress = "Via Delivery App";
+  if (addrObj?.address_line_1) {
+    const parts = [
+      addrObj.address_line_1,
+      addrObj.address_line_2,
+      addrObj.locality,
+      addrObj.administrative_district_level_1,
+      addrObj.postal_code,
+    ].filter(Boolean);
+    customerAddress = parts.join(", ");
+  }
+  const customerPhone = (deliveryRecipient?.phone_number as string) || (pickupRecipient?.phone_number as string) || "";
 
   // Pull any order-level note
   const note = (orderObj.metadata as Record<string, string> | undefined)?.note || "";
@@ -137,8 +154,8 @@ export async function POST(req: NextRequest) {
     menu_id:           null,
     customer_name:     customerName,
     customer_email:    "",
-    customer_phone:    "",
-    customer_address:  "Via Delivery App",
+    customer_phone:    customerPhone,
+    customer_address:  customerAddress,
     special_requests:  note,
     sms_opted_in:      false,
     items,
