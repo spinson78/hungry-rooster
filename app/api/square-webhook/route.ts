@@ -104,13 +104,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  // Parse line items
+  // Parse line items — combine name + variation, include modifiers
   const lineItems = (orderObj.line_items as Array<Record<string, unknown>> | undefined) || [];
-  const items = lineItems.map((item) => ({
-    name: (item.name as string) || (item.variation_name as string) || "Item",
-    qty: parseInt((item.quantity as string) || "1", 10),
-    price: ((item.base_price_money as Record<string, number> | undefined)?.amount || 0) / 100,
-  }));
+  const items = lineItems.map((item) => {
+    const baseName  = (item.name as string) || "Item";
+    const variation = (item.variation_name as string) || "";
+    // Append variation only if it adds info (e.g. "3 Piece", "Large")
+    const fullName  = variation && !baseName.toLowerCase().includes(variation.toLowerCase())
+      ? `${baseName} (${variation})`
+      : baseName;
+    // Collect modifier names (sauces, add-ons, special instructions)
+    const modifiers = (item.modifiers as Array<Record<string, unknown>> | undefined) || [];
+    const modNames  = modifiers.map(m => (m.name as string) || "").filter(Boolean).join(", ");
+    return {
+      name:  fullName,
+      qty:   parseInt((item.quantity as string) || "1", 10),
+      price: ((item.base_price_money as Record<string, number> | undefined)?.amount || 0) / 100,
+      mods:  modNames || undefined,
+    };
+  });
 
   // Parse totals
   const total    = ((orderObj.total_money     as Record<string, number> | undefined)?.amount || 0) / 100;
