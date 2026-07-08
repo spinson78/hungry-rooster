@@ -914,20 +914,31 @@ export default function MenuPage() {
                   ))}
                 </div>
                 {scheduleType === "scheduled" && (
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={scheduledDate}
-                      onChange={e => setScheduledDate(e.target.value)}
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
-                    />
-                    <input
-                      type="time"
-                      value={scheduledTime}
-                      onChange={e => setScheduledTime(e.target.value)}
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
-                    />
+                  <div className="flex gap-2 flex-col">
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        min={new Date().toISOString().split("T")[0]}
+                        value={scheduledDate}
+                        onChange={e => {
+                          const d = new Date(e.target.value + "T12:00:00");
+                          const day = d.getDay();
+                          if (day === 0 || day === 6) {
+                            setScheduledDate("");
+                          } else {
+                            setScheduledDate(e.target.value);
+                          }
+                        }}
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
+                      />
+                      <input
+                        type="time"
+                        value={scheduledTime}
+                        onChange={e => setScheduledTime(e.target.value)}
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
+                      />
+                    </div>
+                    <p className="text-zinc-500 text-xs">Mon–Fri only · We are closed on weekends</p>
                   </div>
                 )}
               </div>

@@ -26,6 +26,17 @@ export async function POST(req: NextRequest) {
     tip,
   } = body;
 
+  // Block weekend event dates for package and alacarte catering
+  if (event_date && (flow_type === "package" || flow_type === "alacarte")) {
+    const day = new Date(event_date + "T12:00:00").getDay();
+    if (day === 0 || day === 6) {
+      return NextResponse.json(
+        { error: "We are not available on weekends. Please choose a Monday–Friday event date." },
+        { status: 400 }
+      );
+    }
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com";
   const taxCents = Math.round(subtotal * TAX_RATE * 100);
   const taxAmount = taxCents / 100;

@@ -24,6 +24,17 @@ export async function POST(req: NextRequest) {
     );
   }
   const body = await req.json();
+
+  // Block scheduled orders targeting a weekend date
+  if (body.scheduled_for) {
+    const scheduledDay = new Date(body.scheduled_for).getDay();
+    if (scheduledDay === 0 || scheduledDay === 6) {
+      return NextResponse.json(
+        { error: "We are not open on weekends. Please choose a Monday–Friday date." },
+        { status: 400 }
+      );
+    }
+  }
   const {
     customer_name, customer_email, customer_phone,
     customer_address, special_requests, fulfillment_type,

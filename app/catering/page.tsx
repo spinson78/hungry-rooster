@@ -129,6 +129,12 @@ const getMinDate = (hours: number) => {
   return d.toISOString().split("T")[0];
 };
 
+const isWeekend = (dateStr: string): boolean => {
+  if (!dateStr) return false;
+  const day = new Date(dateStr + "T12:00:00").getDay();
+  return day === 0 || day === 6;
+};
+
 export default function CateringPage() {
   const [flow, setFlow] = useState<Flow>("choose");
 
@@ -321,6 +327,7 @@ export default function CateringPage() {
   const handlePkgSubmit = async () => {
     const needsAddress = pkgFulfillment === "delivery";
     if (!pkgForm.name || !pkgForm.phone || !pkgForm.event_date || pkgCart.length === 0) { setError("Please fill in all required fields and add at least one package."); return; }
+    if (isWeekend(pkgForm.event_date)) { setError("We are not available on weekends. Please choose a Monday–Friday event date."); return; }
     if (needsAddress && (!pkgForm.address || !pkgForm.address_city)) { setError("Please enter your delivery address."); return; }
     if (needsAddress && pkgDelivErr) { setError(pkgDelivErr); return; }
     setSubmitting(true); setError("");
@@ -368,6 +375,7 @@ export default function CateringPage() {
   const handleAlcSubmit = async () => {
     const needsAddress = alcFulfillment === "delivery";
     if (!alcForm.name || !alcForm.phone || !alcForm.event_date) { setError("Please fill in all required fields."); return; }
+    if (isWeekend(alcForm.event_date)) { setError("We are not available on weekends. Please choose a Monday–Friday event date."); return; }
     if (needsAddress && (!alcForm.address || !alcForm.address_city)) { setError("Please enter your delivery address."); return; }
     if (needsAddress && alcDelivErr) { setError(alcDelivErr); return; }
     setSubmitting(true); setError("");
@@ -391,7 +399,14 @@ export default function CateringPage() {
         customer_address: fullAlcAddress,
         event_date: alcForm.event_date,
         special_requests: alcFinalRequests,
-        items: cart,
+        items: cart.map(e => ({
+          name: [e.itemName, e.size, e.serving ? `(${e.serving})` : ""].filter(Boolean).join(" — "),
+          qty: e.qty,
+          price: e.price,
+          size: e.size,
+          serving: e.serving,
+          mods: Object.values(e.options || {}).filter(Boolean).join(", ") || undefined,
+        })),
         subtotal: cartSubtotal,
         delivery_fee: delivFee,
         delivery_distance_miles: needsAddress ? (alcDelivDist ?? 0) : 0,
@@ -624,7 +639,7 @@ export default function CateringPage() {
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice)</span></label><input type="date" min={getMinDate(24)} value={pkgForm.event_date} onChange={e => setPkgForm({ ...pkgForm, event_date: e.target.value })} className={inputCls()} /></div>
+                      <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(Mon–Fri only · 24hr notice)</span></label><input type="date" min={getMinDate(24)} value={pkgForm.event_date} onChange={e => { if (isWeekend(e.target.value)) { setError("We are not available on weekends. Please choose a Monday–Friday date."); setPkgForm({ ...pkgForm, event_date: "" }); } else { setError(""); setPkgForm({ ...pkgForm, event_date: e.target.value }); } }} className={inputCls()} /></div>
                       <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Drop-off Time *</label><input type="time" value={pkgForm.drop_off_time} onChange={e => setPkgForm({ ...pkgForm, drop_off_time: e.target.value })} className={inputCls()} /></div>
                     </div>
                     <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, setup notes, gate codes..." value={pkgForm.special_requests} onChange={e => setPkgForm({ ...pkgForm, special_requests: e.target.value })} className={`${inputCls()} resize-none h-20`} /></div>
@@ -835,7 +850,7 @@ export default function CateringPage() {
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(24-hour notice)</span></label><input type="date" min={getMinDate(24)} value={alcForm.event_date} onChange={e => setAlcForm({ ...alcForm, event_date: e.target.value })} className={inputCls()} /></div>
+                  <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Event Date * <span className="text-zinc-500 normal-case font-normal">(Mon–Fri only · 24hr notice)</span></label><input type="date" min={getMinDate(24)} value={alcForm.event_date} onChange={e => { if (isWeekend(e.target.value)) { setError("We are not available on weekends. Please choose a Monday–Friday date."); setAlcForm({ ...alcForm, event_date: "" }); } else { setError(""); setAlcForm({ ...alcForm, event_date: e.target.value }); } }} className={inputCls()} /></div>
                   <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Drop-off Time *</label><input type="time" value={alcForm.drop_off_time} onChange={e => setAlcForm({ ...alcForm, drop_off_time: e.target.value })} className={inputCls()} /></div>
                 </div>
                 <div><label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Special Requests</label><textarea placeholder="Allergies, setup notes, gate codes..." value={alcForm.special_requests} onChange={e => setAlcForm({ ...alcForm, special_requests: e.target.value })} className={`${inputCls()} resize-none h-20`} /></div>

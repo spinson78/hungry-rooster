@@ -218,8 +218,8 @@ function OrderCard({
             >
               <p className={`text-sm font-black transition-colors ${done ? "text-green-400 line-through" : "text-white"}`}>
                 {item.qty > 1 && <span className={done ? "text-green-400" : "text-yellow-400"}>{item.qty}× </span>}
-                {item.name}
-                {item.size && <span className="text-zinc-400 text-xs font-normal"> — {item.size}</span>}
+                {(item.name as string) || (item as unknown as Record<string, string>).itemName}
+                {item.size && !(item.name as string || "").includes(item.size) && <span className="text-zinc-400 text-xs font-normal"> — {item.size}</span>}
                 {done && <span className="text-green-400 text-base ml-2">✓</span>}
               </p>
               {item.addons && item.addons.length > 0 && (
@@ -596,7 +596,7 @@ export default function KDSPage() {
           <hr style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
           {printOrder.items.map((item, i) => (
             <div key={i} style={{ marginBottom: "7px" }}>
-              <p style={{ fontWeight: "bold", fontSize: "13px" }}>{item.qty > 1 ? `${item.qty}x ` : ""}{item.name}{item.size ? ` (${item.size})` : ""}</p>
+              <p style={{ fontWeight: "bold", fontSize: "13px" }}>{item.qty > 1 ? `${item.qty}x ` : ""}{(item.name as string) || (item as unknown as Record<string, string>).itemName}{item.size && !((item.name as string) || "").includes(item.size) ? ` (${item.size})` : ""}</p>
               {item.addons && item.addons.length > 0 && <p style={{ fontSize: "11px", paddingLeft: "10px" }}>+ {item.addons.join(", ")}</p>}
               {item.mods && <p style={{ fontSize: "11px", fontWeight: "bold", paddingLeft: "10px" }}>** MOD: {item.mods}</p>}
               {item.protein && <p style={{ fontSize: "11px", paddingLeft: "10px" }}>{[item.protein, item.side1, item.side2, item.extra].filter(Boolean).join(" / ")}</p>}
