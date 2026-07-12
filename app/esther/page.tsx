@@ -28,6 +28,7 @@ const SHABBAT_ADDONS = [
   { name: "Chicken Nuggets", price: 28, description: "Crispy chicken nuggets" },
   { name: "Bourekas", price: 18, description: "Freshly baked bourekas" },
   { name: "Classic Egg Challah", price: 6.50, description: "Freshly baked classic egg challah" },
+  { name: "8 oz Caesar Dressing", price: 6.50, description: "House Caesar dressing, 8 oz" },
 ];
 
 export default function EstherPage() {

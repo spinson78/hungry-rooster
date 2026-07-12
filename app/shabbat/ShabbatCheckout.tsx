@@ -49,6 +49,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     chicken: { selected: false },
     nuggets: { selected: false },
     boureka: { selected: false },
+    caesar:  { selected: false },
   });
 
   const [form, setForm] = useState({
@@ -103,6 +104,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     if (addons.chicken.selected)  total += 36;
     if (addons.nuggets.selected)  total += 28;
     if (addons.boureka.selected)  total += 18;
+    if (addons.caesar.selected)   total += 6.50;
     return total;
   };
 
@@ -116,6 +118,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     if (addons.chicken.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "6pc Grilled Chicken", description: "6 pieces grilled chicken" }, unit_amount: 3600 }, quantity: 1 });
     if (addons.nuggets.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "30pc Chicken Nuggets", description: "30 piece chicken nuggets" }, unit_amount: 2800 }, quantity: 1 });
     if (addons.boureka.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "Boureka Box", description: "4 large Potato & Onion Bourekas" }, unit_amount: 1800 }, quantity: 1 });
+    if (addons.caesar.selected)   items.push({ price_data: { currency: "usd", product_data: { name: "8 oz Caesar Dressing", description: "House Caesar dressing, 8 oz" }, unit_amount: 650 }, quantity: 1 });
     if (bakeryMenu) {
       bakeryMenu.items.filter(i => selectedBakery[i.name]).forEach(i => {
         items.push({ price_data: { currency: "usd", product_data: { name: `🥐 ${i.name}`, description: i.description || "Esther's Friday Bakery" }, unit_amount: Math.round(i.price * 100) }, quantity: 1 });
@@ -135,6 +138,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
       ...(addons.chicken.selected ? [{ name: "6pc Grilled Chicken" }] : []),
       ...(addons.nuggets.selected ? [{ name: "30pc Chicken Nuggets" }] : []),
       ...(addons.boureka.selected ? [{ name: "Boureka Box — 4 large Potato & Onion Bourekas" }] : []),
+      ...(addons.caesar.selected  ? [{ name: "8 oz Caesar Dressing" }] : []),
       ...bakeryAddons,
     ];
   };
@@ -329,6 +333,14 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
                   <div><p className="font-bold text-sm">Boureka Box</p><p className="text-zinc-500 text-xs">4 large Potato &amp; Onion Bourekas</p></div>
                 </div>
                 <span className="text-zinc-400 text-sm">+$18</span>
+              </label>
+
+              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.caesar.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" checked={addons.caesar.selected} onChange={(e) => setAddons({ ...addons, caesar: { selected: e.target.checked } })} className="accent-yellow-400" />
+                  <div><p className="font-bold text-sm">8 oz Caesar Dressing</p><p className="text-zinc-500 text-xs">House Caesar dressing, 8 oz</p></div>
+                </div>
+                <span className="text-zinc-400 text-sm">+$6.50</span>
               </label>
 
             </div>
