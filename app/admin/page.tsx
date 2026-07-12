@@ -501,6 +501,7 @@ export default function AdminPage() {
         side1: shabbat.side1,
         side2: shabbat.side2,
         extra: shabbat.extra,
+        dessert: shabbat.dessert || null,
         quantity_available: shabbat.quantity,
         quantity_remaining: shabbat.quantity,
         is_active: true,

@@ -9,6 +9,7 @@ type ShabbatMenu = {
   side1: string;
   side2: string;
   extra: string;
+  dessert?: string | null;
   quantity_remaining: number;
   reveal_time: string;
   cutoff_time: string;
@@ -139,6 +140,7 @@ export default function ShabbatSection() {
                 <li><span className="text-yellow-400 font-bold">Side 1:</span> {menu.side1}</li>
                 <li><span className="text-yellow-400 font-bold">Side 2:</span> {menu.side2}</li>
                 <li><span className="text-yellow-400 font-bold">Side 3:</span> {menu.extra}</li>
+                {menu.dessert && <li><span className="text-yellow-400 font-bold">Dessert Add-on:</span> {menu.dessert} <span className="text-zinc-500 text-xs">(+$25)</span></li>}
               </ul>
               {menu.quantity_remaining === 0 ? (
                 <p className="text-red-500 font-black text-sm mb-4">SOLD OUT</p>

@@ -9,6 +9,7 @@ type ShabbatMenu = {
   side1: string;
   side2: string;
   extra: string;
+  dessert?: string | null;
   quantity_remaining: number;
   cutoff_time: string;
   is_active: boolean;
@@ -109,7 +110,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     const items: { price_data: { currency: string; product_data: { name: string; description: string }; unit_amount: number }; quantity: number }[] = [];
     items.push({ price_data: { currency: "usd", product_data: { name: `Shabbat Box — ${selectedSize.label}`, description: `${menu?.protein}, ${menu?.side1}, ${menu?.side2}, ${menu?.extra}` }, unit_amount: selectedSize.price * 100 }, quantity: 1 });
     if (addons.greens.selected)   items.push({ price_data: { currency: "usd", product_data: { name: `Certified Greens (${addons.greens.choice})`, description: "Choice of kale or romaine" }, unit_amount: 1500 }, quantity: 1 });
-    if (addons.dessert.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "Friday Night Dessert Add On", description: "Check socials for this week" }, unit_amount: 2500 }, quantity: 1 });
+    if (addons.dessert.selected)  items.push({ price_data: { currency: "usd", product_data: { name: menu?.dessert ? `Friday Night Dessert — ${menu.dessert}` : "Friday Night Dessert Add On", description: menu?.dessert || "Check socials for this week" }, unit_amount: 2500 }, quantity: 1 });
     if (addons.babka.selected)    items.push({ price_data: { currency: "usd", product_data: { name: `Signature Babka (${addons.babka.choice})`, description: "Chocolate or cinnamon" }, unit_amount: 1800 }, quantity: 1 });
     if (addons.salmon.selected)   items.push({ price_data: { currency: "usd", product_data: { name: "Roasted Salmon Add On (6 filets)", description: "6 x 6oz filets" }, unit_amount: 4800 }, quantity: 1 });
     if (addons.chicken.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "6pc Grilled Chicken", description: "6 pieces grilled chicken" }, unit_amount: 3600 }, quantity: 1 });
@@ -128,7 +129,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     return [
       { name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra },
       ...(addons.greens.selected  ? [{ name: `Certified Greens — ${addons.greens.choice}` }] : []),
-      ...(addons.dessert.selected ? [{ name: "Friday Night Dessert Add On" }] : []),
+      ...(addons.dessert.selected ? [{ name: menu?.dessert ? `Friday Night Dessert — ${menu.dessert}` : "Friday Night Dessert Add On" }] : []),
       ...(addons.babka.selected   ? [{ name: `Signature Babka — ${addons.babka.choice}` }] : []),
       ...(addons.salmon.selected  ? [{ name: "Roasted Salmon Add On (6 filets)" }] : []),
       ...(addons.chicken.selected ? [{ name: "6pc Grilled Chicken" }] : []),
@@ -274,7 +275,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
               <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.dessert.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
                 <div className="flex items-center gap-3">
                   <input type="checkbox" checked={addons.dessert.selected} onChange={(e) => setAddons({ ...addons, dessert: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">Friday Night Dessert</p><p className="text-zinc-500 text-xs">Check our socials for this week&apos;s dessert</p></div>
+                  <div><p className="font-bold text-sm">Friday Night Dessert{menu?.dessert ? ` — ${menu.dessert}` : ""}</p><p className="text-zinc-500 text-xs">{menu?.dessert ? "This week's featured dessert" : "Check our socials for this week's dessert"}</p></div>
                 </div>
                 <span className="text-zinc-400 text-sm">+$25</span>
               </label>
