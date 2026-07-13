@@ -29,7 +29,7 @@ const SIZES = [
 export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
   const [menu, setMenu] = useState<ShabbatMenu | null>(initialMenu ?? null);
   const [isOpen, setIsOpen] = useState(initialIsOpen ?? false);
-  const [loading, setLoading] = useState(!initialMenu);
+  const [loading, setLoading] = useState(false); // never block SSR — server always passes initialMenu or null
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showUpsell, setShowUpsell] = useState(false);

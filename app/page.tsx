@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import DinnerDropSection from "./components/DinnerDropSection";
 import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
 import JoinListSection from "./components/JoinListSection";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const jsonLd = {
   "@context": "https://schema.org",

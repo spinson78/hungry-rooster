@@ -22,7 +22,6 @@ export const metadata: Metadata = {
   authors: [{ name: "The Hungry Rooster" }],
   creator: "The Hungry Rooster",
   metadataBase: new URL("https://thehungryroostertx.com"),
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "en_US",
