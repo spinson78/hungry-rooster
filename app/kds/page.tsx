@@ -311,11 +311,15 @@ export default function KDSPage() {
   };
 
   const fetchOrders = useCallback(async () => {
+    // Only fetch orders from today (midnight Dallas time) — prevents stale orders from prior days appearing
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
     const { data, error } = await supabase
       .from("orders")
       .select("*")
       .in("status", ["pending", "in_progress", "complete"])
       .in("order_type", ["menu", "doordash", "ubereats", "phone"])
+      .gte("created_at", todayStart.toISOString())
       .order("created_at", { ascending: true });
     // If Supabase returns an error (outage, network issue), don't update display
     if (error) {
@@ -360,10 +364,13 @@ export default function KDSPage() {
 
   void now;
 
-  const active = orders.filter(o => o.status === "pending" || o.status === "in_progress");
-  // Completed: today only — auto-clears at midnight
+  // Today only — both active and completed clear at midnight
   const todayMidnight = new Date();
   todayMidnight.setHours(0, 0, 0, 0);
+  const active = orders.filter(o =>
+    (o.status === "pending" || o.status === "in_progress") &&
+    new Date(o.created_at) >= todayMidnight
+  );
   const completed = orders
     .filter(o => o.status === "complete" && new Date(o.created_at) >= todayMidnight)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
