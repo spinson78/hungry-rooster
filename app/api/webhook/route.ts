@@ -140,6 +140,13 @@ export async function POST(req: NextRequest) {
     // Mark session as processed immediately before inserting order
     await supabase.from("processed_sessions").insert({ stripe_session_id: session.id, order_type: meta.order_type });
 
+    // ── Gift card / dinner gift purchase ─────────────────────────
+    // Handled entirely by /gift/success page — nothing to write to orders table
+    if (meta.gift_type) {
+      console.log(`Gift purchase (${meta.gift_type}) session ${session.id} — no order record needed`);
+      return NextResponse.json({ received: true });
+    }
+
     // ── Invoice payment ──────────────────────────────────────────
     if (meta.invoice_id) {
       const total = (session.amount_total || 0) / 100;
