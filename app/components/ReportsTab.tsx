@@ -123,7 +123,7 @@ export default function ReportsTab() {
         supabase
           .from("orders")
           .select("id, order_type, total, tax_amount, tip_amount, status, created_at")
-          .in("status", ["pending", "in_progress", "complete"])
+          .not("status", "in", '("pending_payment","cancelled")')
           .order("created_at", { ascending: false }),
         supabase
           .from("invoices")
