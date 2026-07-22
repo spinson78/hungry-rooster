@@ -339,28 +339,28 @@ export default function AdminPage() {
 
   const fetchDinnerOrders = async () => {
     setOrdersLoading(true);
-    const { data } = await supabase.from("orders").select("*").eq("order_type", "dinner").order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase.from("orders").select("*").eq("order_type", "dinner").neq("status", "archived").order("created_at", { ascending: false }).limit(100);
     if (data) setDinnerOrders(data);
     setOrdersLoading(false);
   };
 
   const fetchShabbatOrders = async () => {
     setOrdersLoading(true);
-    const { data } = await supabase.from("orders").select("*").eq("order_type", "shabbat").order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase.from("orders").select("*").eq("order_type", "shabbat").neq("status", "archived").order("created_at", { ascending: false }).limit(100);
     if (data) setShabbatOrders(data);
     setOrdersLoading(false);
   };
 
   const fetchBakeryOrders = async () => {
     setOrdersLoading(true);
-    const { data } = await supabase.from("orders").select("*").eq("order_type", "bakery").order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase.from("orders").select("*").eq("order_type", "bakery").neq("status", "archived").order("created_at", { ascending: false }).limit(100);
     if (data) setBakeryOrders(data);
     setOrdersLoading(false);
   };
 
   const fetchCateringOrders = async () => {
     setOrdersLoading(true);
-    const { data } = await supabase.from("orders").select("*").in("order_type", ["catering", "catering_inquiry"]).order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase.from("orders").select("*").in("order_type", ["catering", "catering_inquiry"]).neq("status", "archived").order("created_at", { ascending: false }).limit(100);
     if (data) setCateringOrders(data);
     setOrdersLoading(false);
   };
@@ -374,17 +374,18 @@ export default function AdminPage() {
 
   const clearCompleted = async (type: "dinner" | "shabbat" | "bakery" | "catering") => {
     setClearing(true);
+    // Soft-delete: archive completed orders so they stay in DB for reports
     if (type === "dinner") {
-      await supabase.from("orders").delete().eq("order_type", "dinner").eq("status", "complete");
+      await supabase.from("orders").update({ status: "archived" }).eq("order_type", "dinner").eq("status", "complete");
       await fetchDinnerOrders();
     } else if (type === "shabbat") {
-      await supabase.from("orders").delete().eq("order_type", "shabbat").eq("status", "complete");
+      await supabase.from("orders").update({ status: "archived" }).eq("order_type", "shabbat").eq("status", "complete");
       await fetchShabbatOrders();
     } else if (type === "bakery") {
-      await supabase.from("orders").delete().eq("order_type", "bakery").eq("status", "complete");
+      await supabase.from("orders").update({ status: "archived" }).eq("order_type", "bakery").eq("status", "complete");
       await fetchBakeryOrders();
     } else {
-      await supabase.from("orders").delete().in("order_type", ["catering", "catering_inquiry"]).eq("status", "complete");
+      await supabase.from("orders").update({ status: "archived" }).in("order_type", ["catering", "catering_inquiry"]).eq("status", "complete");
       await fetchCateringOrders();
     }
     setClearing(false);
