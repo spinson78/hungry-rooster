@@ -155,8 +155,10 @@ export default function OrdersLogTab() {
     );
   });
 
-  const totalRevenue = filtered.reduce((sum, o) => sum + Number(o.total), 0);
-  const totalDeliveryFees = filtered.reduce((sum, o) => sum + Number(o.delivery_fee ?? 0), 0);
+  // Only count confirmed orders in revenue stats (exclude abandoned carts + cancellations)
+  const confirmedOrders = filtered.filter(o => ["pending", "in_progress", "complete"].includes(o.status));
+  const totalRevenue = confirmedOrders.reduce((sum, o) => sum + Number(o.total), 0);
+  const totalDeliveryFees = confirmedOrders.reduce((sum, o) => sum + Number(o.delivery_fee ?? 0), 0);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);

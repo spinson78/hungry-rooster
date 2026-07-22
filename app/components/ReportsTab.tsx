@@ -70,16 +70,15 @@ const TYPE_COLOR: Record<string, string> = {
 
 function getWeekStart(date: Date): string {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
+  const day = d.getDay(); // 0=Sun … 6=Sat
+  d.setDate(d.getDate() - day); // roll back to Sunday
   return d.toISOString().split("T")[0];
 }
 
 function formatWeekLabel(weekStart: string): string {
-  const start = new Date(weekStart + "T12:00:00");
+  const start = new Date(weekStart + "T12:00:00"); // Sunday
   const end   = new Date(weekStart + "T12:00:00");
-  end.setDate(end.getDate() + 6);
+  end.setDate(end.getDate() + 5); // Friday
   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
   return `${start.toLocaleDateString("en-US", opts)} – ${end.toLocaleDateString("en-US", opts)}`;
 }
@@ -89,8 +88,7 @@ function getRangeDates(range: Range): { from: Date | null; to: Date | null } {
   if (range === "all") return { from: null, to: null };
   if (range === "week") {
     const start = new Date(now);
-    const diff = start.getDay() === 0 ? -6 : 1 - start.getDay();
-    start.setDate(start.getDate() + diff);
+    start.setDate(start.getDate() - start.getDay()); // roll back to Sunday
     start.setHours(0, 0, 0, 0);
     return { from: start, to: null };
   }
@@ -125,6 +123,7 @@ export default function ReportsTab() {
         supabase
           .from("orders")
           .select("id, order_type, total, tax_amount, tip_amount, status, created_at")
+          .in("status", ["pending", "in_progress", "complete"])
           .order("created_at", { ascending: false }),
         supabase
           .from("invoices")
@@ -360,7 +359,7 @@ export default function ReportsTab() {
             </tbody>
           </table>
         </div>
-        <p className="text-zinc-600 text-xs mt-3">Weeks run Monday – Sunday. Invoice revenue counted on paid date.</p>
+        <p className="text-zinc-600 text-xs mt-3">Weeks run Sunday – Friday. Invoice revenue counted on paid date.</p>
       </div>
     </div>
   );
