@@ -196,7 +196,7 @@ Sent automatically by The Hungry Rooster ordering system.
       </div>
     `;
 
-    await fetch("https://api.resend.com/emails", {
+    const confirmRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
@@ -209,6 +209,11 @@ Sent automatically by The Hungry Rooster ordering system.
         html: confirmHtml,
       }),
     });
+
+    if (!confirmRes.ok) {
+      const err = await confirmRes.text();
+      console.error("Customer confirmation email failed:", err);
+    }
   }
 
   return NextResponse.json({ success: true });

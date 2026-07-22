@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
         .eq("id", preOrderId)
         .single();
       if (savedOrder) {
-        const notifyBase = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+        const notifyBase = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
         try {
           await fetch(`${notifyBase}/api/notify`, {
             method: "POST",
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
       items = [];
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
 
     if (order_type === "group_order") {
       // Write to group_orders table
