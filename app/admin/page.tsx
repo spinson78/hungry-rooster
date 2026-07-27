@@ -8,6 +8,86 @@ import GiftsTab from "@/app/components/GiftsTab";
 import ReviewsTab from "@/app/components/ReviewsTab";
 import SEOTab from "@/app/components/SEOTab";
 
+function RecoverOrderPanel() {
+  const [sessionId, setSessionId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ success?: boolean; order?: { id: string; order_number: string; customer_name: string; order_type: string; total: number; status: string }; error?: string } | null>(null);
+
+  const handleRecover = async () => {
+    if (!sessionId.trim()) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/recover-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId.trim() }),
+      });
+      const data = await res.json();
+      setResult(data);
+    } catch {
+      setResult({ error: "Network error — try again" });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="max-w-xl">
+      <h2 className="text-xl font-black text-white mb-1">Recover Lost Order</h2>
+      <p className="text-zinc-500 text-sm mb-6">
+        If an order was deleted from the database but payment exists in Stripe, paste the Stripe Checkout Session ID here to restore it.
+        Find it in Stripe → Payments → click the payment → &ldquo;Checkout Session&rdquo; ID (starts with <code className="text-teal-400">cs_live_</code>).
+      </p>
+
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+        <div>
+          <label className="text-xs text-zinc-400 uppercase tracking-widest block mb-2">Stripe Session ID</label>
+          <input
+            type="text"
+            placeholder="cs_live_..."
+            value={sessionId}
+            onChange={e => setSessionId(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 font-mono text-sm"
+          />
+        </div>
+
+        <button
+          onClick={handleRecover}
+          disabled={loading || !sessionId.trim()}
+          className="w-full py-3 rounded-xl font-black bg-teal-500 text-black hover:bg-teal-400 disabled:opacity-40 transition-colors"
+        >
+          {loading ? "Recovering…" : "Recover Order from Stripe"}
+        </button>
+
+        {result && (
+          <div className={`rounded-xl p-4 text-sm font-bold ${result.success ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>
+            {result.success && result.order ? (
+              <div className="space-y-1">
+                <p>✅ Order restored successfully!</p>
+                <p className="text-white font-black">{result.order.customer_name} — {result.order.order_type} — ${result.order.total.toFixed(2)}</p>
+                <p className="text-zinc-400 text-xs font-normal">Order #: {result.order.order_number} · Status: {result.order.status}</p>
+              </div>
+            ) : (
+              <p>❌ {result.error}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 bg-yellow-400/10 border border-yellow-400/20 rounded-xl p-4 text-sm text-yellow-300">
+        <p className="font-black mb-1">How to find the Session ID in Stripe:</p>
+        <ol className="list-decimal list-inside space-y-1 text-yellow-200 font-normal">
+          <li>Go to <strong>dashboard.stripe.com → Payments</strong></li>
+          <li>Search by customer name or amount</li>
+          <li>Click the payment</li>
+          <li>Look for <strong>&ldquo;Checkout Session&rdquo;</strong> — copy the ID starting with <code className="text-teal-400">cs_live_</code></li>
+          <li>Paste it above and click Recover</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 function BannerTab() {
   const [weekDate, setWeekDate] = useState("");
   const [orderUrl, setOrderUrl] = useState("hungry-rooster.vercel.app");
@@ -192,7 +272,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -743,6 +823,9 @@ export default function AdminPage() {
           </button>
           <button onClick={() => setTab("gifts")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "gifts" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🎁 Gifts
+          </button>
+          <button onClick={() => setTab("recover")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "recover" ? "bg-red-500 text-white" : "bg-zinc-900 text-red-400 hover:text-white border border-red-800"}`}>
+            🛟 Recover Order
           </button>
           <button onClick={() => setTab("orders-log")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "orders-log" ? "bg-white text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📋 Orders Log
@@ -1341,6 +1424,9 @@ This cannot be undone.`);
 
         {/* SEO TAB */}
         {tab === "seo" && <SEOTab />}
+
+        {/* RECOVER ORDER TAB */}
+        {tab === "recover" && <RecoverOrderPanel />}
 
         {/* ORDER TABS */}
         {(tab === "dinner-orders" || tab === "shabbat-orders" || tab === "bakery-orders" || tab === "catering-orders") && renderOrderTab()}
