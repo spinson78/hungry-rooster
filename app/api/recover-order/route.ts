@@ -12,23 +12,35 @@ export async function POST(req: NextRequest) {
   const { session_id } = await req.json();
   if (!session_id) return NextResponse.json({ error: "session_id required" }, { status: 400 });
 
+  // Resolve the Checkout Session — accept cs_live_..., cs_test_..., or pi_... (Payment Intent ID)
+  let resolvedSessionId = session_id.trim();
+  let session: Stripe.Checkout.Session;
+
+  if (resolvedSessionId.startsWith("pi_")) {
+    // Look up checkout session by payment intent ID
+    const sessions = await stripe.checkout.sessions.list({ payment_intent: resolvedSessionId, limit: 1 });
+    if (!sessions.data.length) {
+      return NextResponse.json({ error: "No checkout session found for that Payment Intent ID" }, { status: 404 });
+    }
+    session = sessions.data[0];
+    resolvedSessionId = session.id;
+  } else {
+    try {
+      session = await stripe.checkout.sessions.retrieve(resolvedSessionId);
+    } catch {
+      return NextResponse.json({ error: "Stripe session not found" }, { status: 404 });
+    }
+  }
+
   // Check if order already exists
   const { data: existing } = await supabase
     .from("orders")
     .select("id, status")
-    .eq("stripe_session_id", session_id)
+    .eq("stripe_session_id", resolvedSessionId)
     .maybeSingle();
 
   if (existing) {
     return NextResponse.json({ error: `Order already exists in DB (id: ${existing.id}, status: ${existing.status})` }, { status: 409 });
-  }
-
-  // Fetch session from Stripe
-  let session: Stripe.Checkout.Session;
-  try {
-    session = await stripe.checkout.sessions.retrieve(session_id);
-  } catch {
-    return NextResponse.json({ error: "Stripe session not found" }, { status: 404 });
   }
 
   if (session.payment_status !== "paid") {
@@ -63,7 +75,7 @@ export async function POST(req: NextRequest) {
     total,
     fulfillment_type: order_type === "dinner" ? "delivery" : "pickup",
     status:           "complete",   // already fulfilled
-    stripe_session_id: session_id,
+    stripe_session_id: resolvedSessionId,
     sms_opted_in:     meta.sms_opted_in === "true",
   }).select().single();
 

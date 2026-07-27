@@ -35,16 +35,17 @@ function RecoverOrderPanel() {
     <div className="max-w-xl">
       <h2 className="text-xl font-black text-white mb-1">Recover Lost Order</h2>
       <p className="text-zinc-500 text-sm mb-6">
-        If an order was deleted from the database but payment exists in Stripe, paste the Stripe Checkout Session ID here to restore it.
-        Find it in Stripe → Payments → click the payment → &ldquo;Checkout Session&rdquo; ID (starts with <code className="text-teal-400">cs_live_</code>).
+        If an order was deleted from the database but payment exists in Stripe, paste either the <code className="text-teal-400">cs_live_</code> Checkout Session ID
+        or the <code className="text-teal-400">pi_</code> Payment Intent ID — both work.
+        Find either in Stripe → Payments → click the payment.
       </p>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
         <div>
-          <label className="text-xs text-zinc-400 uppercase tracking-widest block mb-2">Stripe Session ID</label>
+          <label className="text-xs text-zinc-400 uppercase tracking-widest block mb-2">Stripe Session ID or Payment Intent ID</label>
           <input
             type="text"
-            placeholder="cs_live_..."
+            placeholder="cs_live_... or pi_..."
             value={sessionId}
             onChange={e => setSessionId(e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-teal-500 font-mono text-sm"
