@@ -110,14 +110,20 @@ function OrderCard({
   const PREP_BUFFER_MINS = isDelivery ? 35 : 15; // delivery needs prep + drive time
 
   const scheduledTime = order.scheduled_for ? new Date(order.scheduled_for) : null;
+  const isToday = scheduledTime
+    ? scheduledTime.toDateString() === new Date().toDateString()
+    : false;
+  const timeOpts: Intl.DateTimeFormatOptions = isToday
+    ? { hour: "numeric", minute: "2-digit" }
+    : { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
   const scheduledLabel = scheduledTime
-    ? scheduledTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })
+    ? scheduledTime.toLocaleString("en-US", timeOpts)
     : null;
   const startByTime = scheduledTime
     ? new Date(scheduledTime.getTime() - PREP_BUFFER_MINS * 60000)
     : null;
   const startByLabel = startByTime
-    ? startByTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })
+    ? startByTime.toLocaleString("en-US", timeOpts)
     : null;
 
   const isStarted = order.status === "in_progress";
@@ -331,16 +337,17 @@ export default function KDSPage() {
   const isWithinWindow = (_order: Order) => true;
 
   const fetchOrders = useCallback(async () => {
-    // Only fetch orders from today (midnight Dallas time) — prevents stale orders from prior days appearing
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
+    // ASAP orders: placed today (no scheduled_for)
+    // Scheduled orders: scheduled_for >= today midnight, regardless of when placed
     const { data, error } = await supabase
       .from("orders")
       .select("*")
       .in("status", ["pending", "in_progress", "complete"])
       .in("order_type", ["menu", "doordash", "ubereats", "phone"])
-      .gte("created_at", todayStart.toISOString())
-      .order("created_at", { ascending: true });
+      .or(`and(scheduled_for.is.null,created_at.gte.${todayStart.toISOString()}),scheduled_for.gte.${todayStart.toISOString()}`)
+      .order("scheduled_for,created_at", { ascending: true });
     // If Supabase returns an error (outage, network issue), don't update display
     if (error) {
       console.error("KDS fetch error:", error.message);
