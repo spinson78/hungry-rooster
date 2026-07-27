@@ -14,7 +14,7 @@ const jsonLd = {
   "@type": "Restaurant",
   name: "The Hungry Rooster",
   description: "Dallas's premier kosher kitchen and catering company offering online ordering, weekly dinner drops, Shabbat meals, bakery items, and full-service kosher catering.",
-  url: "https://thehungryroostertx.com",
+  url: "https://www.thehungryroostertx.com",
   telephone: "+19452157907",
   email: "chef@thehungryroostertx.com",
   address: {
@@ -29,9 +29,9 @@ const jsonLd = {
   servesCuisine: ["Kosher", "Jewish", "American"],
   priceRange: "$$",
   openingHours: ["Mo-Th 10:00-20:00", "Su 10:00-18:00"],
-  hasMenu: "https://thehungryroostertx.com/menu",
+  hasMenu: "https://www.thehungryroostertx.com/menu",
   acceptsReservations: false,
-  image: "https://thehungryroostertx.com/THR%20hor%20logo%20final.png",
+  image: "https://www.thehungryroostertx.com/THR%20hor%20logo%20final.png",
   sameAs: [
     "https://www.facebook.com/thehungryrooster",
     "https://www.instagram.com/thehungryroostertx",

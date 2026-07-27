@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Weekly Dinner Drop | Kosher Family Dinner in Dallas",
     description: "Weekly chef-driven kosher family dinner delivered in Dallas. New menu every week from The Hungry Rooster. Order before it sells out.",
-    url: "https://thehungryroostertx.com/dinner",
+    url: "https://www.thehungryroostertx.com/dinner",
   },
 };
 

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Online Menu | Kosher Food Delivery & Pickup in Dallas",
     description: "Order kosher chicken sandwiches, wraps, salads, and more for delivery or pickup in Dallas, TX. Scratch-made by The Hungry Rooster.",
-    url: "https://thehungryroostertx.com/menu",
+    url: "https://www.thehungryroostertx.com/menu",
   },
 };
 

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Fred's Fixins' | Fresh-Baked Kosher Bakery · Dallas",
     description: "Weekly kosher bakery drop — challahs, babka, cakes, and pastries baked fresh and delivered every Friday in Dallas, TX.",
-    url: "https://thehungryroostertx.com/esther",
+    url: "https://www.thehungryroostertx.com/esther",
   },
 };
 

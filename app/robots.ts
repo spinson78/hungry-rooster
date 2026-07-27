@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/kds", "/api/", "/invoice/"],
       },
     ],
-    sitemap: "https://thehungryroostertx.com/sitemap.xml",
+    sitemap: "https://www.thehungryroostertx.com/sitemap.xml",
   };
 }

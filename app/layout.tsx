@@ -21,11 +21,11 @@ export const metadata: Metadata = {
   keywords: ["kosher food Dallas", "kosher catering Dallas", "kosher delivery Dallas", "kosher restaurant Dallas", "Shabbat meals Dallas", "kosher meal delivery Texas", "Jewish catering Dallas"],
   authors: [{ name: "The Hungry Rooster" }],
   creator: "The Hungry Rooster",
-  metadataBase: new URL("https://thehungryroostertx.com"),
+  metadataBase: new URL("https://www.thehungryroostertx.com"),
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://thehungryroostertx.com",
+    url: "https://www.thehungryroostertx.com",
     siteName: "The Hungry Rooster",
     title: "The Hungry Rooster | Kosher Kitchen & Catering · Dallas, TX",
     description: "Dallas's premier kosher kitchen and catering company. Online ordering, weekly dinner drops, Shabbat meals, bakery, and full-service kosher catering.",

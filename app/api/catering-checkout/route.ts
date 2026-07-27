@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
   const taxCents = Math.round(subtotal * TAX_RATE * 100);
   const taxAmount = taxCents / 100;
   const tipAmount = tip || 0;

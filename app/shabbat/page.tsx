@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Shabbat Box | Kosher Shabbat Meals Delivered in Dallas",
     description: "Weekly kosher Shabbat meals delivered to your door every Friday in Dallas. Roasted chicken, sides, babka, salmon add-ons. Order by Friday 9AM.",
-    url: "https://thehungryroostertx.com/shabbat",
+    url: "https://www.thehungryroostertx.com/shabbat",
   },
 };
 

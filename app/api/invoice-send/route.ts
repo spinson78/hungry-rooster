@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const { data: inv, error } = await supabase.from("invoices").select("*").eq("id", invoice_id).single();
   if (error || !inv) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://thehungryroostertx.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
 
   // Strip angle brackets from email if present e.g. <user@domain.com>
   const cleanEmail = inv.customer_email

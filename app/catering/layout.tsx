@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Kosher Catering Dallas | The Hungry Rooster",
     description: "Full-service kosher catering for corporate events, weddings, bar and bat mitzvahs in Dallas, TX. From 10 to 200+ guests.",
-    url: "https://thehungryroostertx.com/catering",
+    url: "https://www.thehungryroostertx.com/catering",
   },
 };
 
