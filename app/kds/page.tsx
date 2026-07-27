@@ -104,18 +104,34 @@ function OrderCard({
   }, [order.item_statuses]);
 
   const isNew = order.status === "pending";
-  const scheduledLabel = order.scheduled_for
-    ? new Date(order.scheduled_for).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+  const isDelivery = order.fulfillment_type === "delivery";
+
+  // How much lead time the kitchen needs before the customer's requested time
+  const PREP_BUFFER_MINS = isDelivery ? 35 : 15; // delivery needs prep + drive time
+
+  const scheduledTime = order.scheduled_for ? new Date(order.scheduled_for) : null;
+  const scheduledLabel = scheduledTime
+    ? scheduledTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })
     : null;
+  const startByTime = scheduledTime
+    ? new Date(scheduledTime.getTime() - PREP_BUFFER_MINS * 60000)
+    : null;
+  const startByLabel = startByTime
+    ? startByTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })
+    : null;
+
   const isStarted = order.status === "in_progress";
-  // For scheduled orders: urgent when ≤10 min until scheduled time (or overdue)
-  // For ASAP orders: urgent when waiting 10+ min since created
-  const minsUntilScheduled = order.scheduled_for
-    ? Math.floor((new Date(order.scheduled_for).getTime() - Date.now()) / 60000)
+  // Urgent when kitchen is within their start-by window (or overdue for ASAP)
+  const minsUntilScheduled = scheduledTime
+    ? Math.floor((scheduledTime.getTime() - Date.now()) / 60000)
     : null;
   const minsElapsed = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
+  // ASAP orders: urgent after 10 min (kitchen needs the push)
+  // Scheduled orders: urgent only when inside the start-by window — not 12 hours in advance
   const urgent = !isCompleted && (
-    minsUntilScheduled !== null ? minsUntilScheduled <= 10 : minsElapsed >= 10
+    minsUntilScheduled !== null
+      ? minsUntilScheduled <= PREP_BUFFER_MINS   // scheduled: fire when within prep window
+      : minsElapsed >= 10                         // ASAP: flag after 10 min
   );
 
   const updateStatus = async (status: string) => {
@@ -154,8 +170,15 @@ function OrderCard({
       )}
 
       {scheduledLabel && (
-        <div className="bg-yellow-400/20 text-yellow-300 text-xs font-black px-2 py-0.5 rounded-full inline-block self-start">
-          📅 {scheduledLabel}
+        <div className="flex flex-col gap-1 self-start">
+          <div className={`text-xs font-black px-2 py-0.5 rounded-full inline-block ${urgent ? "bg-red-500/30 text-red-300" : "bg-yellow-400/20 text-yellow-300"}`}>
+            {isDelivery ? `🚗 Deliver by ${scheduledLabel}` : `🥡 Pickup at ${scheduledLabel}`}
+          </div>
+          {startByLabel && (
+            <div className={`text-xs font-black px-2 py-0.5 rounded-full inline-block ${urgent ? "bg-red-500/40 text-red-200" : "bg-zinc-700 text-zinc-300"}`}>
+              ⏰ Start by {startByLabel}
+            </div>
+          )}
         </div>
       )}
 
@@ -304,11 +327,8 @@ export default function KDSPage() {
   const knownOrderIds = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
 
-  const isWithinWindow = (order: Order) => {
-    if (!order.scheduled_for) return true; // ASAP order — always show
-    const scheduledMs = new Date(order.scheduled_for).getTime();
-    return scheduledMs <= Date.now() + 20 * 60 * 1000; // within 20 minutes
-  };
+  // Show all orders immediately — kitchen sees everything as soon as it's placed
+  const isWithinWindow = (_order: Order) => true;
 
   const fetchOrders = useCallback(async () => {
     // Only fetch orders from today (midnight Dallas time) — prevents stale orders from prior days appearing

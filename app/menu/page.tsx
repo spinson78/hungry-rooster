@@ -900,7 +900,9 @@ export default function MenuPage() {
                 <input type="email" placeholder="jane@email.com" value={checkoutEmail} onChange={e => setCheckoutEmail(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-teal-500 text-sm" />
               </div>
               <div>
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">When do you want it?</label>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 block">
+                  {fulfillment === "delivery" ? "Delivery Arrival Time" : "Pickup Time"}
+                </label>
                 <div className="flex gap-2 mb-3">
                   {(["asap", "scheduled"] as const).map(type => (
                     <button
@@ -909,7 +911,7 @@ export default function MenuPage() {
                       onClick={() => setScheduleType(type)}
                       className={`flex-1 py-2.5 rounded-full font-black text-sm border transition-colors ${scheduleType === type ? "bg-yellow-400 border-yellow-400 text-black" : "border-zinc-700 text-zinc-400 hover:text-white"}`}
                     >
-                      {type === "asap" ? "⚡ ASAP" : "📅 Schedule"}
+                      {type === "asap" ? "⚡ ASAP" : "📅 Schedule for Later"}
                     </button>
                   ))}
                 </div>
@@ -938,7 +940,11 @@ export default function MenuPage() {
                         className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
                       />
                     </div>
-                    <p className="text-zinc-500 text-xs">Mon–Fri only · We are closed on weekends</p>
+                    <p className="text-zinc-500 text-xs">
+                      {fulfillment === "delivery"
+                        ? "Enter the time you want your food to arrive · Mon–Fri only"
+                        : "Enter the time you want to pick up your order · Mon–Fri only"}
+                    </p>
                   </div>
                 )}
               </div>
