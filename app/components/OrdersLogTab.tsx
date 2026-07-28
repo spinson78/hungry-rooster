@@ -114,6 +114,7 @@ export default function OrdersLogTab() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [sendingToKDSId, setSendingToKDSId] = useState<string | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState("");
@@ -173,6 +174,13 @@ export default function OrdersLogTab() {
     await supabase.from("orders").update({ status: "cancelled" }).eq("id", id);
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: "cancelled" } : o));
     setCancellingId(null);
+  };
+
+  const handleSendToKDS = async (id: string) => {
+    setSendingToKDSId(id);
+    await supabase.from("orders").update({ status: "pending" }).eq("id", id);
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: "pending" } : o));
+    setSendingToKDSId(null);
   };
 
   const handleExportCSV = () => {
@@ -421,7 +429,13 @@ export default function OrdersLogTab() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2 pt-1 flex-wrap">
+                      {(order.status === "cancelled" || order.status === "archived") && (
+                        <button onClick={e => { e.stopPropagation(); handleSendToKDS(order.id); }} disabled={sendingToKDSId === order.id}
+                          className="text-xs font-black px-4 py-2 rounded-full bg-teal-900 border border-teal-600 text-teal-300 hover:bg-teal-700 hover:text-white disabled:opacity-50 transition-colors">
+                          {sendingToKDSId === order.id ? "…" : "📺 Send to KDS"}
+                        </button>
+                      )}
                       {order.status !== "cancelled" && (
                         <button onClick={e => { e.stopPropagation(); handleCancel(order.id); }} disabled={cancellingId === order.id}
                           className="text-xs font-black px-4 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-orange-400 hover:border-orange-400 disabled:opacity-50 transition-colors">
