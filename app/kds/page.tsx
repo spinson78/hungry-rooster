@@ -365,7 +365,9 @@ export default function KDSPage() {
       .select("*")
       .in("status", ["pending", "in_progress", "complete"])
       .in("order_type", ["menu", "doordash", "ubereats", "phone"])
-      .or(`and(scheduled_for.is.null,created_at.gte.${todayStart.toISOString()}),scheduled_for.gte.${todayStart.toISOString()}`)
+      // pending/in_progress: always show regardless of date (never drop an unfinished order)
+      // complete: only show if placed today (ASAP) or scheduled for today
+      .or(`status.in.(pending,in_progress),and(scheduled_for.is.null,created_at.gte.${todayStart.toISOString()}),scheduled_for.gte.${todayStart.toISOString()}`)
       .order("scheduled_for", { ascending: true, nullsFirst: true })
       .order("created_at", { ascending: true });
     // If Supabase returns an error (outage, network issue), don't update display
