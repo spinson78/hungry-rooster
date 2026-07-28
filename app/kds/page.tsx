@@ -332,6 +332,25 @@ export default function KDSPage() {
   const [muted, setMuted] = useState(false);
   const knownOrderIds = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
+  const deployVersion = useRef<string | null>(null);
+
+  // Auto-reload when a new version is deployed — no keyboard needed on touchscreen
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        const res = await fetch("/api/version");
+        const { version } = await res.json();
+        if (!deployVersion.current) {
+          deployVersion.current = version; // store initial version
+        } else if (deployVersion.current !== version) {
+          window.location.reload(); // new deploy detected — refresh silently
+        }
+      } catch { /* ignore network blips */ }
+    };
+    checkVersion();
+    const interval = setInterval(checkVersion, 5 * 60 * 1000); // check every 5 minutes
+    return () => clearInterval(interval);
+  }, []);
 
   // Show all orders immediately — kitchen sees everything as soon as it's placed
   const isWithinWindow = (_order: Order) => true;
@@ -347,7 +366,8 @@ export default function KDSPage() {
       .in("status", ["pending", "in_progress", "complete"])
       .in("order_type", ["menu", "doordash", "ubereats", "phone"])
       .or(`and(scheduled_for.is.null,created_at.gte.${todayStart.toISOString()}),scheduled_for.gte.${todayStart.toISOString()}`)
-      .order("scheduled_for,created_at", { ascending: true });
+      .order("scheduled_for", { ascending: true, nullsFirst: true })
+      .order("created_at", { ascending: true });
     // If Supabase returns an error (outage, network issue), don't update display
     if (error) {
       console.error("KDS fetch error:", error.message);
