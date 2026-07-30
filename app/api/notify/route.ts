@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
     order_type === "dinner" ? "🍽️ Dinner Drop Order" :
     order_type === "catering" ? "🍽️ Catering Package Order" :
     order_type === "catering_inquiry" ? "📋 Catering Inquiry" :
+    order_type === "group_inquiry" ? "👥 Group Order Inquiry" :
     order_type === "bakery" ? "🥐 Fred's Fixins' Order" :
     "📦 New Order";
 
@@ -87,7 +88,7 @@ Sent automatically by The Hungry Rooster ordering system.
   `;
 
   // Internal notification to THR team — catering and group orders only
-  const needsInternalNotify = order_type === "catering" || order_type === "catering_inquiry" || order_type === "group_order";
+  const needsInternalNotify = order_type === "catering" || order_type === "catering_inquiry" || order_type === "group_order" || order_type === "group_inquiry";
   if (needsInternalNotify) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
