@@ -162,9 +162,10 @@ export default function OrdersLogTab() {
   const totalDeliveryFees = confirmedOrders.reduce((sum, o) => sum + Number(o.delivery_fee ?? 0), 0);
 
   const handleDelete = async (id: string) => {
+    // Archive instead of hard-delete so the order still counts in Reports
     setDeletingId(id);
-    await supabase.from("orders").delete().eq("id", id);
-    setOrders(prev => prev.filter(o => o.id !== id));
+    await supabase.from("orders").update({ status: "archived" }).eq("id", id);
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: "archived" } : o));
     setDeletingId(null);
     setConfirmDeleteId(null);
   };
@@ -446,7 +447,7 @@ export default function OrdersLogTab() {
                         <div className="flex gap-2">
                           <button onClick={e => { e.stopPropagation(); handleDelete(order.id); }} disabled={deletingId === order.id}
                             className="text-xs font-black px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-400 disabled:opacity-50 transition-colors">
-                            {deletingId === order.id ? "…" : "Yes, delete"}
+                            {deletingId === order.id ? "…" : "Yes, archive"}
                           </button>
                           <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); }}
                             className="text-xs font-black px-4 py-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
@@ -456,7 +457,7 @@ export default function OrdersLogTab() {
                       ) : (
                         <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(order.id); }}
                           className="text-xs font-black px-4 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-600 hover:text-red-400 hover:border-red-400 transition-colors">
-                          🗑 Delete
+                          🗑 Clear
                         </button>
                       )}
                     </div>

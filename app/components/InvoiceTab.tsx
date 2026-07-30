@@ -461,6 +461,7 @@ export default function InvoiceTab() {
     const selTax = isTaxExempt ? 0 : (storedTax > 0 ? storedTax : selSubtotal * TAX_RATE);
     const selDelivery = Number(selected.delivery_fee) || 0;
     const selService = Number(selected.service_fee) || 0;
+    const selGrandTotal = selSubtotal + selTax + selDelivery + selService;
   
     return (
       <div className="max-w-2xl">
@@ -528,7 +529,7 @@ export default function InvoiceTab() {
             {selService > 0 && <div className="flex justify-between text-zinc-400"><span>Service Fee <span className="text-zinc-600 text-xs">(non-taxable)</span></span><span>{fmt(selService)}</span></div>}
             <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">
               <span>Total</span>
-              <span className="text-xl">{fmt(selected.total)}</span>
+              <span className="text-xl">{fmt(selGrandTotal)}</span>
             </div>
           </div>
         </div>
