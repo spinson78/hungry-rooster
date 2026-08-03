@@ -187,8 +187,14 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
           },
         }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Ordering is now closed.");
+        setIsOpen(false);
+        setSubmitting(false);
+        return;
+      }
+      if (data.url) window.location.href = data.url;
     } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
