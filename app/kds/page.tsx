@@ -357,7 +357,7 @@ export default function KDSPage() {
 
   const fetchOrders = useCallback(async () => {
     const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    todayStart.setUTCHours(0, 0, 0, 0);
     // ASAP orders: placed today (no scheduled_for)
     // Scheduled orders: scheduled_for >= today midnight, regardless of when placed
     const { data, error } = await supabase
