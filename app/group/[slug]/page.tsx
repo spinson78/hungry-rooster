@@ -334,7 +334,7 @@ export default function GroupOrderPage() {
             />
           </div>
           {!meetsMinimum && (
-            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - combinedTotal).toFixed(0)} more needed to confirm delivery. Your card is only charged when the group minimum is met.</p>
+            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - combinedTotal).toFixed(0)} more needed to reach the group minimum. Your coordinator will confirm delivery once the minimum is met.</p>
           )}
           {meetsMinimum && (
             <p className="text-teal-400 text-xs mt-2 font-bold">Minimum met — delivery confirmed{deliveryDate ? ` for ${new Date(deliveryDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}` : ""}!</p>
@@ -491,7 +491,7 @@ export default function GroupOrderPage() {
             >
               {checkingOut ? "Redirecting to payment..." : `Pay $${(total * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
             </button>
-            <p className="text-zinc-600 text-xs text-center mt-2">Only charged if minimum is met. Powered by Stripe.</p>
+            <p className="text-zinc-600 text-xs text-center mt-2">Payment is processed immediately. Powered by Stripe.</p>
           </div>
         </div>
       )}
