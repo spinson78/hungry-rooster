@@ -15,11 +15,13 @@ type GroupOrder = {
   id: string;
   location_slug: string;
   person_name: string;
+  customer_email?: string;
   items: { name: string; qty?: number; price?: number; description?: string }[];
   total: number;
   special_requests: string;
   delivery_date: string | null;
   status: string;
+  stripe_session_id?: string;
   created_at: string;
 };
 
@@ -44,6 +46,7 @@ export default function GroupLocationsTab() {
   const [slugManual, setSlugManual] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -239,50 +242,102 @@ export default function GroupLocationsTab() {
 
           {/* Orders */}
           <div>
-            <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Incoming Orders</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500">Incoming Orders</h3>
+              <div className="flex gap-3 text-xs text-zinc-600">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-500 inline-block" /> Paid</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-zinc-600 inline-block" /> Pending/Abandoned</span>
+              </div>
+            </div>
             {orders.length === 0 ? (
               <p className="text-zinc-600 text-sm py-6 text-center">No group orders yet.</p>
             ) : (
-              <div className="space-y-4">
-                {orders.map(o => (
-                  <div key={o.id} className={`bg-zinc-900 border rounded-2xl p-5 ${o.status === "complete" ? "border-zinc-800 opacity-50" : "border-orange-500/30"}`}>
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div>
-                        <p className="font-black text-white text-lg">{o.person_name}</p>
-                        <p className="text-orange-400 text-xs font-bold uppercase tracking-widest">{o.location_slug.replace(/-/g, " ")}</p>
-                        {o.delivery_date && (
-                          <p className="text-zinc-500 text-xs mt-1">
-                            Delivery: {new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-white font-black text-xl">${Number(o.total).toFixed(2)}</p>
-                        <p className="text-zinc-500 text-xs">{new Date(o.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
-                      </div>
-                    </div>
-                    <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
-                      {o.items.map((item, i) => (
-                        <div key={i} className="py-1 border-b border-zinc-700 last:border-0">
-                          <div className="flex justify-between items-baseline gap-2">
-                            <p className="text-zinc-200 text-sm font-bold">{item.qty && item.qty > 1 ? `${item.qty}× ` : ""}{item.name}</p>
-                            {item.price != null && <p className="text-zinc-400 text-xs shrink-0">${(item.price * (item.qty || 1)).toFixed(2)}</p>}
-                          </div>
-                          {item.description && <p className="text-zinc-500 text-xs mt-0.5">{item.description}</p>}
-                        </div>
-                      ))}
-                    </div>
-                    {o.special_requests && <p className="text-yellow-400 text-xs mb-3">Note: {o.special_requests}</p>}
-                    {o.status !== "complete" && (
+              <div className="space-y-3">
+                {orders.map(o => {
+                  const isPaid = o.status === "paid" || o.status === "complete";
+                  const isAbandoned = o.status === "pending" && (!o.items || o.items.length === 0);
+                  const isExpanded = expandedOrderId === o.id;
+                  const deliveryLabel = o.delivery_date
+                    ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+                    : null;
+
+                  return (
+                    <div
+                      key={o.id}
+                      className={`bg-zinc-900 border rounded-2xl overflow-hidden transition-all ${
+                        o.status === "complete" ? "border-zinc-800 opacity-40" :
+                        isPaid ? "border-teal-500/40" :
+                        "border-zinc-700 opacity-60"
+                      }`}
+                    >
+                      {/* Clickable header row */}
                       <button
-                        onClick={() => markOrderComplete(o.id)}
-                        className="text-xs font-black text-zinc-400 hover:text-teal-400 border border-zinc-700 hover:border-teal-500 px-4 py-2 rounded-full transition-colors"
+                        onClick={() => setExpandedOrderId(isExpanded ? null : o.id)}
+                        className="w-full text-left px-5 py-4 flex items-center justify-between gap-4"
                       >
-                        ✓ Mark Complete
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isPaid ? "bg-teal-500" : "bg-zinc-600"}`} />
+                          <div className="min-w-0">
+                            <p className="font-black text-white leading-none">{o.person_name}</p>
+                            <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mt-0.5">{o.location_slug.replace(/-/g, " ")}</p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              {deliveryLabel && <span className="text-zinc-400 text-xs">📅 {deliveryLabel}</span>}
+                              <span className="text-zinc-600 text-xs">{new Date(o.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                              {isAbandoned && <span className="text-xs text-zinc-500 italic">abandoned</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 flex items-center gap-3">
+                          <div>
+                            <p className={`font-black text-lg ${isPaid ? "text-teal-400" : "text-zinc-500"}`}>${Number(o.total).toFixed(2)}</p>
+                            <p className={`text-xs font-bold uppercase ${isPaid ? "text-teal-500" : "text-zinc-600"}`}>{o.status}</p>
+                          </div>
+                          <span className="text-zinc-600 text-sm">{isExpanded ? "▲" : "▼"}</span>
+                        </div>
                       </button>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Expanded detail */}
+                      {isExpanded && (
+                        <div className="px-5 pb-5 border-t border-zinc-800 pt-4">
+                          {o.customer_email && (
+                            <p className="text-zinc-400 text-xs mb-3">✉️ {o.customer_email}</p>
+                          )}
+                          {o.items && o.items.length > 0 ? (
+                            <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
+                              {o.items.map((item, i) => (
+                                <div key={i} className="py-1 border-b border-zinc-700 last:border-0">
+                                  <div className="flex justify-between items-baseline gap-2">
+                                    <p className="text-zinc-200 text-sm font-bold">{item.qty && item.qty > 1 ? `${item.qty}× ` : ""}{item.name}</p>
+                                    {item.price != null && <p className="text-zinc-400 text-xs shrink-0">${(item.price * (item.qty || 1)).toFixed(2)}</p>}
+                                  </div>
+                                  {item.description && <p className="text-zinc-500 text-xs mt-0.5">{item.description}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-zinc-600 text-xs italic mb-3">No items — customer abandoned checkout before paying.</p>
+                          )}
+                          {o.special_requests && (
+                            <p className="text-yellow-400 text-xs mb-3">📝 {o.special_requests}</p>
+                          )}
+                          {o.stripe_session_id && (
+                            <p className="text-zinc-600 text-xs font-mono mb-3 truncate">Stripe: {o.stripe_session_id}</p>
+                          )}
+                          <div className="flex gap-2">
+                            {o.status !== "complete" && isPaid && (
+                              <button
+                                onClick={() => markOrderComplete(o.id)}
+                                className="text-xs font-black text-zinc-400 hover:text-teal-400 border border-zinc-700 hover:border-teal-500 px-4 py-2 rounded-full transition-colors"
+                              >
+                                ✓ Mark Complete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

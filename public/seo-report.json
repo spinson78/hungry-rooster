@@ -1,96 +1,96 @@
 {
-  "generated_at": "2026-07-27T13:08:21Z",
-  "week": "Week of Mon Jul 27, 2026",
-  "data_quality_note": "WebSearch returned full results for all 7 target keywords and the new-competitor query. The Yelp site: query and a competitor-reviews query returned 'unavailable' this run and were not retried. Position numbers are estimated from the order results appeared in WebSearch, which approximates but is not identical to a live Google SERP, so treat single-position moves as directional. Site audit completed via direct fetches of the homepage, /menu, /catering, and /shabbat. JSON-LD structured data could not be confirmed via fetch (script tags are stripped from fetched HTML) and remains unverified.",
+  "generated_at": "2026-08-03T13:08:37Z",
+  "week": "Week of Mon Aug 03, 2026",
+  "data_quality_note": "WebSearch returned full results for all 7 target keywords and the competitor/new-opening queries this run (two initial attempts returned 'unavailable' and were retried successfully). Position numbers are estimated from the order results appeared in WebSearch, which approximates but is not identical to a live Google SERP, so treat single-position moves as directional. Site audit completed via direct fetches of the homepage, /menu, /catering, /shabbat, and /review (the site has no /reviews path — 'Leave a Review' lives at /review, a submission form only). JSON-LD structured data could not be confirmed via fetch (script tags are stripped from fetched HTML) and remains unverified.",
   "keyword_rankings": [
     {
       "keyword": "kosher food Dallas",
       "our_position": "not found (page 1 dominated by directories)",
-      "top_competitor": "Dallas Kosher directory — https://www.dallaskosher.org/restaurants (also Yelp, Aderet — https://aderetrestaurant.com/)"
+      "top_competitor": "Dallas Kosher directory — https://www.dallaskosher.org/restaurants (also Yelp, Milk and Honey, Chabad of Dallas)"
     },
     {
       "keyword": "kosher catering Dallas",
-      "our_position": "position ~10 (bottom of page 1 — we do appear)",
+      "our_position": "position ~10 (last on page 1 — we do appear)",
       "top_competitor": "Simcha Kosher Catering — https://www.simchakosher.com/ and A Taste of the World — https://atasteoftheworld.com/"
     },
     {
       "keyword": "kosher delivery Dallas",
-      "our_position": "not found in organic results (page 1 owned by Uber Eats, DoorDash, Yelp)",
+      "our_position": "not found in the organic link results (mentioned only in narrative summary text, not a ranked link)",
       "top_competitor": "Uber Eats — https://www.ubereats.com/category/dallas-tx/kosher and DoorDash — https://www.doordash.com/food-delivery/dallas-tx-restaurants/kosher/"
     },
     {
       "keyword": "kosher restaurant Dallas",
       "our_position": "not found",
-      "top_competitor": "Tripadvisor list + Meat Point — https://www.meatpointdallas.com/ and Aderet — https://aderetrestaurant.com/"
+      "top_competitor": "Milk and Honey and Aderet Grill & Salad — https://aderetrestaurant.com/ (also Meat Point — https://www.meatpointdallas.com/)"
     },
     {
       "keyword": "Shabbat meals Dallas",
       "our_position": "not found",
-      "top_competitor": "Dallas Kosher — https://www.dallaskosher.org/restaurants and Meat Point Friday menu — https://www.meatpointdallas.com/"
+      "top_competitor": "A Taste of the World's dedicated Shabbat menu page — https://atasteoftheworld.com/shabbat/ and Meat Point's Friday menu — https://www.meatpointdallas.com/"
     },
     {
       "keyword": "kosher meal delivery Texas",
-      "our_position": "not found (results skew to Austin/Houston + national services)",
-      "top_competitor": "Shef — https://shef.com/ and Postmates Dallas — https://postmates.com/category/dallas-tx/kosher"
+      "our_position": "not found (results skew to Austin/Houston + national services; we're mentioned in narrative text only)",
+      "top_competitor": "KosherBox — https://kosher-box.com/ and Uber Eats Dallas/Houston category pages"
     },
     {
       "keyword": "Jewish catering Dallas",
-      "our_position": "position ~8 (we do appear)",
+      "our_position": "position ~10 (last on page 1 — we do appear, down from ~8 last week)",
       "top_competitor": "JGourmet at the JCC — https://www.jccdallas.org/jgourmet and Simcha Kosher Catering — https://www.simchakosher.com/"
     }
   ],
   "competitor_alerts": [
-    "NEW COMPETITOR: Shi-Ya, a 100% kosher sushi restaurant from the owners of Meat Point, opened June 2026 and earned coverage in the Dallas Observer's new-openings roundup (https://www.dallasobserver.com/food-drink/new-dallas-restaurants-opened-june-2026-40693920/). Meat Point is actively expanding its kosher footprint and press presence.",
-    "Simcha Kosher Catering and A Taste of the World outrank us on both 'kosher catering Dallas' and 'Jewish catering Dallas'. Both run dedicated catering-focused websites with address markup and review counts; we appear but lower on the page.",
-    "dallaskosher.org is the authority directory ranking #1-2 for nearly every target keyword (food, restaurant, catering, delivery, Shabbat). The Hungry Rooster is not listed in its Restaurants or Catering directories — a major visibility gap on the exact pages our customers browse.",
-    "Delivery-intent keywords ('kosher delivery Dallas', 'kosher meal delivery Texas') are fully owned by aggregators (Uber Eats, DoorDash, Postmates, Shef). We are not present on these marketplaces' Dallas kosher category pages, so we capture none of that high-intent delivery traffic."
+    "dallaskosher.org remains the authority directory ranking at or near #1 for nearly every target keyword (food, restaurant, catering, delivery, Shabbat). The Hungry Rooster still does not appear in its Restaurants or Catering directories — this gap flagged last week is unresolved.",
+    "Shi-Ya Modern Asian Cuisine — the 100% kosher sushi concept that opened inside Meat Point (7114 Campbell Rd) in June 2026 — continues to surface in 'new kosher restaurant Dallas' searches, adding variety to the competitive set.",
+    "Simcha Kosher Catering (11 Yelp reviews) and A Taste of the World both still outrank us on 'kosher catering Dallas' and 'Jewish catering Dallas', where we sit in the last position on page 1.",
+    "Our own /shabbat page still returns only 'Loading this week's Shabbat menu...' with no crawlable content on fetch — the same issue identified last week — while A Taste of the World has a fully built-out, indexable /shabbat page and it shows in results for that exact keyword."
   ],
   "recommendations": [
     {
       "priority": "high",
-      "action": "Fix the canonical tags. Every subpage (/menu, /catering, /shabbat) currently sets <link rel=canonical> to the homepage root (https://thehungryroostertx.com). Give each page a self-referencing canonical URL.",
-      "reason": "A homepage-pointing canonical tells Google not to index the subpages on their own. This is the most likely technical reason our /catering page does not rank for 'kosher catering Dallas' despite having relevant content — Google is being told the catering page is a duplicate of the homepage."
+      "action": "Still outstanding from last week: server-render the /shabbat page. It continues to return only 'Loading this week's Shabbat menu...' on a direct fetch, with the real menu injected client-side.",
+      "reason": "'Shabbat meals Dallas' is a target keyword and we still don't rank for it at all. A competitor with a fully crawlable Shabbat page (A Taste of the World) does show up. This is the most likely reason for zero visibility on our most on-brand keyword."
     },
     {
       "priority": "high",
-      "action": "Get The Hungry Rooster listed on dallaskosher.org's Restaurants and Catering directory pages (and confirm current Dallas VAAD / kosher-certification listing).",
-      "reason": "dallaskosher.org ranks #1-2 for almost every one of our target keywords and we are absent from it. Being listed there is the fastest way to appear on page 1 for 'kosher food Dallas', 'kosher restaurant Dallas', and 'Shabbat meals Dallas' via a trusted authority site."
+      "action": "Still outstanding from last week: every subpage's canonical tag (/menu, /catering, /shabbat, /review) points back to the homepage root (https://thehungryroostertx.com) instead of itself — confirmed again this run.",
+      "reason": "A homepage-pointing canonical tells Google the subpage is a duplicate and not worth indexing separately, which likely suppresses /catering from ranking on 'kosher catering Dallas' despite relevant content."
     },
     {
       "priority": "high",
-      "action": "Server-render the Shabbat page. /shabbat currently returns only 'Loading this week's Shabbat menu...' with the actual menu injected client-side; give it real crawlable HTML plus a heading like 'Kosher Shabbat Meals & Dinner Delivery in Dallas'.",
-      "reason": "'Shabbat meals Dallas' is a target keyword and we don't rank. Google largely sees an empty page because the content is JS-loaded, so there is nothing to index for our single most on-brand keyword."
-    },
-    {
-      "priority": "high",
-      "action": "Claim/optimize marketplace listings on Uber Eats, DoorDash, and Postmates under the Dallas 'kosher' category, and add a dedicated 'Delivery' page targeting 'kosher delivery Dallas'.",
-      "reason": "Every delivery-intent keyword is owned by these aggregators and we appear on none of their kosher category pages. This is high-purchase-intent traffic (people ready to order now) that currently goes entirely to competitors."
+      "action": "Still outstanding from last week: get listed on dallaskosher.org's Restaurants and Catering directories.",
+      "reason": "This single directory ranks at or near #1 for 6 of our 7 target keywords. We remain absent from it two weeks running — the fastest available lever for page-1 visibility on 'kosher food Dallas', 'kosher restaurant Dallas', and 'Shabbat meals Dallas'."
     },
     {
       "priority": "medium",
-      "action": "Add LocalBusiness / Restaurant JSON-LD structured data (name, address 1499 Regal Row Suite 206, phone 945-215-7907, hours Mon-Fri 9am-2pm, geo, priceRange, servesCuisine: Kosher, sameAs social links). Could not confirm any JSON-LD in the current markup — verify and add if missing.",
-      "reason": "Structured data powers rich results and Google Business/Maps eligibility. Competitors like Meat Point and Aderet surface with rich listings; without it we forfeit map-pack and knowledge-panel visibility for local kosher searches."
+      "action": "Add keyword-rich, Dallas-specific body copy to the /catering page. Its current visible text ('We pull up and feed your flock... Corporate. Schools. Weddings. Shiva.') never mentions 'Dallas' or 'kosher catering' explicitly.",
+      "reason": "Thin, non-geo-specific copy gives Google little to match against 'kosher catering Dallas' searches even once the canonical fix lands."
     },
     {
       "priority": "medium",
-      "action": "Build a dedicated, indexable reviews/testimonials page. The site only has a 'Leave a Review' link (/review); there is no public /reviews page showing social proof, and the /reviews path does not exist in navigation.",
-      "reason": "Top competitors show visible review counts (Simcha, A Taste of the World). A crawlable reviews page adds fresh keyword-rich content and trust signals, and supports Review/AggregateRating schema for star rich-results."
+      "action": "Verify LocalBusiness/Restaurant JSON-LD structured data is present (name, address at 1499 Regal Row Suite 206, phone 945-215-7907, hours Mon-Fri 9am-2pm, servesCuisine: Kosher). Not detectable via automated fetch two runs in a row — confirm directly with Google's Rich Results Test.",
+      "reason": "Structured data supports map-pack and rich-result eligibility for local searches; without confirmation this remains a blind spot for two consecutive audits."
     },
     {
       "priority": "medium",
-      "action": "Publish a blog post targeting 'kosher Shabbat dinner delivery Dallas' and 'weekly kosher dinner drops Dallas' — long-tail terms with weak, non-specific results.",
-      "reason": "No competitor owns these exact phrases and they match our weekly dinner-drop and Shabbat offering exactly. Low competition plus high relevance makes this a realistic page-1 win that also reinforces the /shabbat and delivery keywords."
+      "action": "Claim or verify listings on Uber Eats, DoorDash, and Postmates under Dallas's 'kosher' category.",
+      "reason": "Every delivery-intent keyword ('kosher delivery Dallas', 'kosher meal delivery Texas') is fully owned by these marketplaces and we don't appear on any of their kosher category pages — this is ready-to-order traffic going entirely to competitors."
     },
     {
       "priority": "low",
-      "action": "Differentiate page titles and meta descriptions per page. /menu, /catering, and /shabbat all reuse the identical homepage title and meta description.",
-      "reason": "Duplicate titles/descriptions across pages weaken relevance signals and hurt click-through. Unique, keyword-targeted titles (e.g. 'Kosher Catering Dallas — Corporate, Weddings & Shiva | The Hungry Rooster') help each page rank for its own term."
+      "action": "Build a public, indexable reviews/testimonials page. The only reviews-related page is /review, a submission form with no visible testimonials (there is no /reviews page in the site's navigation).",
+      "reason": "Competitors display visible review counts (e.g., Simcha's 11 Yelp reviews) as a trust signal; a crawlable reviews page also adds fresh, naturally keyword-rich content."
+    },
+    {
+      "priority": "low",
+      "action": "Give /menu, /catering, and /shabbat unique page titles and meta descriptions instead of reusing the homepage's identical tags (confirmed identical again this run).",
+      "reason": "Duplicate titles/descriptions across pages dilute relevance signals and click-through; unique, keyword-targeted tags help each page compete for its own term."
     }
   ],
   "quick_wins": [
-    "Change the canonical tag on /menu, /catering and /shabbat to point to themselves instead of the homepage root.",
-    "Submit The Hungry Rooster to the dallaskosher.org Restaurants and Catering directories.",
-    "Give /shabbat and /catering unique <title> and meta descriptions instead of reusing the homepage's."
+    "Fix the canonical tag on /menu, /catering, and /shabbat so each points to itself, not the homepage root — flagged last week and still unresolved.",
+    "Add a static fallback paragraph to /shabbat (e.g., 'Order Kosher Shabbat Meals for Dallas Delivery') so the page has crawlable content even before the JS menu loads.",
+    "Submit The Hungry Rooster to the dallaskosher.org Restaurants and Catering directories — still not listed after two weekly audits."
   ],
-  "summary": "The Hungry Rooster's on-page basics are solid (strong homepage title, meta description, keyword and Open Graph tags), and we now appear on page 1 for 'kosher catering Dallas' (~#10) and 'Jewish catering Dallas' (~#8), but we're absent from every other target keyword. Two fixable technical issues are holding us back: every subpage canonicalizes to the homepage, so Google won't rank /catering or /shabbat on their own, and the Shabbat page's content is JavaScript-loaded and effectively invisible to crawlers. The biggest external gaps are not being listed on the authority directory dallaskosher.org and having zero presence on delivery marketplaces — plus a new competitor, Shi-Ya kosher sushi from the Meat Point team, just opened and is gaining press."
+  "summary": "For a second straight week, The Hungry Rooster appears only for 'kosher catering Dallas' and 'Jewish catering Dallas' — both in last position on page 1 — and is absent from the other five target keywords, including its most on-brand term, 'Shabbat meals Dallas'. The three technical issues flagged last week (homepage-pointing canonical tags, a JavaScript-only /shabbat page, and no listing on the dominant dallaskosher.org directory) are all still unresolved on this run's checks, and remain the most likely reasons visibility hasn't improved. New kosher sushi concept Shi-Ya continues to add to the competitive field inside Meat Point."
 }

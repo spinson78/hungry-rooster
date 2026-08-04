@@ -9,6 +9,7 @@ export default function NavBar({ active }: { active?: string }) {
     { label: "Our Concepts", href: "/#concepts" },
     { label: "Gallery", href: "/gallery" },
     { label: "Our Story", href: "/story" },
+    { label: "Blog", href: "/blog" },
   ];
 
   return (

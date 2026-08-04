@@ -17,5 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/reviews`,     lastModified: now, changeFrequency: "weekly",  priority: 0.6 },
     { url: `${base}/review`,      lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
     { url: `${base}/privacy`,     lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${base}/blog`,        lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
+    { url: `${base}/blog/kosher-shabbat-dinner-delivery-dallas`, lastModified: new Date("2025-07-18"), changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/blog/weekly-kosher-dinner-drops-dallas`,     lastModified: new Date("2025-07-25"), changeFrequency: "monthly", priority: 0.8 },
   ];
 }
