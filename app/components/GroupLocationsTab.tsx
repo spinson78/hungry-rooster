@@ -8,6 +8,8 @@ type Location = {
   address: string;
   slug: string;
   is_active: boolean;
+  delivery_date: string | null;
+  order_cutoff: string | null;
   created_at: string;
 };
 
@@ -42,7 +44,7 @@ export default function GroupLocationsTab() {
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", address: "", slug: "" });
+  const [form, setForm] = useState({ name: "", address: "", slug: "", delivery_date: "", order_cutoff: "" });
   const [slugManual, setSlugManual] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -83,6 +85,8 @@ export default function GroupLocationsTab() {
       address: form.address.trim(),
       slug: form.slug.trim(),
       is_active: true,
+      delivery_date: form.delivery_date || null,
+      order_cutoff: form.order_cutoff ? new Date(form.order_cutoff).toISOString() : null,
     });
     if (dbErr) {
       setError(dbErr.message.includes("unique") ? "That URL slug is already taken — try a different one." : dbErr.message);
@@ -90,7 +94,7 @@ export default function GroupLocationsTab() {
       return;
     }
     setSuccess(`✅ Created! Link: ${BASE_URL}/group/${form.slug.trim()}`);
-    setForm({ name: "", address: "", slug: "" });
+    setForm({ name: "", address: "", slug: "", delivery_date: "", order_cutoff: "" });
     setSlugManual(false);
     setShowForm(false);
     setSaving(false);
@@ -183,6 +187,26 @@ export default function GroupLocationsTab() {
               <p className="text-teal-400 text-xs mt-1.5 font-mono">{BASE_URL}/group/{form.slug}</p>
             )}
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className={labelCls}>Delivery Date — all orders on this link deliver on this day</label>
+              <input
+                type="date"
+                className={inputCls}
+                value={form.delivery_date}
+                onChange={e => setForm(f => ({ ...f, delivery_date: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Order Cutoff (date & time) — orders close at this time</label>
+              <input
+                type="datetime-local"
+                className={inputCls}
+                value={form.order_cutoff}
+                onChange={e => setForm(f => ({ ...f, order_cutoff: e.target.value }))}
+              />
+            </div>
+          </div>
           {error && <p className="text-red-400 text-sm mb-4 font-bold">{error}</p>}
           <div className="flex gap-3">
             <button
@@ -193,7 +217,7 @@ export default function GroupLocationsTab() {
               {saving ? "Creating…" : "Create & Get Link"}
             </button>
             <button
-              onClick={() => { setShowForm(false); setError(""); setForm({ name: "", address: "", slug: "" }); setSlugManual(false); }}
+              onClick={() => { setShowForm(false); setError(""); setForm({ name: "", address: "", slug: "", delivery_date: "", order_cutoff: "" }); setSlugManual(false); }}
               className="font-black text-zinc-400 hover:text-white px-6 py-2.5 rounded-full text-sm border border-zinc-700 transition-colors"
             >
               Cancel
@@ -219,6 +243,16 @@ export default function GroupLocationsTab() {
                       <p className="font-black text-white">{loc.name}</p>
                       <p className="text-zinc-500 text-xs mt-0.5">{loc.address}</p>
                       <p className="text-teal-400 text-xs font-mono mt-1">{BASE_URL}/group/{loc.slug}</p>
+                      {loc.delivery_date && (
+                        <p className="text-yellow-400 text-xs mt-1 font-bold">
+                          📅 Delivery: {new Date(loc.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                        </p>
+                      )}
+                      {loc.order_cutoff && (
+                        <p className="text-zinc-500 text-xs mt-0.5">
+                          ⏰ Cutoff: {new Date(loc.order_cutoff).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <button
@@ -255,7 +289,8 @@ export default function GroupLocationsTab() {
               <div className="space-y-3">
                 {orders.map(o => {
                   const isPaid = o.status === "paid" || o.status === "complete";
-                  const isAbandoned = o.status === "pending" && (!o.items || o.items.length === 0);
+                  const hasItems = Array.isArray(o.items) && o.items.length > 0;
+                  const isAbandoned = o.status === "pending" && !hasItems && !o.stripe_session_id;
                   const isExpanded = expandedOrderId === o.id;
                   const deliveryLabel = o.delivery_date
                     ? new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
@@ -302,7 +337,7 @@ export default function GroupLocationsTab() {
                           {o.customer_email && (
                             <p className="text-zinc-400 text-xs mb-3">✉️ {o.customer_email}</p>
                           )}
-                          {o.items && o.items.length > 0 ? (
+                          {hasItems ? (
                             <div className="bg-zinc-800 rounded-xl p-3 mb-3 space-y-1">
                               {o.items.map((item, i) => (
                                 <div key={i} className="py-1 border-b border-zinc-700 last:border-0">

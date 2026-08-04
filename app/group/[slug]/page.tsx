@@ -78,7 +78,24 @@ export default function GroupOrderPage() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
+  // Coordinator setup state (shown when no date param in URL)
+  const [coordDate, setCoordDate] = useState("");
+  const [coordCutoff, setCoordCutoff] = useState("");
+  const [coordLinkCopied, setCoordLinkCopied] = useState(false);
+
+  // Read delivery date & cutoff from URL params (set by coordinator)
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const deliveryDate = searchParams?.get("date") ?? null;
+  const orderCutoff = searchParams?.get("cutoff") ?? null;
+  const isCoordinatorMode = !deliveryDate; // no date param = coordinator setup view
+
+  const buildShareLink = () => {
+    if (!coordDate) return "";
+    const base = `${window.location.origin}/group/${slug}`;
+    const params = new URLSearchParams({ date: coordDate });
+    if (coordCutoff) params.set("cutoff", coordCutoff);
+    return `${base}?${params.toString()}`;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,19 +109,26 @@ export default function GroupOrderPage() {
       if (!loc) { setNotFound(true); setLoading(false); return; }
       setLocation(loc);
 
-      const { data: orderData } = await supabase
-        .from("group_orders")
-        .select("total")
-        .eq("location_slug", slug)
-        .eq("delivery_date", today)
-        .eq("status", "paid");
-
-      const totalSoFar = (orderData || []).reduce((sum, o) => sum + (o.total || 0), 0);
-      setOrderCount(totalSoFar);
       setLoading(false);
     };
     fetchData();
   }, [slug]);
+
+  // Fetch order count for this delivery date
+  useEffect(() => {
+    if (!deliveryDate) return;
+    const fetchCount = async () => {
+      const { data: orderData } = await supabase
+        .from("group_orders")
+        .select("total")
+        .eq("location_slug", slug)
+        .eq("delivery_date", deliveryDate)
+        .eq("status", "paid");
+      const totalSoFar = (orderData || []).reduce((sum, o) => sum + (o.total || 0), 0);
+      setOrderCount(totalSoFar);
+    };
+    fetchCount();
+  }, [slug, deliveryDate]);
 
   const getTotal = () =>
     Object.entries(quantities).reduce((sum, [id, qty]) => {
@@ -163,7 +187,7 @@ export default function GroupOrderPage() {
           locationId: location!.id,
           locationSlug: slug,
           locationName: location!.name,
-          deliveryDate: today,
+          deliveryDate: deliveryDate ?? "",
           tipAmount,
         }),
       });
@@ -204,6 +228,64 @@ export default function GroupOrderPage() {
   const combinedTotal = orderCount + total;
   const meetsMinimum = combinedTotal >= MIN_TOTAL;
 
+  // ── COORDINATOR SETUP VIEW ──────────────────────────────────────────────
+  if (isCoordinatorMode) {
+    const shareLink = buildShareLink();
+    return (
+      <main className="bg-black text-white min-h-screen">
+        <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+          <a href="/group"><img src="/THR%20hor%20logo%20final.png" alt="The Hungry Rooster" className="h-12 w-auto" /></a>
+          <span className="text-zinc-400 text-sm font-bold">{location?.name}</span>
+        </nav>
+        <div className="max-w-lg mx-auto px-6 py-16">
+          <p className="text-teal-400 font-black text-xs uppercase tracking-widest mb-3">Order Coordinator</p>
+          <h1 className="text-3xl font-black mb-2">{location?.name}</h1>
+          <p className="text-zinc-400 text-sm mb-10">Pick the delivery date and order cutoff, then copy the link and share it with your group.</p>
+
+          <div className="space-y-5 mb-8">
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Delivery Date *</label>
+              <input
+                type="date"
+                value={coordDate}
+                onChange={e => setCoordDate(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Order Cutoff — when ordering closes (optional)</label>
+              <input
+                type="datetime-local"
+                value={coordCutoff}
+                onChange={e => setCoordCutoff(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 text-sm"
+              />
+            </div>
+          </div>
+
+          {shareLink ? (
+            <div className="bg-zinc-900 border border-teal-500/40 rounded-2xl p-5">
+              <p className="text-xs font-black uppercase tracking-widest text-teal-400 mb-3">Your shareable link</p>
+              <p className="text-zinc-300 text-sm font-mono break-all mb-4">{shareLink}</p>
+              <button
+                onClick={() => { navigator.clipboard.writeText(shareLink); setCoordLinkCopied(true); setTimeout(() => setCoordLinkCopied(false), 2500); }}
+                className="w-full bg-teal-500 hover:bg-teal-400 text-black font-black py-3 rounded-full text-sm transition-colors"
+              >
+                {coordLinkCopied ? "✓ Copied!" : "📋 Copy & Share with Your Group"}
+              </button>
+              <p className="text-zinc-600 text-xs text-center mt-3">Everyone who clicks this link will order for {new Date(coordDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+            </div>
+          ) : (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 text-center">
+              <p className="text-zinc-600 text-sm">Pick a delivery date above to generate your link.</p>
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
+
+  // ── ORDERING VIEW (date in URL) ─────────────────────────────────────────
   return (
     <main className="bg-black text-white min-h-screen pb-32">
       <nav className="bg-black border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -218,6 +300,24 @@ export default function GroupOrderPage() {
           <h1 className="text-3xl font-black mb-1">{location?.name}</h1>
           <p className="text-zinc-400 text-sm">📍 {location?.address}</p>
         </div>
+
+        {/* DELIVERY DATE BANNER */}
+        {deliveryDate && (
+          <div className="bg-teal-900/30 border border-teal-500/40 rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
+            <span className="text-2xl">📅</span>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-teal-400 mb-0.5">Delivery Date</p>
+              <p className="text-white font-black text-lg">
+                {new Date(deliveryDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+              </p>
+              {orderCutoff && (
+                <p className="text-zinc-400 text-xs mt-0.5">
+                  Orders close {new Date(orderCutoff).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ORDER COUNTER */}
         <div className={`rounded-2xl p-5 border mb-8 ${meetsMinimum ? "bg-teal-900/30 border-teal-500" : "bg-zinc-900 border-zinc-700"}`}>
@@ -234,10 +334,10 @@ export default function GroupOrderPage() {
             />
           </div>
           {!meetsMinimum && (
-            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - combinedTotal).toFixed(0)} more needed to confirm today&apos;s delivery. Your card is only charged when the minimum is met.</p>
+            <p className="text-zinc-400 text-xs mt-2">${(MIN_TOTAL - combinedTotal).toFixed(0)} more needed to confirm delivery. Your card is only charged when the group minimum is met.</p>
           )}
           {meetsMinimum && (
-            <p className="text-teal-400 text-xs mt-2 font-bold">Delivery confirmed for today. Order now!</p>
+            <p className="text-teal-400 text-xs mt-2 font-bold">Minimum met — delivery confirmed{deliveryDate ? ` for ${new Date(deliveryDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}` : ""}!</p>
           )}
         </div>
 

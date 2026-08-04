@@ -177,21 +177,37 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
 
     if (order_type === "group_order") {
-      // Write to group_orders table
-      const { error: insertError } = await supabase.from("group_orders").insert({
-        location_id: meta.location_id || null,
-        location_slug: meta.location_slug || "",
-        person_name: meta.person_name || "",
-        items,
-        total,
-        special_requests: meta.special_requests || "",
-        delivery_date: meta.delivery_date || null,
-        status: "paid",
-        stripe_session_id: session.id,
-      });
-      if (insertError) {
-        console.error("Supabase group_orders insert error:", insertError);
-        return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
+      // Try to update the existing pending order created at checkout time
+      const { data: existing } = await supabase
+        .from("group_orders")
+        .select("id")
+        .eq("stripe_session_id", session.id)
+        .single();
+
+      if (existing) {
+        // Update the pending row to paid — items/details already stored correctly
+        const { error: updateError } = await supabase
+          .from("group_orders")
+          .update({ status: "paid", total })
+          .eq("stripe_session_id", session.id);
+        if (updateError) console.error("group_orders update error:", updateError);
+      } else {
+        // Fallback: insert (items will be empty since they're not in Stripe metadata)
+        const { error: insertError } = await supabase.from("group_orders").insert({
+          location_id: meta.location_id || null,
+          location_slug: meta.location_slug || "",
+          person_name: meta.person_name || "",
+          items,
+          total,
+          special_requests: meta.special_requests || "",
+          delivery_date: meta.delivery_date || null,
+          status: "paid",
+          stripe_session_id: session.id,
+        });
+        if (insertError) {
+          console.error("Supabase group_orders insert error:", insertError);
+          return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
+        }
       }
 
       try {
