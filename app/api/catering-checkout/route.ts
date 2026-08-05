@@ -10,7 +10,23 @@ const supabase = createClient(
 
 const TAX_RATE = 0.0825;
 
+function isBusinessHours(): boolean {
+  // Mon–Fri, 9am–2pm Dallas (America/Chicago)
+  const dallas = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const day = dallas.getDay();
+  const mins = dallas.getHours() * 60 + dallas.getMinutes();
+  return day >= 1 && day <= 5 && mins >= 9 * 60 && mins < 14 * 60;
+}
+
 export async function POST(req: NextRequest) {
+  // Block orders placed outside business hours
+  if (!isBusinessHours()) {
+    return NextResponse.json(
+      { error: "Online ordering is only available Mon–Fri, 9 am – 2 pm Central Time. Please call us or submit your request during business hours." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const {
     flow_type,           // "package" | "alacarte"
@@ -26,15 +42,19 @@ export async function POST(req: NextRequest) {
     tip,
   } = body;
 
-  // Block weekend event dates for package and alacarte catering
-  if (event_date && (flow_type === "package" || flow_type === "alacarte")) {
-    const day = new Date(event_date + "T12:00:00").getDay();
-    if (day === 0 || day === 6) {
-      return NextResponse.json(
-        { error: "We are not available on weekends. Please choose a Monday–Friday event date." },
-        { status: 400 }
-      );
-    }
+  // Always require a weekday event date — block weekends and missing dates
+  if (!event_date) {
+    return NextResponse.json(
+      { error: "Please select an event date before checking out." },
+      { status: 400 }
+    );
+  }
+  const eventDay = new Date(event_date + "T12:00:00").getDay();
+  if (eventDay === 0 || eventDay === 6) {
+    return NextResponse.json(
+      { error: "We are not available on weekends. Please choose a Monday–Friday event date." },
+      { status: 400 }
+    );
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
