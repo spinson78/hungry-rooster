@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import NavBar from "../components/NavBar";
 import DinnerCheckout from "./DinnerCheckout";
 
+export const dynamic = "force-dynamic"; // always fetch fresh — never serve cached menu
+
 export default async function DinnerPage() {
   // Server-side fetch so Googlebot sees real menu content
   const supabase = createClient(

@@ -158,6 +158,15 @@ export async function POST(req: NextRequest) {
   // Pull any order-level note
   const note = (orderObj.metadata as Record<string, string> | undefined)?.note || "";
 
+  // Extract scheduled time for future orders (Uber Eats / DoorDash pre-orders)
+  // Square stores this in pickup_details.pickup_at or delivery_details.deliver_at
+  const rawScheduledAt =
+    (deliveryDetails?.deliver_at as string) ||
+    (deliveryDetails?.pickup_at  as string) ||
+    (pickupDetails?.pickup_at    as string) ||
+    null;
+  const scheduledFor = rawScheduledAt ? new Date(rawScheduledAt).toISOString() : null;
+
   const orderNum = `THR-${Date.now().toString().slice(-6)}`;
 
   const { error: insertError } = await supabase.from("orders").insert({
@@ -177,6 +186,7 @@ export async function POST(req: NextRequest) {
     total,
     fulfillment_type:  "delivery",
     status:            "pending",
+    scheduled_for:     scheduledFor,
     stripe_session_id: `square_${squareOrderId}`,
   });
 
