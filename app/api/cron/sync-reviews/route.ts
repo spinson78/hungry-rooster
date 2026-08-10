@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+// NextRequest used for type annotation on _req
 import { createClient } from "@supabase/supabase-js";
 
-export async function GET(req: NextRequest) {
-  // Protect the cron endpoint — Vercel passes this automatically
-  const auth = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET(_req: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
