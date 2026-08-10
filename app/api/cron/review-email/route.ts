@@ -7,7 +7,7 @@ const REVIEW_LINK = "https://g.page/r/CelZGPN-7w0SEBE/review";
 export async function GET(_req: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   // Find orders that:

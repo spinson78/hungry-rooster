@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(_req: NextRequest) {
+  try {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -71,4 +72,8 @@ export async function GET(_req: NextRequest) {
     total_google_reviews: detailsData.result?.user_ratings_total,
     overall_rating: detailsData.result?.rating,
   });
+  } catch (err) {
+    console.error("sync-reviews: unhandled error", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
