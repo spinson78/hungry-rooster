@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 const REVIEW_LINK = "https://g.page/r/CelZGPN-7w0SEBE/review";
 
 export async function GET(req: NextRequest) {
@@ -14,6 +9,11 @@ export async function GET(req: NextRequest) {
   if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   // Find orders that:
   // - have a customer email
