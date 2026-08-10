@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 // ← Paste your GBP "Get more reviews" link here once you have it
-const GOOGLE_REVIEW_URL = "https://g.page/r/CelZGPN-7w0SEBM/review";
+const GOOGLE_REVIEW_URL = "https://g.page/r/CelZGPN-7w0SEBE/review";
 
 export async function POST(req: NextRequest) {
   try {

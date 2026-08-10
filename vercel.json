@@ -3,6 +3,14 @@
     {
       "path": "/api/weekly-report",
       "schedule": "0 12 * * 1"
+    },
+    {
+      "path": "/api/cron/review-email",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/sync-reviews",
+      "schedule": "0 14 * * 1"
     }
   ]
 }

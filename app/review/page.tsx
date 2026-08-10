@@ -33,7 +33,7 @@ export default function ReviewPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedRating, setSubmittedRating] = useState(0);
 
-  const GOOGLE_REVIEW_URL = "https://g.page/r/CelZGPN-7w0SEBM/review";
+  const GOOGLE_REVIEW_URL = "https://g.page/r/CelZGPN-7w0SEBE/review";
 
   const handleSubmit = async () => {
     setError("");
