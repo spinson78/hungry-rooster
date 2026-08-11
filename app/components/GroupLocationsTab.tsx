@@ -49,6 +49,7 @@ export default function GroupLocationsTab() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [manifestSlug, setManifestSlug] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -262,6 +263,12 @@ export default function GroupLocationsTab() {
                         {copiedId === loc.id ? "✓ Copied!" : "📋 Copy Link"}
                       </button>
                       <button
+                        onClick={() => setManifestSlug(loc.slug)}
+                        className="text-xs font-black px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 transition-colors"
+                      >
+                        📋 Manifest
+                      </button>
+                      <button
                         onClick={() => handleToggleActive(loc)}
                         className={`text-xs font-black px-4 py-2 rounded-full border transition-colors ${loc.is_active ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-orange-400 hover:border-orange-400" : "bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20"}`}
                       >
@@ -378,6 +385,116 @@ export default function GroupLocationsTab() {
           </div>
         </>
       )}
+
+      {/* Order Manifest Modal */}
+      {manifestSlug && (() => {
+        const loc = locations.find(l => l.slug === manifestSlug);
+        const paidOrders = orders.filter(o =>
+          o.location_slug === manifestSlug &&
+          (o.status === "paid" || o.status === "complete") &&
+          Array.isArray(o.items) && o.items.length > 0
+        );
+
+        // Aggregate items across all paid orders
+        const itemMap: Record<string, { name: string; qty: number; price: number }> = {};
+        for (const order of paidOrders) {
+          for (const item of order.items) {
+            const key = item.name;
+            if (!itemMap[key]) itemMap[key] = { name: item.name, qty: 0, price: item.price || 0 };
+            itemMap[key].qty += item.qty || 1;
+          }
+        }
+        const aggregated = Object.values(itemMap).sort((a, b) => b.qty - a.qty);
+        const grandTotal = paidOrders.reduce((s, o) => s + (o.total || 0), 0);
+
+        return (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center p-4 overflow-y-auto">
+            <div className="bg-zinc-900 border border-orange-500/30 rounded-2xl w-full max-w-2xl my-8">
+              {/* Header */}
+              <div className="flex items-start justify-between p-6 border-b border-zinc-800">
+                <div>
+                  <h2 className="text-xl font-black text-white">{loc?.name} — Order Manifest</h2>
+                  <div className="flex gap-3 mt-1 flex-wrap">
+                    {loc?.delivery_date && (
+                      <span className="text-yellow-400 text-xs font-bold">
+                        📅 {new Date(loc.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                      </span>
+                    )}
+                    <span className="text-zinc-400 text-xs">{paidOrders.length} paid order{paidOrders.length !== 1 ? "s" : ""}</span>
+                    <span className="text-teal-400 text-xs font-bold">${grandTotal.toFixed(2)} total</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    🖨 Print
+                  </button>
+                  <button
+                    onClick={() => setManifestSlug(null)}
+                    className="text-zinc-500 hover:text-white text-xl leading-none px-2"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {paidOrders.length === 0 ? (
+                <div className="p-10 text-center">
+                  <p className="text-zinc-500 text-lg">No paid orders yet for this location.</p>
+                  <p className="text-zinc-600 text-sm mt-2">Orders will appear here once payment is completed.</p>
+                </div>
+              ) : (
+                <div className="p-6 space-y-6">
+                  {/* Aggregated prep list */}
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-orange-400 mb-3">What to Prepare</h3>
+                    <div className="bg-zinc-800 rounded-xl overflow-hidden">
+                      {aggregated.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 last:border-0">
+                          <p className="text-white font-bold">{item.name}</p>
+                          <div className="flex items-center gap-4">
+                            {item.price > 0 && <p className="text-zinc-500 text-sm">${(item.price * item.qty).toFixed(2)}</p>}
+                            <span className="bg-orange-500 text-white font-black text-lg w-10 h-10 rounded-full flex items-center justify-center">{item.qty}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Individual order breakdown */}
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Individual Orders</h3>
+                    <div className="space-y-2">
+                      {paidOrders.map(o => (
+                        <div key={o.id} className="bg-zinc-800 rounded-xl px-4 py-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-white font-black">{o.person_name}</p>
+                            <p className="text-teal-400 font-bold text-sm">${Number(o.total).toFixed(2)}</p>
+                          </div>
+                          <p className="text-zinc-400 text-xs">
+                            {o.items.map(item => `${item.qty && item.qty > 1 ? item.qty + "× " : ""}${item.name}`).join(", ")}
+                          </p>
+                          {o.special_requests && (
+                            <p className="text-yellow-400 text-xs mt-1">📝 {o.special_requests}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Summary footer */}
+                  <div className="border-t border-zinc-700 pt-4 flex justify-between items-center">
+                    <p className="text-zinc-500 text-sm">{paidOrders.length} orders · {aggregated.reduce((s, i) => s + i.qty, 0)} total items</p>
+                    <p className="text-white font-black text-xl">${grandTotal.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
