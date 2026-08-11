@@ -418,7 +418,10 @@ export default function KDSPage() {
   todayMidnight.setHours(0, 0, 0, 0);
   const active = orders.filter(o =>
     (o.status === "pending" || o.status === "in_progress") &&
-    new Date(o.created_at) >= todayMidnight
+    (
+      new Date(o.created_at) >= todayMidnight ||                          // placed today (ASAP)
+      (o.scheduled_for != null && new Date(o.scheduled_for) >= todayMidnight) // or scheduled for today/future
+    )
   );
   const completed = orders
     .filter(o => o.status === "complete" && new Date(o.created_at) >= todayMidnight)
