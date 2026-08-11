@@ -407,6 +407,45 @@ export default function GroupLocationsTab() {
         const aggregated = Object.values(itemMap).sort((a, b) => b.qty - a.qty);
         const grandTotal = paidOrders.reduce((s, o) => s + (o.total || 0), 0);
 
+        const printManifest = () => {
+          const deliveryLabel = loc?.delivery_date
+            ? new Date(loc.delivery_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+            : "";
+
+          const prepRows = aggregated.map(item =>
+            `<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;font-size:15px">${item.name}</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:22px;font-weight:900;color:#f97316">${item.qty}</td></tr>`
+          ).join("");
+
+          const orderRows = paidOrders.map(o =>
+            `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <strong>${o.person_name}</strong>
+                <span style="color:#059669">$${Number(o.total).toFixed(2)}</span>
+              </div>
+              <div style="color:#6b7280;font-size:13px">${o.items.map(i => `${i.qty && i.qty > 1 ? i.qty + "× " : ""}${i.name}`).join(", ")}</div>
+              ${o.special_requests ? `<div style="color:#d97706;font-size:12px;margin-top:4px">📝 ${o.special_requests}</div>` : ""}
+            </div>`
+          ).join("");
+
+          const html = `<!DOCTYPE html><html><head><title>${loc?.name} — Order Manifest</title>
+            <style>body{font-family:sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#111}h1{font-size:22px;font-weight:900;margin:0 0 4px}h2{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin:20px 0 8px}table{width:100%;border-collapse:collapse}@media print{@page{margin:12mm}}</style>
+            </head><body>
+            <h1>${loc?.name} — Order Manifest</h1>
+            <div style="color:#6b7280;font-size:14px;margin-bottom:20px">${deliveryLabel ? `📅 ${deliveryLabel} · ` : ""}${paidOrders.length} orders · $${grandTotal.toFixed(2)}</div>
+            <h2>What to Prepare</h2>
+            <table><tbody>${prepRows}</tbody></table>
+            <h2>Individual Orders</h2>
+            ${orderRows}
+            <div style="border-top:2px solid #111;margin-top:20px;padding-top:12px;display:flex;justify-content:space-between;font-weight:900;font-size:18px">
+              <span>${paidOrders.length} orders · ${aggregated.reduce((s, i) => s + i.qty, 0)} items</span>
+              <span>$${grandTotal.toFixed(2)}</span>
+            </div>
+          </body></html>`;
+
+          const w = window.open("", "_blank", "width=800,height=900");
+          if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
+        };
+
         return (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center p-4 overflow-y-auto">
             <div className="bg-zinc-900 border border-orange-500/30 rounded-2xl w-full max-w-2xl my-8">
@@ -426,7 +465,7 @@ export default function GroupLocationsTab() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => window.print()}
+                    onClick={printManifest}
                     title="Opens print dialog — choose 'Save as PDF' to download"
                     className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 px-3 py-1.5 rounded-full transition-colors"
                   >
