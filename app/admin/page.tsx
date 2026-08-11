@@ -728,12 +728,48 @@ export default function AdminPage() {
                     })}
                   </div>
                 )}
-                {order.special_requests && (
-                  <div className="bg-zinc-800 rounded-xl px-4 py-2 text-sm mb-3">
-                    <span className="text-yellow-400 font-bold">Note: </span>
-                    <span className="text-zinc-300">{order.special_requests}</span>
-                  </div>
-                )}
+                {order.special_requests && (() => {
+                  const sr = order.special_requests;
+                  // Parse event date and drop-off time out of special_requests
+                  const eventMatch    = sr.match(/Event:\s*([\d-]+)/);
+                  const dropoffMatch  = sr.match(/Drop-off time:\s*([\d:]+)/);
+                  const remaining     = sr
+                    .replace(/Event:\s*[\d-]+\s*·?\s*/i, "")
+                    .replace(/Drop-off time:\s*[\d:]+\s*·?\s*/i, "")
+                    .trim().replace(/^·\s*/, "").replace(/\s*·$/, "").trim();
+
+                  const eventDate = eventMatch
+                    ? new Date(eventMatch[1] + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+                    : null;
+                  const dropoffTime = dropoffMatch
+                    ? new Date("1970-01-01T" + dropoffMatch[1]).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+                    : null;
+
+                  return (
+                    <div className="space-y-2 mb-3">
+                      {(eventDate || dropoffTime) && (
+                        <div className="flex flex-wrap gap-2">
+                          {eventDate && (
+                            <span className="bg-yellow-400/15 border border-yellow-400/30 text-yellow-300 text-xs font-bold px-3 py-1.5 rounded-full">
+                              📅 Event: {eventDate}
+                            </span>
+                          )}
+                          {dropoffTime && (
+                            <span className="bg-teal-400/15 border border-teal-400/30 text-teal-300 text-xs font-bold px-3 py-1.5 rounded-full">
+                              🕐 Drop-off: {dropoffTime}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {remaining && (
+                        <div className="bg-zinc-800 rounded-xl px-4 py-2 text-sm">
+                          <span className="text-yellow-400 font-bold">Note: </span>
+                          <span className="text-zinc-300">{remaining}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {order.status !== "complete" && (
                   <button
                     onClick={() => {
