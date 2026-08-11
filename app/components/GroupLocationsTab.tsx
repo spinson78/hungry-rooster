@@ -427,9 +427,10 @@ export default function GroupLocationsTab() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => window.print()}
+                    title="Opens print dialog — choose 'Save as PDF' to download"
                     className="text-xs font-black text-zinc-400 hover:text-white border border-zinc-700 px-3 py-1.5 rounded-full transition-colors"
                   >
-                    🖨 Print
+                    💾 Save as PDF
                   </button>
                   <button
                     onClick={() => setManifestSlug(null)}
