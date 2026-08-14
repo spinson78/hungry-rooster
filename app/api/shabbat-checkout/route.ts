@@ -11,7 +11,7 @@ const TAX_RATE = 0.0825;
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { lineItems, metadata, tipAmount } = body;
+  const { lineItems, metadata, tipAmount, gift_code, gift_discount } = body;
 
   // Server-side cutoff check — prevents orders slipping through after 9 AM
   if (metadata?.menu_id) {
@@ -62,19 +62,35 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Gift card → Stripe coupon
+  type Discount = { coupon: string };
+  const discounts: Discount[] = [];
+  if ((gift_discount || 0) > 0) {
+    const coupon = await stripe.coupons.create({
+      amount_off: Math.round(gift_discount * 100),
+      currency: "usd",
+      duration: "once",
+      name: `Gift Card${gift_code ? ` (${gift_code})` : ""}`,
+    });
+    discounts.push({ coupon: coupon.id });
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: allLineItems,
     mode: "payment",
+    ...(discounts.length > 0 ? { discounts } : {}),
     success_url: `${baseUrl}/shabbat/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/shabbat`,
     metadata: {
       ...metadata,
-      subtotal:   (subtotalCents / 100).toFixed(2),
-      tax_amount: (taxCents      / 100).toFixed(2),
-      tip_amount: (tipCents      / 100).toFixed(2),
+      subtotal:      (subtotalCents / 100).toFixed(2),
+      tax_amount:    (taxCents      / 100).toFixed(2),
+      tip_amount:    (tipCents      / 100).toFixed(2),
+      gift_code:     gift_code || "",
+      gift_discount: String(gift_discount || 0),
     },
     custom_text: {
       submit: { message: "Your Shabbat Box will be delivered Friday. Shabbat Shalom!" },

@@ -39,6 +39,11 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
   const [bakeryMenu, setBakeryMenu] = useState<{ id: string; items: { name: string; price: number; description: string }[] } | null>(null);
   const [selectedBakery, setSelectedBakery] = useState<Record<string, boolean>>({});
   const [tipAmount, setTipAmount] = useState<number>(0);
+  const [giftCode, setGiftCode] = useState("");
+  const [giftDiscount, setGiftDiscount] = useState(0);
+  const [giftCodeMsg, setGiftCodeMsg] = useState("");
+  const [giftCodeErr, setGiftCodeErr] = useState("");
+  const [checkingGift, setCheckingGift] = useState(false);
 
   const [selectedSize, setSelectedSize] = useState<typeof SIZES[0]>(SIZES[0]);
   const [addons, setAddons] = useState({
@@ -143,6 +148,29 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     ];
   };
 
+  const applyGiftCard = async () => {
+    if (!giftCode.trim()) return;
+    setCheckingGift(true);
+    setGiftCodeMsg("");
+    setGiftCodeErr("");
+    try {
+      const res = await fetch(`/api/gift-validate?code=${encodeURIComponent(giftCode.trim().toUpperCase())}`);
+      const data = await res.json();
+      if (data.valid) {
+        const rawTotal = getTotal() * 1.0825 + tipAmount;
+        const discount = Math.min(parseFloat(data.balance), rawTotal);
+        setGiftDiscount(discount);
+        setGiftCodeMsg(`✓ $${parseFloat(data.balance).toFixed(2)} available — $${discount.toFixed(2)} applied`);
+      } else {
+        setGiftCodeErr(data.message || "Invalid gift card");
+        setGiftDiscount(0);
+      }
+    } catch {
+      setGiftCodeErr("Could not validate gift card. Try again.");
+    }
+    setCheckingGift(false);
+  };
+
   const handleSubmit = async () => {
     if (!form.name || !form.phone || !form.address) {
       setError("Please fill in your name, phone, and delivery address.");
@@ -174,6 +202,8 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
         body: JSON.stringify({
           lineItems: buildLineItems(),
           tipAmount,
+          gift_code: giftCode.trim().toUpperCase(),
+          gift_discount: giftDiscount,
           metadata: {
             order_type: "shabbat",
             menu_id: menu?.id || "",
@@ -376,13 +406,39 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
               </div>
             </div>
 
+            {/* Gift Card */}
+            <div className="mt-6">
+              <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">Gift Card (optional)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="THR-XXXX-XXXX"
+                  value={giftCode}
+                  onChange={(e) => { setGiftCode(e.target.value.toUpperCase()); setGiftCodeMsg(""); setGiftCodeErr(""); setGiftDiscount(0); }}
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm font-mono"
+                />
+                <button
+                  onClick={applyGiftCard}
+                  disabled={checkingGift || !giftCode.trim()}
+                  className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black px-4 rounded-xl text-sm transition-colors"
+                >
+                  {checkingGift ? "..." : "Apply"}
+                </button>
+              </div>
+              {giftCodeMsg && <p className="text-yellow-400 text-xs mt-1">{giftCodeMsg}</p>}
+              {giftCodeErr && <p className="text-red-400 text-xs mt-1">{giftCodeErr}</p>}
+            </div>
+
             {/* Order Summary */}
             <div className="mt-4 bg-zinc-800 rounded-xl p-4 text-sm space-y-1">
               <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>${getTotal().toFixed(2)}</span></div>
               <div className="flex justify-between text-zinc-400"><span>Sales Tax (8.25%)</span><span>${(getTotal() * 0.0825).toFixed(2)}</span></div>
               {tipAmount > 0 && <div className="flex justify-between text-teal-400"><span>Driver Tip</span><span>${tipAmount.toFixed(2)}</span></div>}
+              {giftDiscount > 0 && (
+                <div className="flex justify-between text-yellow-400"><span>🎁 Gift Card</span><span>−${giftDiscount.toFixed(2)}</span></div>
+              )}
               <div className="flex justify-between text-white font-black border-t border-zinc-700 pt-2 mt-2">
-                <span>Total</span><span>${(getTotal() * 1.0825 + tipAmount).toFixed(2)}</span>
+                <span>Total</span><span>${Math.max(0, getTotal() * 1.0825 + tipAmount - giftDiscount).toFixed(2)}</span>
               </div>
             </div>
             {getTotal() < 100 && (
@@ -391,7 +447,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
 
             {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
             <button onClick={handleSubmit} disabled={submitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-lg transition-colors mt-6 disabled:opacity-50">
-              {submitting ? "Redirecting to payment..." : `Pay $${(getTotal() * 1.0825 + tipAmount).toFixed(2)} — Secure Checkout`}
+              {submitting ? "Redirecting to payment..." : `Pay $${Math.max(0, getTotal() * 1.0825 + tipAmount - giftDiscount).toFixed(2)} — Secure Checkout`}
             </button>
             <p className="text-zinc-600 text-xs text-center mt-3">Powered by Stripe. Your card info is never stored on our servers.</p>
           </div>
