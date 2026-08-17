@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Client created inside handler to avoid build-time env var issues
 
 const TYPE_LABELS: Record<string, string> = {
   menu:        "Menu (Walk-in)",
@@ -49,14 +46,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const { from, to, label } = getPreviousWeekRange();
 
-  // Fetch all orders from last week
+  // Fetch paid orders from last week — exclude unpaid and cancelled
   const { data: orders, error } = await supabase
     .from("orders")
     .select("*")
     .gte("created_at", from.toISOString())
     .lte("created_at", to.toISOString())
+    .neq("status", "pending_payment")
+    .neq("status", "cancelled")
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -64,30 +68,71 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
   }
 
+  // Also fetch invoices and group orders for the same week
+  const [{ data: invoiceData }, { data: groupData }] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("id, total, tax_amount, status, paid_at, created_at")
+      .eq("status", "paid")
+      .gte("paid_at", from.toISOString())
+      .lte("paid_at", to.toISOString()),
+    supabase
+      .from("group_orders")
+      .select("id, person_name, location_slug, total, status, created_at")
+      .eq("status", "paid")
+      .gte("created_at", from.toISOString())
+      .lte("created_at", to.toISOString()),
+  ]);
+
   const rows = orders || [];
+  const invoiceRows = invoiceData || [];
+  const groupRows = groupData || [];
+
+  // Unified rows for summary
+  type ReportItem = { order_type: string; total: number; tax_amount: number; tip_amount: number };
+  const allItems: ReportItem[] = [
+    ...rows.map(o => ({
+      order_type: o.order_type || "unknown",
+      total:      Number(o.total) || 0,
+      tax_amount: Number(o.tax_amount) || 0,
+      tip_amount: Number(o.tip_amount) || 0,
+    })),
+    ...invoiceRows.map(i => ({
+      order_type: "invoice",
+      total:      Number(i.total) || 0,
+      tax_amount: Number(i.tax_amount) || 0,
+      tip_amount: 0,
+    })),
+    ...groupRows.map(g => ({
+      order_type: "group_order",
+      total:      Number(g.total) || 0,
+      tax_amount: 0,
+      tip_amount: 0,
+    })),
+  ];
 
   // Compute summary
-  const summary = rows.reduce(
+  const summary = allItems.reduce(
     (acc, o) => ({
       count:   acc.count + 1,
-      revenue: acc.revenue + Math.max(0, (Number(o.total) || 0) - (Number(o.tax_amount) || 0) - (Number(o.tip_amount) || 0)),
-      tax:     acc.tax    + (Number(o.tax_amount) || 0),
-      tips:    acc.tips   + (Number(o.tip_amount) || 0),
-      total:   acc.total  + (Number(o.total) || 0),
+      revenue: acc.revenue + Math.max(0, o.total - o.tax_amount - o.tip_amount),
+      tax:     acc.tax    + o.tax_amount,
+      tips:    acc.tips   + o.tip_amount,
+      total:   acc.total  + o.total,
     }),
     { count: 0, revenue: 0, tax: 0, tips: 0, total: 0 }
   );
 
   // Breakdown by type
   const byType: Record<string, { count: number; revenue: number; tax: number; tips: number; total: number }> = {};
-  rows.forEach(o => {
-    const t = o.order_type || "unknown";
+  allItems.forEach(o => {
+    const t = o.order_type;
     if (!byType[t]) byType[t] = { count: 0, revenue: 0, tax: 0, tips: 0, total: 0 };
     byType[t].count++;
-    byType[t].tax     += Number(o.tax_amount) || 0;
-    byType[t].tips    += Number(o.tip_amount) || 0;
-    byType[t].total   += Number(o.total) || 0;
-    byType[t].revenue += Math.max(0, (Number(o.total) || 0) - (Number(o.tax_amount) || 0) - (Number(o.tip_amount) || 0));
+    byType[t].tax     += o.tax_amount;
+    byType[t].tips    += o.tip_amount;
+    byType[t].total   += o.total;
+    byType[t].revenue += Math.max(0, o.total - o.tax_amount - o.tip_amount);
   });
 
   const byTypeSorted = Object.entries(byType).sort((a, b) => b[1].total - a[1].total);
@@ -142,24 +187,44 @@ export async function GET(req: NextRequest) {
     </table>
   `;
 
-  const orderRows = rows.map(o => {
-    const itemList = Array.isArray(o.items)
-      ? o.items.map((i: { name?: string; qty?: number; quantity?: number }) =>
-          `${i.qty || i.quantity || 1}x ${i.name || "Item"}`
-        ).join(", ")
-      : "—";
-    return `
+  const orderRows = [
+    ...rows.map(o => {
+      const itemList = Array.isArray(o.items)
+        ? o.items.map((i: { name?: string; qty?: number; quantity?: number }) =>
+            `${i.qty || i.quantity || 1}x ${i.name || "Item"}`
+          ).join(", ")
+        : "—";
+      return `
+        <tr style="border-bottom:1px solid #1c1c1e;">
+          <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${new Date(o.created_at).toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" })}</td>
+          <td style="padding:8px 12px;color:#d4d4d8;font-size:12px;">${o.customer_name || "—"}</td>
+          <td style="padding:8px 12px;color:#71717a;font-size:12px;">${TYPE_LABELS[o.order_type] || o.order_type}</td>
+          <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${itemList}</td>
+          <td style="padding:8px 12px;text-align:right;color:#ffffff;font-weight:bold;font-size:12px;">${fmt(Number(o.total) || 0)}</td>
+        </tr>
+      `;
+    }),
+    ...invoiceRows.map(i => `
       <tr style="border-bottom:1px solid #1c1c1e;">
-        <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${new Date(o.created_at).toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" })}</td>
-        <td style="padding:8px 12px;color:#d4d4d8;font-size:12px;">${o.customer_name || "—"}</td>
-        <td style="padding:8px 12px;color:#71717a;font-size:12px;">${TYPE_LABELS[o.order_type] || o.order_type}</td>
-        <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${itemList}</td>
-        <td style="padding:8px 12px;text-align:right;color:#ffffff;font-weight:bold;font-size:12px;">${fmt(Number(o.total) || 0)}</td>
+        <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${new Date(i.paid_at || i.created_at).toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" })}</td>
+        <td style="padding:8px 12px;color:#d4d4d8;font-size:12px;">Invoice</td>
+        <td style="padding:8px 12px;color:#71717a;font-size:12px;">Invoice</td>
+        <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">—</td>
+        <td style="padding:8px 12px;text-align:right;color:#ffffff;font-weight:bold;font-size:12px;">${fmt(Number(i.total) || 0)}</td>
       </tr>
-    `;
-  }).join("");
+    `),
+    ...groupRows.map(g => `
+      <tr style="border-bottom:1px solid #1c1c1e;">
+        <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${new Date(g.created_at).toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" })}</td>
+        <td style="padding:8px 12px;color:#d4d4d8;font-size:12px;">${g.person_name || "Group Order"}</td>
+        <td style="padding:8px 12px;color:#71717a;font-size:12px;">Group Order</td>
+        <td style="padding:8px 12px;color:#a1a1aa;font-size:12px;">${g.location_slug || "—"}</td>
+        <td style="padding:8px 12px;text-align:right;color:#ffffff;font-weight:bold;font-size:12px;">${fmt(Number(g.total) || 0)}</td>
+      </tr>
+    `),
+  ].join("");
 
-  const orderTable = rows.length > 0 ? `
+  const orderTable = summary.count > 0 ? `
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <thead>
         <tr style="border-bottom:2px solid #2d2d2f;">
@@ -187,13 +252,13 @@ export async function GET(req: NextRequest) {
         ${typeTable}
       </div>
 
-      <h2 style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#71717a;margin:0 0 10px;">All Orders (${rows.length})</h2>
+      <h2 style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#71717a;margin:0 0 10px;">All Orders (${summary.count})</h2>
       <div style="background:#111;border:1px solid #2d2d2f;border-radius:10px;overflow:hidden;">
         ${orderTable}
       </div>
 
       <p style="color:#3f3f46;font-size:11px;text-align:center;margin-top:28px;">
-        Orders for ${label} have been cleared from the database. · The Hungry Rooster
+        The Hungry Rooster · 1499 Regal Row, Suite 206, Dallas TX
       </p>
     </div>
   `;
@@ -215,19 +280,10 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Delete last week's orders
-  if (rows.length > 0) {
-    const ids = rows.map((o: { id: string }) => o.id);
-    for (let i = 0; i < ids.length; i += 50) {
-      await supabase.from("orders").delete().in("id", ids.slice(i, i + 50));
-    }
-  }
-
   return NextResponse.json({
     success: true,
     week: label,
-    orders_reported: rows.length,
-    orders_deleted: rows.length,
+    orders_reported: summary.count,
     gross_total: summary.total,
   });
 }
