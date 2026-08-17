@@ -4,6 +4,54 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+export async function GET(req: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type");
+
+  // All accounts list
+  if (type === "all") {
+    const { data } = await supabase
+      .from("school_accounts")
+      .select("id,student_name,student_pin,grade_class,school_name,parent_name,parent_email,parent_phone,billing_preference,balance,status,freeze_reason,created_at")
+      .order("created_at", { ascending: false });
+    return NextResponse.json({ accounts: data || [] });
+  }
+
+  // Single account + transactions
+  if (type === "single") {
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const { data: txns } = await supabase
+      .from("school_transactions")
+      .select("id,type,amount,description,created_at")
+      .eq("account_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    return NextResponse.json({ transactions: txns || [] });
+  }
+
+  // All sales transactions (for reports) — only point-of-sale types
+  if (type === "sales") {
+    const from = searchParams.get("from");
+    const to   = searchParams.get("to");
+    let query = supabase
+      .from("school_transactions")
+      .select("id,type,amount,description,account_id,created_at")
+      .in("type", ["purchase", "card_sale", "cash_sale"])
+      .order("created_at", { ascending: false });
+    if (from) query = query.gte("created_at", from);
+    if (to)   query = query.lte("created_at", to);
+    const { data } = await query;
+    return NextResponse.json({ sales: data || [] });
+  }
+
+  return NextResponse.json({ error: "Unknown type" }, { status: 400 });
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
@@ -86,8 +134,8 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             from: "The Hungry Rooster <sales@thehungryroostertx.com>",
             to: parent_email,
-            subject: `Set up ${student_name}'s coffee shop account ☕`,
-            html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:12px;"><h1 style="color:#e9c46a;">Almost ready! ☕</h1><p>Hi ${parent_name},</p><p>An account has been created for <strong>${student_name}</strong> at the school coffee shop. To activate it, please add a card on file for weekly billing:</p><div style="text-align:center;margin:28px 0;"><a href="${setupSession.url}" style="background:#e9c46a;color:#000;font-weight:900;padding:14px 32px;border-radius:50px;text-decoration:none;font-size:16px;">Add Card &amp; Activate Account</a></div><p style="color:#71717a;font-size:12px;">Your card will be charged every Friday for that week's purchases.</p></div>`,
+            subject: `Set up ${student_name}'s THE COOP account ☕`,
+            html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:12px;"><h1 style="color:#e9c46a;">Almost ready! ☕</h1><p>Hi ${parent_name},</p><p>An account has been created for <strong>${student_name}</strong> at THE COOP by The Hungry Rooster. To activate it, please add a card on file for weekly billing:</p><div style="text-align:center;margin:28px 0;"><a href="${setupSession.url}" style="background:#e9c46a;color:#000;font-weight:900;padding:14px 32px;border-radius:50px;text-decoration:none;font-size:16px;">Add Card &amp; Activate Account</a></div><p style="color:#71717a;font-size:12px;">Your card will be charged every Friday for that week's purchases.</p></div>`,
           }),
         });
       }
@@ -104,7 +152,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             from: "The Hungry Rooster <sales@thehungryroostertx.com>",
             to: parent_email,
-            subject: `${student_name}'s coffee shop account is ready ☕`,
+            subject: `${student_name}'s THE COOP account is ready ☕`,
             html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:12px;"><h1 style="color:#e9c46a;">Account Ready! ☕</h1><p>Hi ${parent_name},</p><p><strong>${student_name}</strong> is all set!</p><div style="background:#1c1c1e;border:2px solid #e9c46a;border-radius:12px;padding:24px;text-align:center;margin:24px 0;"><p style="color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;">Student Account ID</p><p style="font-size:42px;font-weight:900;color:#e9c46a;letter-spacing:6px;margin:0;">${student_pin}</p></div><p>You'll receive a Stripe invoice by email each Friday. Questions? Reply to this email.</p></div>`,
           }),
         });
@@ -131,7 +179,7 @@ export async function POST(req: NextRequest) {
           from: "The Hungry Rooster <sales@thehungryroostertx.com>",
           to: acct.parent_email,
           subject: `Reminder: ${acct.student_name}'s coffee shop balance — $${Number(acct.balance).toFixed(2)}`,
-          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><p>Hi ${acct.parent_name},</p><p>This is a friendly reminder that <strong>${acct.student_name}</strong> has an outstanding balance of <strong>$${Number(acct.balance).toFixed(2)}</strong>.</p><p>To view the full transaction history, visit: <a href="${baseUrl}/school/account">${baseUrl}/school/account</a> and enter your email and student ID (<strong>${acct.student_pin}</strong>).</p><p>— The Hungry Rooster Coffee Shop</p></div>`,
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><p>Hi ${acct.parent_name},</p><p>This is a friendly reminder that <strong>${acct.student_name}</strong> has an outstanding balance of <strong>$${Number(acct.balance).toFixed(2)}</strong>.</p><p>To view the full transaction history, visit: <a href="${baseUrl}/school/account">${baseUrl}/school/account</a> and enter your email and student ID (<strong>${acct.student_pin}</strong>).</p><p>— THE COOP by The Hungry Rooster</p></div>`,
         }),
       });
     }

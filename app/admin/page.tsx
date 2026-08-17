@@ -873,7 +873,7 @@ export default function AdminPage() {
             ⭐ Reviews
           </button>
           <button onClick={() => setTab("school")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "school" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
-            ☕ Coffee Shop
+            🐓 THE COOP
           </button>
           <button onClick={() => setTab("seo")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "seo" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📈 SEO

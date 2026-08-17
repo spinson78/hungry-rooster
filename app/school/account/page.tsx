@@ -65,7 +65,7 @@ export default function ParentPortalPage() {
 
           {account.status === "frozen" && account.freeze_reason && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-sm text-red-300">
-              <strong>Account frozen:</strong> {account.freeze_reason}. Please contact the school coffee shop to resolve.
+              <strong>Account frozen:</strong> {account.freeze_reason}. Please contact the THE COOP to resolve.
             </div>
           )}
 
@@ -106,7 +106,7 @@ export default function ParentPortalPage() {
       <div className="max-w-sm w-full">
         <div className="text-center mb-8">
           <p className="text-5xl mb-4">☕</p>
-          <h1 className="text-2xl font-black mb-2">Parent Account Portal</h1>
+          <h1 className="text-2xl font-black mb-2">THE COOP — Parent Portal</h1>
           <p className="text-zinc-400 text-sm">View your student&apos;s balance and transaction history</p>
         </div>
         <div className="space-y-4">

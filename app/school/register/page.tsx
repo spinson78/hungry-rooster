@@ -65,7 +65,7 @@ export default function SchoolRegisterPage() {
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-10">
           <div className="text-5xl mb-4">☕</div>
-          <h1 className="text-3xl font-black mb-2">Set Up Coffee Shop Account</h1>
+          <h1 className="text-3xl font-black mb-2">Set Up THE COOP Account</h1>
           <p className="text-zinc-400">Create an account for your student. They&apos;ll use their ID number at the counter.</p>
         </div>
 

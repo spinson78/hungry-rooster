@@ -2,6 +2,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 
+type CoopSale = { id: string; type: string; amount: number; description: string; created_at: string };
+
 type OrderRow = {
   id: string;
   order_type: string;
@@ -113,19 +115,19 @@ export default function ReportsTab() {
   const [orders,   setOrders]   = useState<OrderRow[]>([]);
   const [groupOrders, setGroupOrders] = useState<GroupOrderRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [coopSales, setCoopSales] = useState<CoopSale[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [range,    setRange]    = useState<Range>("month");
 
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
-      const [{ data: orderData }, { data: invoiceData }, { data: groupData }] = await Promise.all([
+      const [{ data: orderData }, { data: invoiceData }, { data: groupData }, { data: coopData }] = await Promise.all([
         supabase
           .from("orders")
           .select("id, order_type, total, tax_amount, tip_amount, status, created_at")
           .neq("status", "pending_payment")
           .neq("status", "cancelled")
-          // archived = delivered/cleared — still count in revenue
           .order("created_at", { ascending: false }),
         supabase
           .from("invoices")
@@ -136,10 +138,16 @@ export default function ReportsTab() {
           .from("group_orders")
           .select("id, total, status, created_at")
           .order("created_at", { ascending: false }),
+        supabase
+          .from("school_transactions")
+          .select("id, type, amount, description, created_at")
+          .in("type", ["purchase", "card_sale", "cash_sale"])
+          .order("created_at", { ascending: false }),
       ]);
       setOrders((orderData as OrderRow[]) || []);
       setInvoices((invoiceData as InvoiceRow[]) || []);
       setGroupOrders((groupData as GroupOrderRow[]) || []);
+      setCoopSales((coopData as CoopSale[]) || []);
       setLoading(false);
     };
     fetchAll();
@@ -363,6 +371,138 @@ export default function ReportsTab() {
         </div>
         <p className="text-zinc-600 text-xs mt-3">Weeks run Sunday – Friday. Invoice revenue counted on paid date.</p>
       </div>
+
+      {/* ── THE COOP SECTION ─────────────────────────────────────────── */}
+      {(() => {
+        const { from, to } = getRangeDates(range);
+        const coopFiltered = coopSales.filter(s => {
+          const d = new Date(s.created_at);
+          if (from && d < from) return false;
+          if (to   && d > to)   return false;
+          return true;
+        });
+
+        const coopTotal = coopFiltered.reduce((sum, s) => sum + Number(s.amount), 0);
+        const coopByType = [
+          { key: "purchase",  label: "Account Tab" },
+          { key: "card_sale", label: "Card"        },
+          { key: "cash_sale", label: "Cash"        },
+        ].map(t => ({
+          ...t,
+          count: coopFiltered.filter(s => s.type === t.key).length,
+          total: coopFiltered.filter(s => s.type === t.key).reduce((sum, s) => sum + Number(s.amount), 0),
+        })).filter(t => t.count > 0);
+
+        const coopByWeek: Record<string, { label: string; total: number; count: number }> = {};
+        coopFiltered.forEach(s => {
+          const d = new Date(s.created_at);
+          const sun = new Date(d); sun.setDate(d.getDate() - d.getDay()); sun.setHours(0,0,0,0);
+          const key = sun.toISOString().split("T")[0];
+          if (!coopByWeek[key]) {
+            const fri = new Date(sun); fri.setDate(sun.getDate() + 5);
+            const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+            coopByWeek[key] = { label: `${sun.toLocaleDateString("en-US", opts)} – ${fri.toLocaleDateString("en-US", opts)}`, total: 0, count: 0 };
+          }
+          coopByWeek[key].total += Number(s.amount);
+          coopByWeek[key].count++;
+        });
+
+        if (coopSales.length === 0 && !loading) return null;
+
+        return (
+          <div className="mt-10 pt-8 border-t border-zinc-800">
+            <div className="flex items-center gap-3 mb-6">
+              <div>
+                <h2 className="text-xl font-black">🐓 THE COOP</h2>
+                <p className="text-zinc-500 text-sm">Coffee shop sales — account tabs, card, and cash</p>
+              </div>
+            </div>
+
+            {/* Coop summary cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">Transactions</p>
+                <p className="text-2xl font-black text-white">{coopFiltered.length}</p>
+              </div>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">Total Sales</p>
+                <p className="text-2xl font-black text-yellow-400">{fmt(coopTotal)}</p>
+              </div>
+              {coopByType.map(t => (
+                <div key={t.key} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">{t.label}</p>
+                  <p className="text-2xl font-black text-teal-400">{fmt(t.total)}</p>
+                  <p className="text-zinc-600 text-xs">{t.count} sale{t.count !== 1 ? "s" : ""}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Coop by payment type table */}
+            {coopByType.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">By Payment Type</h3>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-800">
+                        <th className={thLCls}>Type</th>
+                        <th className={thCls}>Transactions</th>
+                        <th className={thCls}>Total</th>
+                        <th className={thCls}>Avg / Sale</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {coopByType.map(t => (
+                        <tr key={t.key} className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/40">
+                          <td className="px-5 py-3 font-bold text-yellow-400">{t.label}</td>
+                          <td className="px-5 py-3 text-right text-zinc-400">{t.count}</td>
+                          <td className="px-5 py-3 text-right font-black text-white">{fmt(t.total)}</td>
+                          <td className="px-5 py-3 text-right text-zinc-400">{fmt(t.total / t.count)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-zinc-700 bg-zinc-800/80">
+                        <td className="px-5 py-3 font-black text-white">TOTAL</td>
+                        <td className="px-5 py-3 text-right font-black text-white">{coopFiltered.length}</td>
+                        <td className="px-5 py-3 text-right font-black text-yellow-400">{fmt(coopTotal)}</td>
+                        <td className="px-5 py-3 text-right text-zinc-400">{coopFiltered.length > 0 ? fmt(coopTotal / coopFiltered.length) : "$0.00"}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Coop weekly breakdown */}
+            {Object.keys(coopByWeek).length > 0 && (
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Weekly Breakdown</h3>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-800">
+                        <th className={thLCls}>Week</th>
+                        <th className={thCls}>Transactions</th>
+                        <th className={thCls}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(coopByWeek).sort((a,b) => b[0].localeCompare(a[0])).map(([key, w]) => (
+                        <tr key={key} className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/40">
+                          <td className="px-5 py-3 font-bold text-white">{w.label}</td>
+                          <td className="px-5 py-3 text-right text-zinc-400">{w.count}</td>
+                          <td className="px-5 py-3 text-right font-black text-yellow-400">{fmt(w.total)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

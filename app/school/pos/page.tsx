@@ -257,7 +257,7 @@ export default function SchoolPOS() {
       <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xl">☕</span>
-          <span className="font-black text-base">Coffee Shop POS</span>
+          <span className="font-black text-base">THE COOP POS</span>
         </div>
         <div className="flex items-center gap-3">
           <button

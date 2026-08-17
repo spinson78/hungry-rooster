@@ -54,7 +54,7 @@ export default function SetupCompletePage() {
       <div className="max-w-md w-full text-center">
         <div className="text-6xl mb-6">☕</div>
         <h1 className="text-3xl font-black mb-2">You&apos;re all set!</h1>
-        <p className="text-zinc-400 mb-8">{studentName}&apos;s account is active. Card will be charged automatically every Friday.</p>
+        <p className="text-zinc-400 mb-8">{studentName}&apos;s account is active. Card will be charged automatically every Friday for THE COOP purchases.</p>
         <div className="bg-zinc-900 border-2 border-yellow-400 rounded-2xl p-6 mb-8">
           <p className="text-zinc-400 text-xs uppercase tracking-widest mb-2">Student Account ID</p>
           <p className="text-5xl font-black text-yellow-400 tracking-[0.3em]">{studentPin}</p>

@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
           payment_method: acct.stripe_payment_method_id,
           confirm: true,
           off_session: true,
-          description: `Weekly coffee shop tab — ${acct.student_name}`,
+          description: `Weekly COOP tab — ${acct.student_name}`,
           metadata: { account_id: acct.id, student_name: acct.student_name },
         });
 
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
           customer: customerId,
           amount: amountCents,
           currency: "usd",
-          description: `Weekly coffee shop tab — ${acct.student_name}`,
+          description: `Weekly COOP tab — ${acct.student_name}`,
         });
 
         const invoice = await stripe.invoices.create({
@@ -125,8 +125,8 @@ export async function GET(req: NextRequest) {
           body: JSON.stringify({
             from: "The Hungry Rooster <sales@thehungryroostertx.com>",
             to: acct.parent_email,
-            subject: `⚠️ Action needed: ${acct.student_name}'s coffee shop account`,
-            html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#ef4444;">Account Temporarily Paused</h2><p>Hi ${acct.parent_name},</p><p>We were unable to process this week's payment of <strong>$${Number(acct.balance).toFixed(2)}</strong> for ${acct.student_name}'s coffee shop account. The account has been temporarily paused.</p><p>Please contact us to update your payment method and reactivate the account.</p><p>— The Hungry Rooster Coffee Shop</p></div>`,
+            subject: `⚠️ Action needed: ${acct.student_name}'s COOP account`,
+            html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><h2 style="color:#ef4444;">Account Temporarily Paused</h2><p>Hi ${acct.parent_name},</p><p>We were unable to process this week's payment of <strong>$${Number(acct.balance).toFixed(2)}</strong> for ${acct.student_name}'s COOP account. The account has been temporarily paused.</p><p>Please contact us to update your payment method and reactivate the account.</p><p>— THE COOP by The Hungry Rooster</p></div>`,
           }),
         });
       }

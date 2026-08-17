@@ -52,7 +52,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function SchoolTab() {
-  const [view, setView] = useState<"accounts" | "menu" | "billing">("accounts");
+  const [view, setView] = useState<"accounts" | "menu" | "billing" | "sales">("accounts");
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +90,35 @@ export default function SchoolTab() {
   const [savingMenu, setSavingMenu] = useState(false);
 
   // Billing
+  // Sales log
+  type SaleTxn = { id: string; type: string; amount: number; description: string; account_id: string | null; created_at: string };
+  const [sales, setSales] = useState<SaleTxn[]>([]);
+  const [salesLoading, setSalesLoading] = useState(false);
+  const [salesRange, setSalesRange] = useState<"week" | "month" | "ytd" | "all">("month");
+
+  const fetchSales = useCallback(async (rangeVal: "week" | "month" | "ytd" | "all") => {
+    setSalesLoading(true);
+    const now = new Date();
+    let from = "";
+    if (rangeVal === "week") {
+      const s = new Date(now); s.setDate(s.getDate() - s.getDay()); s.setHours(0,0,0,0); from = s.toISOString();
+    } else if (rangeVal === "month") {
+      from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    } else if (rangeVal === "ytd") {
+      from = new Date(now.getFullYear(), 0, 1).toISOString();
+    }
+    const params = new URLSearchParams({ type: "sales" });
+    if (from) params.set("from", from);
+    const res = await fetch(`/api/school/admin?${params}`);
+    const data = await res.json();
+    setSales(data.sales || []);
+    setSalesLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (view === "sales") fetchSales(salesRange);
+  }, [view, salesRange, fetchSales]);
+
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingResult, setBillingResult] = useState<{ charged?: number; invoiced?: number; failed?: number; failures?: string[] } | null>(null);
 
@@ -342,12 +371,20 @@ export default function SchoolTab() {
     <div>
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <h2 className="text-xl font-black">☕ Coffee Shop</h2>
-        <div className="flex gap-2 ml-auto">
-          {(["accounts", "menu", "billing"] as const).map(v => (
+        <div>
+          <h2 className="text-xl font-black">🐓 THE COOP</h2>
+          <p className="text-zinc-500 text-xs">by The Hungry Rooster</p>
+        </div>
+        <div className="flex flex-wrap gap-2 ml-auto">
+          {([
+            { v: "accounts", label: "Accounts" },
+            { v: "sales",    label: "Sales Log" },
+            { v: "menu",     label: "Menu" },
+            { v: "billing",  label: "Billing" },
+          ] as const).map(({ v, label }) => (
             <button key={v} onClick={() => setView(v)}
               className={`px-4 py-2 rounded-full text-sm font-black transition-colors ${view === v ? "bg-yellow-400 text-black" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:text-white"}`}>
-              {v === "accounts" ? "Accounts" : v === "menu" ? "Menu" : "Billing"}
+              {label}
             </button>
           ))}
         </div>
@@ -470,6 +507,103 @@ export default function SchoolTab() {
           )}
         </div>
       )}
+
+      {/* ── SALES LOG VIEW ── */}
+      {view === "sales" && (() => {
+        const SALE_LABEL: Record<string, string> = { purchase: "Account Tab", card_sale: "Card", cash_sale: "Cash" };
+        const SALE_COLOR: Record<string, string> = { purchase: "text-yellow-400", card_sale: "text-teal-400", cash_sale: "text-green-400" };
+        const salesTotal = sales.reduce((s, t) => s + Number(t.amount), 0);
+        const byType = ["purchase", "card_sale", "cash_sale"].map(type => ({
+          type,
+          count: sales.filter(t => t.type === type).length,
+          total: sales.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0),
+        }));
+        // Group by week
+        const byWeek: Record<string, { label: string; total: number; count: number }> = {};
+        sales.forEach(t => {
+          const d = new Date(t.created_at);
+          const day = d.getDay();
+          const sun = new Date(d); sun.setDate(d.getDate() - day); sun.setHours(0,0,0,0);
+          const key = sun.toISOString().split("T")[0];
+          if (!byWeek[key]) {
+            const fri = new Date(sun); fri.setDate(sun.getDate() + 5);
+            const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+            byWeek[key] = { label: `${sun.toLocaleDateString("en-US", opts)} – ${fri.toLocaleDateString("en-US", opts)}`, total: 0, count: 0 };
+          }
+          byWeek[key].total += Number(t.amount);
+          byWeek[key].count++;
+        });
+        return (
+          <div>
+            {/* Range filter */}
+            <div className="flex items-center gap-2 mb-6">
+              {([["week","This Week"],["month","This Month"],["ytd","YTD"],["all","All Time"]] as const).map(([v, label]) => (
+                <button key={v} onClick={() => setSalesRange(v)}
+                  className={`px-4 py-2 rounded-full text-sm font-black transition-colors ${salesRange === v ? "bg-teal-500 text-black" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:text-white"}`}>
+                  {label}
+                </button>
+              ))}
+              <button onClick={() => fetchSales(salesRange)} className="ml-auto text-zinc-500 text-xs hover:text-white">↺ Refresh</button>
+            </div>
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Transactions</p>
+                <p className="font-black text-xl text-white">{sales.length}</p>
+              </div>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Total Sales</p>
+                <p className="font-black text-xl text-yellow-400">${salesTotal.toFixed(2)}</p>
+              </div>
+              {byType.filter(t => t.count > 0).map(t => (
+                <div key={t.type} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">{SALE_LABEL[t.type]}</p>
+                  <p className={`font-black text-xl ${SALE_COLOR[t.type]}`}>${t.total.toFixed(2)}</p>
+                  <p className="text-zinc-600 text-xs">{t.count} sale{t.count !== 1 ? "s" : ""}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Weekly breakdown */}
+            {Object.keys(byWeek).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Weekly Breakdown</h3>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                  {Object.entries(byWeek).sort((a,b) => b[0].localeCompare(a[0])).map(([key, w]) => (
+                    <div key={key} className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 last:border-0">
+                      <div>
+                        <p className="font-bold text-sm">{w.label}</p>
+                        <p className="text-zinc-500 text-xs">{w.count} transactions</p>
+                      </div>
+                      <p className="font-black text-yellow-400">${w.total.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Transaction list */}
+            <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">All Transactions</h3>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+              {salesLoading ? (
+                <p className="text-center text-zinc-600 py-8 text-sm animate-pulse">Loading…</p>
+              ) : sales.length === 0 ? (
+                <p className="text-center text-zinc-600 py-8 text-sm">No sales in this period</p>
+              ) : sales.map(t => (
+                <div key={t.id} className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 last:border-0">
+                  <div>
+                    <p className={`font-bold text-sm ${SALE_COLOR[t.type]}`}>{SALE_LABEL[t.type]}</p>
+                    <p className="text-zinc-500 text-xs">{t.description}</p>
+                    <p className="text-zinc-600 text-xs">{new Date(t.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                  </div>
+                  <p className="font-black text-white">${Number(t.amount).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── MENU VIEW ── */}
       {view === "menu" && (
