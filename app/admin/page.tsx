@@ -8,6 +8,7 @@ import GiftsTab from "@/app/components/GiftsTab";
 import ReviewsTab from "@/app/components/ReviewsTab";
 import SEOTab from "@/app/components/SEOTab";
 import GroupLocationsTab from "@/app/components/GroupLocationsTab";
+import SchoolTab from "@/app/components/SchoolTab";
 
 function RecoverOrderPanel() {
   const [sessionId, setSessionId] = useState("");
@@ -274,7 +275,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -871,6 +872,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("reviews")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "reviews" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             ⭐ Reviews
           </button>
+          <button onClick={() => setTab("school")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "school" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            ☕ Coffee Shop
+          </button>
           <button onClick={() => setTab("seo")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "seo" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📈 SEO
           </button>
@@ -1410,6 +1414,9 @@ This cannot be undone.`);
 
         {/* SEO TAB */}
         {tab === "seo" && <SEOTab />}
+
+        {/* SCHOOL COFFEE SHOP TAB */}
+        {tab === "school" && <SchoolTab />}
 
         {/* RECOVER ORDER TAB */}
         {tab === "recover" && <RecoverOrderPanel />}
