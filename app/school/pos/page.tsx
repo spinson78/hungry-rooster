@@ -5,6 +5,7 @@ type MenuItem = { id: string; name: string; price: number; category: string; emo
 type CartItem = MenuItem & { qty: number };
 type PaymentMode = null | "account" | "card" | "cash";
 type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "success" | "error";
+type FBPurchase = { id: string; teacher_name: string; teacher_email: string; school_name: string; amount_paid: number; coupons_total: number; coupons_redeemed: number; ref_code: string; created_at: string };
 
 declare global {
   interface Window {
@@ -44,6 +45,45 @@ export default function SchoolPOS() {
 
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const categories = Array.from(new Set(menu.map(m => m.category)));
+
+  // ── Fred Bucks ─────────────────────────────────────────────────────────
+  const [posTab, setPosTab] = useState<"order" | "fredbucks">("order");
+  const [fbPurchases, setFbPurchases] = useState<FBPurchase[]>([]);
+  const [fbLoading, setFbLoading] = useState(false);
+  const [fbRedeemId, setFbRedeemId] = useState<string | null>(null);
+  const [fbRedeemQty, setFbRedeemQty] = useState(1);
+  const [fbMsg, setFbMsg] = useState("");
+
+  const fetchFB = useCallback(async () => {
+    setFbLoading(true);
+    const res = await fetch("/api/coop/fredbucks/list");
+    const data = await res.json();
+    setFbPurchases(data.purchases || []);
+    setFbLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (posTab === "fredbucks") fetchFB();
+  }, [posTab, fetchFB]);
+
+  const doRedeem = async () => {
+    if (!fbRedeemId || fbRedeemQty < 1) return;
+    const res = await fetch("/api/coop/fredbucks/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ purchase_id: fbRedeemId, quantity: fbRedeemQty }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setFbMsg(`✓ Redeemed ${fbRedeemQty} buck${fbRedeemQty > 1 ? "s" : ""} ($${data.value}) — ${data.remaining} remaining`);
+      setFbRedeemId(null);
+      setFbRedeemQty(1);
+      fetchFB();
+      setTimeout(() => setFbMsg(""), 4000);
+    } else {
+      setFbMsg("❌ " + (data.error || "Failed"));
+    }
+  };
 
   useEffect(() => {
     fetch("/api/school/menu").then(r => r.json()).then(d => setMenu(d.items || []));
@@ -255,9 +295,19 @@ export default function SchoolPOS() {
 
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">☕</span>
-          <span className="font-black text-base">THE COOP POS</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xl">🐓</span>
+          <span className="font-black text-base">THE COOP</span>
+          <div className="flex gap-1">
+            <button onClick={() => setPosTab("order")}
+              className={`px-3 py-1 rounded-full text-xs font-black transition-colors ${posTab === "order" ? "bg-yellow-400 text-black" : "bg-zinc-800 text-zinc-400 border border-zinc-700"}`}>
+              Order
+            </button>
+            <button onClick={() => setPosTab("fredbucks")}
+              className={`px-3 py-1 rounded-full text-xs font-black transition-colors ${posTab === "fredbucks" ? "bg-yellow-400 text-black" : "bg-zinc-800 text-zinc-400 border border-zinc-700"}`}>
+              Fred's Bucks
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -276,8 +326,83 @@ export default function SchoolPOS() {
 
       <div className="flex flex-1 overflow-hidden">
 
+        {/* ── Fred's Bucks Panel ── */}
+        {posTab === "fredbucks" && (
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-black text-base">Fred's Bucks</h2>
+              <button onClick={fetchFB} className="text-xs text-zinc-500 hover:text-white">↺ Refresh</button>
+            </div>
+
+            {fbMsg && (
+              <div className={`rounded-xl px-4 py-3 mb-4 text-sm font-bold ${fbMsg.startsWith("✓") ? "bg-green-500/20 text-green-300 border border-green-500/30" : "bg-red-500/20 text-red-300 border border-red-500/30"}`}>
+                {fbMsg}
+              </div>
+            )}
+
+            {/* Redeem modal */}
+            {fbRedeemId && (() => {
+              const p = fbPurchases.find(x => x.id === fbRedeemId);
+              const remaining = p ? p.coupons_total - p.coupons_redeemed : 0;
+              return (
+                <div className="bg-zinc-800 border border-yellow-400/30 rounded-2xl p-4 mb-4">
+                  <p className="font-black mb-1">Redeeming — {p?.teacher_name}</p>
+                  <p className="text-zinc-500 text-xs mb-3">{remaining} buck{remaining !== 1 ? "s" : ""} remaining</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <button onClick={() => setFbRedeemQty(q => Math.max(1, q - 1))} className="w-8 h-8 bg-zinc-700 rounded-full font-black text-lg">−</button>
+                    <span className="font-black text-xl w-8 text-center">{fbRedeemQty}</span>
+                    <button onClick={() => setFbRedeemQty(q => Math.min(remaining, q + 1))} className="w-8 h-8 bg-zinc-700 rounded-full font-black text-lg">+</button>
+                    <span className="text-zinc-400 text-sm">= ${(fbRedeemQty * 5).toFixed(2)} value</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={doRedeem} className="bg-yellow-400 text-black font-black px-5 py-2 rounded-full text-sm">Confirm Redeem</button>
+                    <button onClick={() => { setFbRedeemId(null); setFbRedeemQty(1); }} className="text-zinc-400 text-sm px-4 py-2">Cancel</button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {fbLoading ? (
+              <p className="text-zinc-500 text-sm text-center py-8 animate-pulse">Loading…</p>
+            ) : fbPurchases.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-3xl mb-2">🐓</p>
+                <p className="text-zinc-500 text-sm">No Fred's Bucks purchased yet</p>
+                <p className="text-zinc-600 text-xs mt-1">Share the link: /coop/fredbucks</p>
+              </div>
+            ) : fbPurchases.map(p => {
+              const remaining = p.coupons_total - p.coupons_redeemed;
+              const pct = (p.coupons_redeemed / p.coupons_total) * 100;
+              return (
+                <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-black">{p.teacher_name}</p>
+                      <p className="text-zinc-500 text-xs">{p.ref_code}{p.school_name ? ` · ${p.school_name}` : ""}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-black text-sm ${remaining > 0 ? "text-yellow-400" : "text-zinc-600"}`}>{remaining} left</p>
+                      <p className="text-zinc-600 text-xs">{p.coupons_redeemed}/{p.coupons_total} used</p>
+                    </div>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="w-full bg-zinc-800 rounded-full h-1.5 mb-3">
+                    <div className="bg-yellow-400 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <button
+                    onClick={() => { setFbRedeemId(p.id); setFbRedeemQty(1); }}
+                    disabled={remaining === 0}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-white font-black py-2 rounded-xl text-sm transition-colors border border-zinc-700">
+                    {remaining > 0 ? "Mark Redeemed" : "All Used"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* ── Menu Panel ── */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {posTab === "order" && <div className="flex-1 overflow-y-auto p-4 space-y-5">
           {menu.length === 0 && (
             <div className="text-center py-16 text-zinc-600">
               <p className="text-3xl mb-2">☕</p>
@@ -312,10 +437,10 @@ export default function SchoolPOS() {
               </div>
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* ── Order Panel ── */}
-        <div className="w-72 bg-zinc-900 border-l border-zinc-800 flex flex-col flex-shrink-0">
+        {posTab === "order" && <div className="w-72 bg-zinc-900 border-l border-zinc-800 flex flex-col flex-shrink-0">
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
             <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Current Order</p>
             {cart.length === 0 ? (
@@ -442,7 +567,7 @@ export default function SchoolPOS() {
               </>
             )}
           </div>
-        </div>
+        </div>}
       )}
 
       {/* ── Cash Modal ── */}
