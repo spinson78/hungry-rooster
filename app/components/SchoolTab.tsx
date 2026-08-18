@@ -35,6 +35,18 @@ type Transaction = {
   created_at: string;
 };
 
+type FBPurchase = {
+  id: string;
+  teacher_name: string;
+  teacher_email: string;
+  school_name: string;
+  amount_paid: number;
+  coupons_total: number;
+  coupons_redeemed: number;
+  ref_code: string;
+  created_at: string;
+};
+
 const STATUS_COLOR: Record<string, string> = {
   active: "text-green-400",
   frozen: "text-red-400",
@@ -52,7 +64,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function SchoolTab() {
-  const [view, setView] = useState<"accounts" | "menu" | "billing" | "sales">("accounts");
+  const [view, setView] = useState<"accounts" | "menu" | "billing" | "sales" | "fredbucks">("accounts");
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +100,22 @@ export default function SchoolTab() {
   // Menu item form
   const [menuForm, setMenuForm] = useState({ name: "", price: "", category: "", emoji: "☕", sort_order: "0" });
   const [savingMenu, setSavingMenu] = useState(false);
+
+  // Fred's Bucks
+  const [fbPurchases, setFbPurchases] = useState<FBPurchase[]>([]);
+  const [fbLoading, setFbLoading] = useState(false);
+
+  const fetchFB = useCallback(async () => {
+    setFbLoading(true);
+    const res = await fetch("/api/coop/fredbucks/list");
+    const data = await res.json();
+    setFbPurchases(data.purchases || []);
+    setFbLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (view === "fredbucks") fetchFB();
+  }, [view, fetchFB]);
 
   // Billing
   // Sales log
@@ -377,10 +405,11 @@ export default function SchoolTab() {
         </div>
         <div className="flex flex-wrap gap-2 ml-auto">
           {([
-            { v: "accounts", label: "Accounts" },
-            { v: "sales",    label: "Sales Log" },
-            { v: "menu",     label: "Menu" },
-            { v: "billing",  label: "Billing" },
+            { v: "accounts",  label: "Accounts" },
+            { v: "sales",     label: "Sales Log" },
+            { v: "fredbucks", label: "🐓 Fred's Bucks" },
+            { v: "menu",      label: "Menu" },
+            { v: "billing",   label: "Billing" },
           ] as const).map(({ v, label }) => (
             <button key={v} onClick={() => setView(v)}
               className={`px-4 py-2 rounded-full text-sm font-black transition-colors ${view === v ? "bg-yellow-400 text-black" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:text-white"}`}>
@@ -600,6 +629,75 @@ export default function SchoolTab() {
                   <p className="font-black text-white">${Number(t.amount).toFixed(2)}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── FRED'S BUCKS VIEW ── */}
+      {view === "fredbucks" && (() => {
+        const totalRevenue = fbPurchases.reduce((s, p) => s + Number(p.amount_paid), 0);
+        const totalIssued = fbPurchases.reduce((s, p) => s + p.coupons_total, 0);
+        const totalRedeemed = fbPurchases.reduce((s, p) => s + p.coupons_redeemed, 0);
+        const totalRemaining = totalIssued - totalRedeemed;
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-black text-sm uppercase tracking-widest text-zinc-400">Fred&apos;s Bucks</h3>
+              <button onClick={fetchFB} className="text-xs text-zinc-500 hover:text-white">↺ Refresh</button>
+            </div>
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: "Teachers",      value: fbPurchases.length,            color: "text-white" },
+                { label: "Revenue",       value: `$${totalRevenue.toFixed(2)}`, color: "text-yellow-400" },
+                { label: "Bucks Issued",  value: totalIssued,                   color: "text-teal-400" },
+                { label: "Bucks Remaining", value: totalRemaining,              color: totalRemaining > 0 ? "text-green-400" : "text-zinc-500" },
+              ].map(c => (
+                <div key={c.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">{c.label}</p>
+                  <p className={`font-black text-xl ${c.color}`}>{c.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Purchase list */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+              {fbLoading ? (
+                <p className="text-center text-zinc-600 py-8 text-sm animate-pulse">Loading…</p>
+              ) : fbPurchases.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-3xl mb-2">🐓</p>
+                  <p className="text-zinc-600 text-sm">No Fred&apos;s Bucks purchased yet</p>
+                  <p className="text-zinc-700 text-xs mt-1">Share the link: /coop/fredbucks</p>
+                </div>
+              ) : fbPurchases.map(p => {
+                const remaining = p.coupons_total - p.coupons_redeemed;
+                const pct = Math.round((p.coupons_redeemed / p.coupons_total) * 100);
+                return (
+                  <div key={p.id} className="px-5 py-4 border-b border-zinc-800 last:border-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-black text-sm">{p.teacher_name}</p>
+                        <p className="text-zinc-500 text-xs">{p.teacher_email}{p.school_name ? ` · ${p.school_name}` : ""}</p>
+                        <p className="text-zinc-700 text-xs font-mono mt-0.5">{p.ref_code}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-yellow-400">${Number(p.amount_paid).toFixed(2)}</p>
+                        <p className="text-zinc-500 text-xs">{p.coupons_total} bucks · {pct}% used</p>
+                        <p className={`text-xs font-black mt-0.5 ${remaining > 0 ? "text-green-400" : "text-zinc-600"}`}>
+                          {remaining} remaining
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-full bg-zinc-800 rounded-full h-1.5">
+                      <div className="bg-yellow-400 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-zinc-700 text-xs mt-1.5">{new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
