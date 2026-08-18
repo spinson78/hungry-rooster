@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+async function sendEmail(to: string, subject: string, html: string) {
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: "THE COOP <noreply@thehungryroostertx.com>", to, subject, html }),
+  });
+}
 
 // Installment due dates (8/28 is collected at checkout)
 const INSTALLMENT_DATES = ["2026-10-15", "2027-01-08", "2027-03-15"];
@@ -110,11 +116,7 @@ export async function GET(req: NextRequest) {
       ? `Pickup: ${getNextFriday()} · The Coop Counter`
       : "Pickup: Every Friday · The Coop Counter";
 
-    await resend.emails.send({
-      from: "THE COOP <noreply@thehungryroostertx.com>",
-      to: "sales@thehungryroostertx.com",
-      subject: `🍞 New Challah Order — ${meta.name}`,
-      html: `
+    await sendEmail("sales@thehungryroostertx.com", `🍞 New Challah Order — ${meta.name}`, `
         <div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#111;color:#fff;padding:24px;border-radius:12px;">
           <h2 style="color:#facc15;margin:0 0 16px">New Challah/Babka Order</h2>
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -127,8 +129,7 @@ export async function GET(req: NextRequest) {
           </table>
           ${installmentNote ? `<div style="margin-top:16px;background:#222;border-radius:8px;padding:12px;font-size:13px;color:#aaa;">${installmentNote.replace(/\n/g,"<br>")}</div>` : ""}
         </div>
-      `,
-    });
+      `);
 
     return NextResponse.json({ success: true, name: meta.name, order_type: meta.order_type, package: pkg, babka_flavor: meta.babka_flavor || null, amount_total: amountTotal, is_installment: isInstallment });
   } catch (err) {

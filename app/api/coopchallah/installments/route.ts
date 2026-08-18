@@ -2,10 +2,16 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+async function sendEmail(to: string, subject: string, html: string) {
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: "THE COOP <noreply@thehungryroostertx.com>", to, subject, html }),
+  });
+}
 
 export async function GET() {
   const supabase = createClient(
@@ -61,24 +67,14 @@ export async function GET() {
       results.charged++;
 
       // Notify staff
-      await resend.emails.send({
-        from: "THE COOP <noreply@thehungryroostertx.com>",
-        to: "sales@thehungryroostertx.com",
-        subject: `✅ Installment ${inst.installment_number}/4 charged — ${order.name}`,
-        html: `<p style="font-family:sans-serif"><strong>${order.name}</strong> — Installment ${inst.installment_number} of 4 auto-drafted successfully.<br>Amount: <strong>$${inst.amount.toFixed(2)}</strong><br>Package: ${order.package.replace(/_/g," ")}</p>`,
-      });
+      await sendEmail("sales@thehungryroostertx.com", `✅ Installment ${inst.installment_number}/4 charged — ${order.name}`, `<p style="font-family:sans-serif"><strong>${order.name}</strong> — Installment ${inst.installment_number} of 4 auto-drafted successfully.<br>Amount: <strong>$${inst.amount.toFixed(2)}</strong><br>Package: ${order.package.replace(/_/g," ")}</p>`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Stripe error";
       results.failed++;
       results.failures.push(`${order.name} — ${msg}`);
       await supabase.from("coopchallah_installments").update({ status: "failed" }).eq("id", inst.id);
 
-      await resend.emails.send({
-        from: "THE COOP <noreply@thehungryroostertx.com>",
-        to: "sales@thehungryroostertx.com",
-        subject: `❌ Installment charge failed — ${order.name}`,
-        html: `<p style="font-family:sans-serif"><strong>${order.name}</strong> — Installment ${inst.installment_number} of 4 FAILED.<br>Error: ${msg}<br>Phone: ${order.phone}</p>`,
-      });
+      await sendEmail("sales@thehungryroostertx.com", `❌ Installment charge failed — ${order.name}`, `<p style="font-family:sans-serif"><strong>${order.name}</strong> — Installment ${inst.installment_number} of 4 FAILED.<br>Error: ${msg}<br>Phone: ${order.phone}</p>`);
     }
   }
 
