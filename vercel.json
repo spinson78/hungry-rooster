@@ -15,6 +15,18 @@
     {
       "path": "/api/school/billing",
       "schedule": "0 13 * * 5"
+    },
+    {
+      "path": "/api/coopchallah/installments",
+      "schedule": "0 13 15 10 *"
+    },
+    {
+      "path": "/api/coopchallah/installments",
+      "schedule": "0 14 8 1 *"
+    },
+    {
+      "path": "/api/coopchallah/installments",
+      "schedule": "0 13 15 3 *"
     }
   ]
 }

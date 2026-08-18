@@ -9,6 +9,7 @@ import ReviewsTab from "@/app/components/ReviewsTab";
 import SEOTab from "@/app/components/SEOTab";
 import GroupLocationsTab from "@/app/components/GroupLocationsTab";
 import SchoolTab from "@/app/components/SchoolTab";
+import ChallahTab from "@/app/components/ChallahTab";
 
 function RecoverOrderPanel() {
   const [sessionId, setSessionId] = useState("");
@@ -875,6 +876,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("school")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "school" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🐓 THE COOP
           </button>
+          <button onClick={() => setTab("challah")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "challah" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🍞 Challah
+          </button>
           <button onClick={() => setTab("seo")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "seo" ? "bg-green-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             📈 SEO
           </button>
@@ -1417,6 +1421,7 @@ This cannot be undone.`);
 
         {/* SCHOOL COFFEE SHOP TAB */}
         {tab === "school" && <SchoolTab />}
+        {tab === "challah" && <ChallahTab />}
 
         {/* RECOVER ORDER TAB */}
         {tab === "recover" && <RecoverOrderPanel />}
