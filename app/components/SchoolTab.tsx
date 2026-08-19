@@ -64,7 +64,14 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function SchoolTab() {
-  const [view, setView] = useState<"accounts" | "menu" | "billing" | "sales" | "fredbucks">("accounts");
+  const [view, setView] = useState<"accounts" | "menu" | "billing" | "sales" | "fredbucks" | "lunch">("accounts");
+  const [lunchOrders, setLunchOrders] = useState<{
+    id: string; student_name: string; grade: string; item_name: string;
+    make_it_meal: boolean; drink: string | null; amount_total: number;
+    status: string; week_of: string; created_at: string;
+  }[]>([]);
+  const [lunchLoading, setLunchLoading] = useState(false);
+  const [lunchClearing, setLunchClearing] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +122,13 @@ export default function SchoolTab() {
 
   useEffect(() => {
     if (view === "fredbucks") fetchFB();
+    if (view === "lunch") {
+      setLunchLoading(true);
+      fetch("/api/akiba-lunch/orders")
+        .then(r => r.json())
+        .then(d => { setLunchOrders(d.orders || []); setLunchLoading(false); })
+        .catch(() => setLunchLoading(false));
+    }
   }, [view, fetchFB]);
 
   // Billing
@@ -408,6 +422,7 @@ export default function SchoolTab() {
             { v: "accounts",  label: "Accounts" },
             { v: "sales",     label: "Sales Log" },
             { v: "fredbucks", label: "🐓 Fred's Bucks" },
+            { v: "lunch",     label: "🏫 Akiba Lunch" },
             { v: "menu",      label: "Menu" },
             { v: "billing",   label: "Billing" },
           ] as const).map(({ v, label }) => (
@@ -698,6 +713,137 @@ export default function SchoolTab() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── AKIBA LUNCH VIEW ── */}
+      {view === "lunch" && (() => {
+        const paid = lunchOrders.filter(o => o.status === "paid");
+        const revenue = paid.reduce((s, o) => s + Number(o.amount_total), 0);
+        const itemCounts: Record<string, number> = {};
+        paid.forEach(o => { itemCounts[o.item_name] = (itemCounts[o.item_name] || 0) + 1; });
+        const mealCount = paid.filter(o => o.make_it_meal).length;
+
+        const printManifest = () => {
+          const rows = paid.map(o =>
+            `<tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-weight:700">${o.student_name}</td>
+             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280">${o.grade}</td>
+             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${o.item_name}${o.make_it_meal ? ` + Meal (${o.drink})` : ""}</td>
+             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700">$${Number(o.amount_total).toFixed(2)}</td></tr>`
+          ).join("");
+          const summaryRows = Object.entries(itemCounts).map(([name, qty]) =>
+            `<tr><td style="padding:8px 12px;font-weight:700">${name}</td><td style="padding:8px 12px;font-weight:900;font-size:20px;color:#f97316">${qty}</td></tr>`
+          ).join("");
+          const html = `<!DOCTYPE html><html><head><title>Akiba Yavneh Lunch Manifest</title>
+            <style>body{font-family:sans-serif;max-width:750px;margin:0 auto;padding:24px;color:#111}h1{font-weight:900;margin:0 0 4px}h2{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin:20px 0 8px}table{width:100%;border-collapse:collapse}@media print{@page{margin:12mm}}</style>
+            </head><body>
+            <h1>Akiba Yavneh Lunch — Order Manifest</h1>
+            <p style="color:#6b7280;font-size:14px;margin:0 0 20px">${paid.length} orders · $${revenue.toFixed(2)} · ${mealCount} meal add-ons</p>
+            <h2>Item Summary</h2><table><tbody>${summaryRows}</tbody></table>
+            <h2>Student Orders</h2>
+            <table><thead><tr style="background:#f9fafb"><th style="padding:8px 12px;text-align:left">Student</th><th style="padding:8px 12px;text-align:left">Grade</th><th style="padding:8px 12px;text-align:left">Order</th><th style="padding:8px 12px;text-align:right">Total</th></tr></thead><tbody>${rows}</tbody></table>
+            <div style="border-top:2px solid #111;margin-top:20px;padding-top:12px;display:flex;justify-content:space-between;font-weight:900;font-size:18px">
+              <span>${paid.length} students</span><span>$${revenue.toFixed(2)}</span></div>
+            </body></html>`;
+          const w = window.open("", "_blank", "width=800,height=900");
+          if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
+        };
+
+        const archiveAll = async () => {
+          if (!window.confirm(`Archive all ${paid.length} completed orders?`)) return;
+          setLunchClearing(true);
+          await Promise.all(paid.map(o =>
+            fetch("/api/akiba-lunch/orders", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: o.id, action: "archive" }),
+            })
+          ));
+          setLunchOrders(prev => prev.filter(o => o.status !== "paid"));
+          setLunchClearing(false);
+        };
+
+        return (
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+              <div>
+                <h3 className="font-black text-lg">🏫 Akiba Yavneh Lunch</h3>
+                <p className="text-zinc-500 text-xs mt-0.5">
+                  Order link: <span className="text-teal-400 font-mono">thehungryroostertx.com/akiba-lunch</span>
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {paid.length > 0 && (
+                  <>
+                    <button onClick={printManifest}
+                      className="text-xs font-black text-orange-400 border border-orange-400/30 hover:border-orange-400 px-4 py-2 rounded-full transition-colors">
+                      🖨️ Print Manifest
+                    </button>
+                    <button onClick={archiveAll} disabled={lunchClearing}
+                      className="text-xs font-black text-red-400 border border-red-400/30 hover:border-red-400 px-4 py-2 rounded-full transition-colors disabled:opacity-40">
+                      {lunchClearing ? "Clearing…" : `Archive ${paid.length} orders`}
+                    </button>
+                  </>
+                )}
+                <button onClick={() => {
+                  setLunchLoading(true);
+                  fetch("/api/akiba-lunch/orders").then(r => r.json()).then(d => { setLunchOrders(d.orders || []); setLunchLoading(false); }).catch(() => setLunchLoading(false));
+                }} className="text-xs text-zinc-500 hover:text-white font-bold border border-zinc-700 px-4 py-2 rounded-full">
+                  ↺ Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: "Orders This Week", value: paid.length, color: "text-white" },
+                { label: "Revenue",           value: `$${revenue.toFixed(2)}`, color: "text-yellow-400" },
+                { label: "Meal Add-ons",      value: mealCount, color: "text-teal-400" },
+                { label: "Cutoff",            value: "Thu Noon", color: "text-zinc-400" },
+              ].map(c => (
+                <div key={c.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">{c.label}</p>
+                  <p className={`font-black text-xl ${c.color}`}>{c.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Item breakdown */}
+            {Object.keys(itemCounts).length > 0 && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6">
+                <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Item Breakdown</p>
+                <div className="space-y-2">
+                  {Object.entries(itemCounts).map(([name, qty]) => (
+                    <div key={name} className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-300">{name}</span>
+                      <span className="bg-orange-500 text-white font-black text-sm w-8 h-8 rounded-full flex items-center justify-center">{qty}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Orders list */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+              {lunchLoading ? (
+                <p className="text-center text-zinc-600 py-8 text-sm animate-pulse">Loading…</p>
+              ) : paid.length === 0 ? (
+                <p className="text-center text-zinc-600 py-8 text-sm">No orders yet this week</p>
+              ) : paid.map(o => (
+                <div key={o.id} className="flex items-start justify-between px-4 py-4 border-b border-zinc-800 last:border-0">
+                  <div>
+                    <p className="font-black text-sm">{o.student_name}</p>
+                    <p className="text-zinc-500 text-xs">{o.grade}</p>
+                    <p className="text-zinc-400 text-xs mt-1">{o.item_name}</p>
+                    {o.make_it_meal && <p className="text-teal-400 text-xs">+ Meal · {o.drink}</p>}
+                  </div>
+                  <p className="text-yellow-400 font-black">${Number(o.amount_total).toFixed(2)}</p>
+                </div>
+              ))}
             </div>
           </div>
         );
