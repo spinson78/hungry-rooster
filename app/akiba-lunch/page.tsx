@@ -9,6 +9,7 @@ const MENU = [
 
 const DRINKS = ["Water Bottle", "Sweet Tea", "Sprite", "Coke", "Diet Coke", "Root Beer"];
 
+// Grades: 9th–12th only
 const GRADES = ["9th Grade", "10th Grade", "11th Grade", "12th Grade"];
 
 function getNextThursday(): string {
