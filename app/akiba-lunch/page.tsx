@@ -167,7 +167,27 @@ export default function AkibaLunchPage() {
         </div>
       )}
 
-      {/* Drink modal */}
+      {/* Make it a Meal popup — fires right after item selection */}
+      {mealModal && selected && (
+        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-6">
+          <div className="bg-zinc-950 border-2 border-yellow-400 rounded-3xl p-7 max-w-sm w-full text-center">
+            <p className="text-5xl mb-3">🥤🍪</p>
+            <h3 className="font-black text-2xl mb-1">Make it a Meal?</h3>
+            <p className="text-zinc-400 text-sm mb-2">Add a drink + cookie for just <span className="text-yellow-400 font-black">$5 more</span></p>
+            <p className="text-zinc-500 text-xs mb-6">Your {selected.label} is <span className="text-white font-bold">${selected.price.toFixed(2)}</span> — make it a full lunch for <span className="text-yellow-400 font-bold">${(selected.price + 5).toFixed(2)}</span></p>
+            <button onClick={() => { setMealModal(false); setDrinkModal(true); }}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-full text-base mb-3 transition-colors">
+              Yes! Make it a Meal 🙌
+            </button>
+            <button onClick={() => setMealModal(false)}
+              className="w-full bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-white font-bold py-3 rounded-full text-sm transition-colors">
+              No thanks, just the {selected.label.split(" ")[0]}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Drink choice popup */}
       {drinkModal && (
         <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-6">
           <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-7 max-w-sm w-full">
@@ -181,7 +201,7 @@ export default function AkibaLunchPage() {
                 </button>
               ))}
             </div>
-            <button onClick={() => { setDrinkModal(false); setMeal(false); }}
+            <button onClick={() => { setDrinkModal(false); setMealModal(false); }}
               className="w-full text-zinc-500 hover:text-white text-sm py-3 mt-4 transition-colors font-bold">
               Cancel
             </button>
