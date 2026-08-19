@@ -4,8 +4,8 @@ import { useEffect, useState, useRef } from "react";
 export default function AkibaLunchSuccess() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [info, setInfo] = useState<{
-    student_name?: string; grade?: string; item_name?: string;
-    make_it_meal?: boolean; drink?: string; amount_total?: number; week_of?: string;
+    student_name?: string; grade?: string; cart_summary?: string;
+    drink?: string | null; amount_total?: number; week_of?: string;
   } | null>(null);
   const ran = useRef(false);
 
@@ -46,7 +46,7 @@ export default function AkibaLunchSuccess() {
       <div className="max-w-md w-full text-center">
         <div className="text-5xl mb-5">🎉🏫</div>
         <h1 className="text-3xl font-black mb-2">Order Confirmed!</h1>
-        <p className="text-zinc-400 mb-8 text-sm">{info?.student_name}&apos;s lunch is all set.</p>
+        <p className="text-zinc-400 mb-8 text-sm">Lunch for {info?.student_name} is all set.</p>
 
         <div className="bg-zinc-950 border-2 border-yellow-400 rounded-3xl p-6 mb-6 text-left space-y-3">
           <div className="flex justify-between">
@@ -57,13 +57,13 @@ export default function AkibaLunchSuccess() {
             <span className="text-zinc-500 text-sm">Grade</span>
             <span className="font-black">{info?.grade}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-500 text-sm">Lunch</span>
-            <span className="font-black text-sm text-right max-w-xs">{info?.item_name}</span>
+          <div className="flex justify-between gap-4">
+            <span className="text-zinc-500 text-sm shrink-0">Order</span>
+            <span className="font-bold text-sm text-right">{info?.cart_summary}</span>
           </div>
-          {info?.make_it_meal && (
+          {info?.drink && (
             <div className="flex justify-between">
-              <span className="text-zinc-500 text-sm">Meal Add-on</span>
+              <span className="text-zinc-500 text-sm">Drink</span>
               <span className="font-black text-teal-400">🥤 {info.drink}</span>
             </div>
           )}
@@ -76,7 +76,7 @@ export default function AkibaLunchSuccess() {
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 mb-6">
           <p className="text-2xl mb-2">📍</p>
           <p className="font-black text-lg mb-1">Delivery: {thursdayLabel}</p>
-          <p className="text-zinc-400 text-sm">Lunch will be delivered to Akiba Yavneh. Have {info?.student_name?.split(" ")[0]} check in at lunch!</p>
+          <p className="text-zinc-400 text-sm">Lunch will be delivered to Akiba Yavneh.</p>
         </div>
 
         <a href="/akiba-lunch" className="inline-block bg-zinc-900 border border-zinc-700 text-white font-black px-8 py-3 rounded-full text-sm hover:border-yellow-400 transition-colors">

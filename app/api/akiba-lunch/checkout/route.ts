@@ -3,56 +3,64 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04-22.dahlia" });
 
-const ITEMS: Record<string, { label: string; cents: number }> = {
-  brisket_sandwich: { label: "Brisket Sandwich w/ French Fries", cents: 1650 },
-  caesar_salad:     { label: "Chicken Caesar Salad",              cents: 2100 },
-  bbq_wrap:         { label: "Crispy BBQ Chicken Wrap w/ Chips",  cents: 1650 },
+const ITEMS: Record<string, { label: string; cents: number; price: number }> = {
+  brisket_sandwich: { label: "Brisket Sandwich w/ French Fries", cents: 1650, price: 16.50 },
+  caesar_salad:     { label: "Chicken Caesar Salad",              cents: 2100, price: 21.00 },
+  bbq_wrap:         { label: "Crispy BBQ Chicken Wrap w/ Chips",  cents: 1650, price: 16.50 },
 };
 
 const MEAL_CENTS = 500;
 
-export async function POST(req: NextRequest) {
-  const { student_name, grade, item_id, make_it_meal, drink } = await req.json();
+interface CartItem { item_id: string; qty: number; meal_count: number; }
 
-  if (!student_name || !grade || !item_id || !ITEMS[item_id]) {
+export async function POST(req: NextRequest) {
+  const { student_name, grade, cart, drink } = await req.json() as {
+    student_name: string; grade: string; cart: CartItem[]; drink?: string;
+  };
+
+  if (!student_name || !grade || !Array.isArray(cart) || cart.length === 0) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
-  if (make_it_meal && !drink) {
-    return NextResponse.json({ error: "Please choose a drink" }, { status: 400 });
+
+  const totalMeals = cart.reduce((sum, c) => sum + (c.meal_count || 0), 0);
+  if (totalMeals > 0 && !drink) {
+    return NextResponse.json({ error: "Please choose a drink for meal add-ons" }, { status: 400 });
   }
 
-  const item = ITEMS[item_id];
-  const totalCents = item.cents + (make_it_meal ? MEAL_CENTS : 0);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
-
-  // Next Thursday delivery date
   const now = new Date();
   const daysToThursday = (4 - now.getDay() + 7) % 7 || 7;
   const thursday = new Date(now);
   thursday.setDate(now.getDate() + daysToThursday);
   const weekOf = thursday.toISOString().split("T")[0];
 
-  const lineItems = [
-    {
-      price_data: {
-        currency: "usd",
-        product_data: { name: `${item.label} — ${student_name} (${grade})` },
-        unit_amount: item.cents,
-      },
-      quantity: 1,
-    },
-  ];
+  const lineItems: { price_data: { currency: string; product_data: { name: string }; unit_amount: number }; quantity: number }[] = [];
 
-  if (make_it_meal) {
+  for (const { item_id, qty, meal_count } of cart) {
+    const item = ITEMS[item_id];
+    if (!item || qty < 1) continue;
     lineItems.push({
-      price_data: {
-        currency: "usd",
-        product_data: { name: `Make it a Meal — ${drink}` },
-        unit_amount: MEAL_CENTS,
-      },
-      quantity: 1,
+      price_data: { currency: "usd", product_data: { name: `${item.label} — ${student_name} (${grade})` }, unit_amount: item.cents },
+      quantity: qty,
     });
+    if ((meal_count || 0) > 0) {
+      lineItems.push({
+        price_data: { currency: "usd", product_data: { name: `Meal Add-on (${drink}) — ${student_name}` }, unit_amount: MEAL_CENTS },
+        quantity: meal_count,
+      });
+    }
   }
+
+  if (lineItems.length === 0) {
+    return NextResponse.json({ error: "No valid items in cart" }, { status: 400 });
+  }
+
+  const cartSummary = cart
+    .filter(c => c.qty > 0)
+    .map(c => `${c.qty}× ${ITEMS[c.item_id]?.label}${(c.meal_count || 0) > 0 ? ` (+${c.meal_count} meal)` : ""}`)
+    .join(", ");
+
+  const totalCents = lineItems.reduce((sum, li) => sum + li.price_data.unit_amount * li.quantity, 0);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -63,16 +71,14 @@ export async function POST(req: NextRequest) {
       metadata: {
         student_name,
         grade,
-        item_id,
-        item_name: item.label,
-        item_price: (item.cents / 100).toFixed(2),
-        make_it_meal: make_it_meal ? "true" : "false",
+        cart: JSON.stringify(cart),
+        cart_summary: cartSummary,
         drink: drink || "",
+        total_meals: String(totalMeals),
         amount_total: (totalCents / 100).toFixed(2),
         week_of: weekOf,
       },
     });
-
     return NextResponse.json({ url: session.url });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Stripe error";
