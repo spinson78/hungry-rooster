@@ -9,8 +9,7 @@ const MENU = [
 
 const DRINKS = ["Water Bottle", "Sweet Tea", "Sprite", "Coke", "Diet Coke", "Root Beer"];
 
-const GRADES = ["Pre-K", "Kindergarten", "1st Grade", "2nd Grade", "3rd Grade", "4th Grade",
-  "5th Grade", "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade", "11th Grade", "12th Grade"];
+const GRADES = ["9th Grade", "10th Grade", "11th Grade", "12th Grade"];
 
 function getNextThursday(): string {
   const d = new Date();
@@ -44,15 +43,13 @@ export default function AkibaLunchPage() {
 
   const total = selected ? selected.price + (meal ? 5 : 0) : 0;
 
-  const handleMealToggle = (checked: boolean) => {
-    setMeal(checked);
-    if (checked) { setDrinkModal(true); setDrink(""); }
-    else { setDrink(""); }
-  };
+  const [mealModal, setMealModal] = useState(false);
 
   const handleDrinkSelect = (d: string) => {
     setDrink(d);
+    setMeal(true);
     setDrinkModal(false);
+    setMealModal(false);
   };
 
   const handleSubmit = async () => {
@@ -104,7 +101,7 @@ export default function AkibaLunchPage() {
           <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Choose Your Lunch</h2>
           <div className="space-y-3 mb-8">
             {MENU.map(item => (
-              <button key={item.id} onClick={() => { setSelected(item); setMeal(false); setDrink(""); setError(""); }}
+              <button key={item.id} onClick={() => { setSelected(item); setMeal(false); setDrink(""); setError(""); setMealModal(true); }}
                 className={`w-full text-left p-5 rounded-2xl border-2 transition-all flex items-center justify-between ${
                   selected?.id === item.id
                     ? "border-yellow-400 bg-yellow-400/10"
@@ -122,27 +119,13 @@ export default function AkibaLunchPage() {
             ))}
           </div>
 
-          {/* Meal add-on */}
-          {selected && (
-            <div className="mb-6">
-              <button
-                onClick={() => handleMealToggle(!meal)}
-                className={`w-full text-left p-5 rounded-2xl border-2 transition-all flex items-center justify-between ${
-                  meal ? "border-teal-400 bg-teal-400/10" : "border-zinc-800 bg-zinc-950 hover:border-zinc-600"
-                }`}>
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl">🥤</span>
-                  <div>
-                    <p className="font-black text-base">Make it a Meal</p>
-                    <p className="text-zinc-500 text-xs">Add a drink + cookie</p>
-                    {meal && drink && <p className="text-teal-400 text-xs font-bold mt-0.5">✓ {drink}</p>}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-black text-xl ${meal ? "text-teal-400" : "text-zinc-400"}`}>+$5.00</p>
-                  {meal && <p className="text-xs text-zinc-500">tap to remove</p>}
-                </div>
-              </button>
+          {/* Meal indicator (shown after selection) */}
+          {selected && meal && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between bg-teal-400/10 border border-teal-400/30 rounded-2xl px-5 py-3">
+                <p className="text-teal-400 font-black text-sm">🥤 Make it a Meal — {drink}</p>
+                <button onClick={() => { setMeal(false); setDrink(""); }} className="text-zinc-500 hover:text-red-400 text-xs font-bold transition-colors">Remove</button>
+              </div>
             </div>
           )}
 
