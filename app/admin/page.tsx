@@ -458,25 +458,35 @@ export default function AdminPage() {
 
   const clearCompleted = async (type: "dinner" | "shabbat" | "bakery" | "catering") => {
     setClearing(true);
-    // Soft-delete: archive completed orders so they stay in DB for reports
-    if (type === "dinner") {
-      await supabase.from("orders").update({ status: "archived" }).eq("order_type", "dinner").eq("status", "complete");
-      await fetchDinnerOrders();
-    } else if (type === "shabbat") {
-      await supabase.from("orders").update({ status: "archived" }).eq("order_type", "shabbat").eq("status", "complete");
-      await fetchShabbatOrders();
-    } else if (type === "bakery") {
-      await supabase.from("orders").update({ status: "archived" }).eq("order_type", "bakery").eq("status", "complete");
-      await fetchBakeryOrders();
-    } else {
-      await supabase.from("orders").update({ status: "archived" }).in("order_type", ["catering", "catering_inquiry"]).eq("status", "complete");
-      await fetchCateringOrders();
+    // Fetch completed IDs for this type, then archive each via service-role API
+    const types = type === "catering" ? ["catering", "catering_inquiry"] : [type === "bakery" ? "bakery" : type];
+    const { data: completed } = await supabase
+      .from("orders")
+      .select("id")
+      .in("order_type", types)
+      .eq("status", "complete");
+    if (completed) {
+      await Promise.all(completed.map(o =>
+        fetch("/api/admin/complete-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: o.id, action: "archive" }),
+        })
+      ));
     }
+    if (type === "dinner") await fetchDinnerOrders();
+    else if (type === "shabbat") await fetchShabbatOrders();
+    else if (type === "bakery") await fetchBakeryOrders();
+    else await fetchCateringOrders();
     setClearing(false);
   };
 
   const markOrderComplete = async (id: string, type: "dinner" | "shabbat" | "bakery" | "catering") => {
-    await supabase.from("orders").update({ status: "complete" }).eq("id", id);
+    await fetch("/api/admin/complete-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "complete" }),
+    });
     if (type === "dinner") setDinnerOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
     else if (type === "shabbat") setShabbatOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
     else if (type === "bakery") setBakeryOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
