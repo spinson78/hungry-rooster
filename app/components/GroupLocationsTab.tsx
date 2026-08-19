@@ -56,7 +56,7 @@ export default function GroupLocationsTab() {
     setLoading(true);
     const [{ data: locs }, { data: ords }] = await Promise.all([
       supabase.from("group_locations").select("*").order("created_at", { ascending: false }),
-      supabase.from("group_orders").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("group_orders").select("*").neq("status", "archived").order("created_at", { ascending: false }).limit(100),
     ]);
     setLocations((locs as Location[]) || []);
     setOrders((ords as GroupOrder[]) || []);
