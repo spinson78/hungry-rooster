@@ -50,6 +50,7 @@ export default function GroupLocationsTab() {
   const [success, setSuccess] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [manifestSlug, setManifestSlug] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -114,8 +115,26 @@ export default function GroupLocationsTab() {
   };
 
   const markOrderComplete = async (id: string) => {
-    await supabase.from("group_orders").update({ status: "complete" }).eq("id", id);
+    await fetch("/api/admin/complete-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "complete", table: "group_orders" }),
+    });
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: "complete" } : o));
+  };
+
+  const clearCompleted = async () => {
+    setClearing(true);
+    const completed = orders.filter(o => o.status === "complete");
+    await Promise.all(completed.map(o =>
+      fetch("/api/admin/complete-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: o.id, action: "archive", table: "group_orders" }),
+      })
+    ));
+    await fetchAll();
+    setClearing(false);
   };
 
   const inputCls = "w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-orange-400 text-sm";
@@ -283,11 +302,22 @@ export default function GroupLocationsTab() {
 
           {/* Orders */}
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500">Incoming Orders</h3>
-              <div className="flex gap-3 text-xs text-zinc-600">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-500 inline-block" /> Paid</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-zinc-600 inline-block" /> Pending/Abandoned</span>
+              <div className="flex items-center gap-3 flex-wrap">
+                {orders.filter(o => o.status === "complete").length > 0 && (
+                  <button
+                    onClick={clearCompleted}
+                    disabled={clearing}
+                    className="text-red-400 hover:text-red-300 font-bold text-xs transition-colors border border-red-400/30 px-4 py-2 rounded-full"
+                  >
+                    {clearing ? "Clearing…" : `Clear ${orders.filter(o => o.status === "complete").length} completed`}
+                  </button>
+                )}
+                <div className="flex gap-3 text-xs text-zinc-600">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-500 inline-block" /> Paid</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-zinc-600 inline-block" /> Pending/Abandoned</span>
+                </div>
               </div>
             </div>
             {orders.length === 0 ? (
