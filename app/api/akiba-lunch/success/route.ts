@@ -48,7 +48,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    let session: Stripe.Checkout.Session;
+    if (sessionId.startsWith("pi_")) {
+      const sessions = await stripe.checkout.sessions.list({ payment_intent: sessionId, limit: 1 });
+      if (!sessions.data.length) return NextResponse.json({ error: "No checkout session found for this payment intent" }, { status: 404 });
+      session = sessions.data[0];
+    } else {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+    }
     if (session.payment_status !== "paid") {
       return NextResponse.json({ error: "Payment not complete" }, { status: 400 });
     }
