@@ -76,7 +76,7 @@ export default function AkibaLunchSuccess() {
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 mb-6">
           <p className="text-2xl mb-2">📍</p>
           <p className="font-black text-lg mb-1">Delivery: {thursdayLabel}</p>
-          <p className="text-zinc-400 text-sm">Lunch will be delivered to Akiba Yavneh.</p>
+          <p className="text-zinc-400 text-sm">Lunch will be delivered to Akiba Yavneh on Friday.</p>
         </div>
 
         <a href="/akiba-lunch" className="inline-block bg-zinc-900 border border-zinc-700 text-white font-black px-8 py-3 rounded-full text-sm hover:border-yellow-400 transition-colors">

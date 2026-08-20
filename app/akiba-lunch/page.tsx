@@ -5,14 +5,15 @@ const MENU = [
   { id: "brisket_sandwich", emoji: "🥩", label: "Brisket Sandwich", detail: "w/ French Fries", price: 16.50 },
   { id: "caesar_salad",     emoji: "🥗", label: "Chicken Caesar Salad", detail: "Fresh romaine, grilled chicken", price: 21.00 },
   { id: "bbq_wrap",         emoji: "🌯", label: "Crispy BBQ Chicken Wrap", detail: "w/ Chips", price: 16.50 },
+  { id: "tenders",          emoji: "🍗", label: "5 Pc Tenders & Fries", detail: "Crispy chicken tenders w/ fries", price: 18.00 },
 ];
 
 const DRINKS = ["Water Bottle", "Sweet Tea", "Sprite", "Coke", "Diet Coke", "Root Beer"];
 const GRADES = ["9th Grade", "10th Grade", "11th Grade", "12th Grade"];
 
-function getNextThursday(): string {
+function getNextFriday(): string {
   const d = new Date();
-  const days = (4 - d.getDay() + 7) % 7 || 7;
+  const days = (5 - d.getDay() + 7) % 7 || 7;
   d.setDate(d.getDate() + days);
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
@@ -37,7 +38,7 @@ export default function AkibaLunchPage() {
   const [error, setError] = useState("");
 
   const closed = isClosed();
-  const thursday = getNextThursday();
+  const thursday = getNextFriday();
 
   const totalMeals = Object.values(mealCounts).reduce((a, b) => a + b, 0);
   const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0);

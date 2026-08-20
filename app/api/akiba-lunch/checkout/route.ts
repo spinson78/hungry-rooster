@@ -4,9 +4,10 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04-22.dahlia" });
 
 const ITEMS: Record<string, { label: string; cents: number; price: number }> = {
-  brisket_sandwich: { label: "Brisket Sandwich w/ French Fries", cents: 1650, price: 16.50 },
-  caesar_salad:     { label: "Chicken Caesar Salad",              cents: 2100, price: 21.00 },
-  bbq_wrap:         { label: "Crispy BBQ Chicken Wrap w/ Chips",  cents: 1650, price: 16.50 },
+  brisket_sandwich: { label: "Brisket Sandwich w/ French Fries",  cents: 1650, price: 16.50 },
+  caesar_salad:     { label: "Chicken Caesar Salad",               cents: 2100, price: 21.00 },
+  bbq_wrap:         { label: "Crispy BBQ Chicken Wrap w/ Chips",   cents: 1650, price: 16.50 },
+  tenders:          { label: "5 Pc Tenders & Fries",               cents: 1800, price: 18.00 },
 };
 
 const MEAL_CENTS = 500;
@@ -29,10 +30,10 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
   const now = new Date();
-  const daysToThursday = (4 - now.getDay() + 7) % 7 || 7;
-  const thursday = new Date(now);
-  thursday.setDate(now.getDate() + daysToThursday);
-  const weekOf = thursday.toISOString().split("T")[0];
+  const daysToFriday = (5 - now.getDay() + 7) % 7 || 7;
+  const friday = new Date(now);
+  friday.setDate(now.getDate() + daysToFriday);
+  const weekOf = friday.toISOString().split("T")[0];
 
   const lineItems: { price_data: { currency: string; product_data: { name: string }; unit_amount: number }; quantity: number }[] = [];
 

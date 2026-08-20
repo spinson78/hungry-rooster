@@ -6,8 +6,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04
 
 const ITEMS: Record<string, { label: string; price: number }> = {
   brisket_sandwich: { label: "Brisket Sandwich w/ French Fries", price: 16.50 },
-  caesar_salad:     { label: "Chicken Caesar Salad", price: 21.00 },
+  caesar_salad:     { label: "Chicken Caesar Salad",             price: 21.00 },
   bbq_wrap:         { label: "Crispy BBQ Chicken Wrap w/ Chips", price: 16.50 },
+  tenders:          { label: "5 Pc Tenders & Fries",             price: 18.00 },
 };
 
 export async function GET(req: NextRequest) {
