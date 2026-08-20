@@ -164,6 +164,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── Akiba Lunch orders — handled by /api/akiba-lunch/success ─────────────
+    if (meta.student_name && meta.cart) {
+      console.log(`Akiba Lunch session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
+    // ── CoopChallah orders — handled by /api/coopchallah/success ─────────────
+    if (meta.package && meta.name) {
+      console.log(`CoopChallah session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
     const order_type = meta.order_type || "dinner";
     const total = (session.amount_total || 0) / 100;
 
