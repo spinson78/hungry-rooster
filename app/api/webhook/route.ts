@@ -164,6 +164,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── School account setup sessions — handled by /api/school/setup-confirm ──
+    if (meta.student_pin || meta.billing_preference) {
+      console.log(`School setup session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
     // ── Akiba Lunch orders — handled by /api/akiba-lunch/success ─────────────
     if (meta.student_name && meta.cart) {
       console.log(`Akiba Lunch session ${session.id} — skipping regular order insert`);
