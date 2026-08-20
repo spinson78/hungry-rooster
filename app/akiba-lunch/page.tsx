@@ -22,7 +22,7 @@ function isClosed(): boolean {
   const now = new Date();
   const day = now.getDay();
   const hour = now.getHours();
-  if (day === 4 && hour >= 12) return true;
+  if (day === 4 && hour >= 17) return true;
   if (day === 5 || day === 6 || day === 0) return true;
   return false;
 }
@@ -113,7 +113,7 @@ export default function AkibaLunchPage() {
         <h1 className="text-3xl font-black tracking-tight">Akiba Yavneh Lunch</h1>
         <p className="text-zinc-400 text-sm mt-1">by The Hungry Rooster · The Coop</p>
         <div className={`inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full text-xs font-bold ${closed ? "bg-red-500/15 text-red-400 border border-red-500/20" : "bg-zinc-900 text-zinc-400 border border-zinc-800"}`}>
-          {closed ? "⛔ Orders closed — opens again Monday" : `⏰ Order by Thursday noon · Delivery: ${thursday}`}
+          {closed ? "⛔ Orders closed — opens again Monday" : `⏰ Order by Thursday 5pm · Delivery: ${thursday}`}
         </div>
       </div>
 
