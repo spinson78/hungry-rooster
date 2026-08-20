@@ -61,11 +61,24 @@ export async function GET(req: NextRequest) {
     }
 
     const meta = session.metadata || {};
-    const cart: Array<{ item_id: string; qty: number; meal_count: number }> = JSON.parse(meta.cart || "[]");
     const drink = meta.drink || "";
     const weekOf = meta.week_of || null;
-    const cartSummary = meta.cart_summary || "";
     const totalAmount = meta.amount_total || "0.00";
+
+    // Support both new cart format and legacy single-item format
+    let cart: Array<{ item_id: string; qty: number; meal_count: number }>;
+    let cartSummary: string;
+    if (meta.cart) {
+      cart = JSON.parse(meta.cart);
+      cartSummary = meta.cart_summary || "";
+    } else if (meta.item_id) {
+      // Legacy format (pre-cart redesign)
+      cart = [{ item_id: meta.item_id, qty: 1, meal_count: meta.make_it_meal === "true" ? 1 : 0 }];
+      cartSummary = `1× ${meta.item_name || ITEMS[meta.item_id]?.label || meta.item_id}`;
+    } else {
+      cart = [];
+      cartSummary = "";
+    }
 
     // Insert one row per cart item (stripe_session_id gets index suffix to stay unique)
     for (let i = 0; i < cart.length; i++) {
