@@ -45,8 +45,31 @@ export async function GET(req: NextRequest) {
 
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
-  // Welcome email
+  // Admin notification
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
+  if (process.env.RESEND_API_KEY) {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "The Hungry Rooster <sales@thehungryroostertx.com>",
+        to: "sales@thehungryroostertx.com",
+        subject: `☕ New Coop Account (Auto-Pay) — ${account.student_name}`,
+        html: `<div style="font-family:sans-serif;padding:20px;background:#111;color:#fff;border-radius:8px;">
+          <h2 style="color:#e9c46a;margin:0 0 12px">New Coffee Shop Account — Card on File</h2>
+          <table style="font-size:14px;width:100%">
+            <tr><td style="color:#888;padding:4px 0">Student</td><td style="font-weight:700">${account.student_name}</td></tr>
+            <tr><td style="color:#888;padding:4px 0">PIN</td><td style="font-weight:900;color:#e9c46a;font-size:18px">${account.student_pin}</td></tr>
+            <tr><td style="color:#888;padding:4px 0">Parent</td><td>${account.parent_name}</td></tr>
+            <tr><td style="color:#888;padding:4px 0">Email</td><td>${account.parent_email}</td></tr>
+            <tr><td style="color:#888;padding:4px 0">Billing</td><td>Auto-charge (card on file)</td></tr>
+          </table>
+        </div>`,
+      }),
+    });
+  }
+
+  // Welcome email
   if (process.env.RESEND_API_KEY) {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
