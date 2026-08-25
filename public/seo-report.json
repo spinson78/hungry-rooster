@@ -1,98 +1,111 @@
 {
-  "generated_at": "2026-08-17T00:00:00.000Z",
-  "week": "Week of Aug 17, 2026",
+  "generated_at": "2026-08-24T00:00:00.000Z",
+  "week": "Week of Aug 24, 2026",
   "keyword_rankings": [
     {
       "keyword": "kosher food Dallas",
       "our_position": "not found",
-      "top_competitor": "Dallas Kosher (VAAD directory) — https://www.dallaskosher.org/restaurants ; also Yelp 'Top 10 Kosher Restaurants Dallas', TripAdvisor, K Market (kmarkettx.com), Aderet (aderetrestaurant.com)"
+      "top_competitor": "Dallas Kosher directory — https://www.dallaskosher.org/restaurants (holds #1 and #2). Also TripAdvisor, Chabad of Dallas, K Market (kmarkettx.com), Aderet (aderetrestaurant.com)"
     },
     {
       "keyword": "kosher catering Dallas",
-      "our_position": "position ~10 (last result on page 1)",
-      "top_competitor": "Simcha Kosher Catering — https://www.yelp.com/biz/simcha-kosher-catering-dallas (Yelp listing outranks their own site); then Dallas Kosher catering directory and A Taste of the World (atasteoftheworld.com)"
+      "our_position": "position ~10 (last result on page 1) — unchanged from last week",
+      "top_competitor": "Simcha Kosher Catering's YELP page — https://www.yelp.com/biz/simcha-kosher-catering-dallas (a Yelp listing with 11 reviews still outranks THR's own /catering page); then dallaskosher.org/new-page-1 and atasteoftheworld.com"
     },
     {
       "keyword": "kosher delivery Dallas",
-      "our_position": "not found (brand mentioned only on third-party aggregator pages, no THR URL on page 1)",
-      "top_competitor": "DoorDash — https://www.doordash.com/food-delivery/dallas-tx-restaurants/kosher/ ; Uber Eats and Postmates own the rest of page 1"
+      "our_position": "not found (brand named inside DoorDash/Uber Eats aggregator descriptions, but no thehungryroostertx.com URL on page 1)",
+      "top_competitor": "DoorDash — https://www.doordash.com/food-delivery/dallas-tx-restaurants/kosher/ ; Uber Eats, Yelp and Postmates take the rest of page 1"
     },
     {
       "keyword": "kosher restaurant Dallas",
       "our_position": "not found",
-      "top_competitor": "Yelp category page — https://www.yelp.com/search?cflt=kosher&find_loc=Dallas,+TX ; Aderet Grill & Salad is the top-ranking individual restaurant site"
+      "top_competitor": "TotallyJewishTravel + Yelp category pages — https://www.yelp.com/search?cflt=kosher&find_loc=Dallas,+TX ; Aderet Grill & Salad (aderetrestaurant.com) and Meat Point (meatpointdallas.com) are the top-ranking individual restaurant sites"
     },
     {
       "keyword": "Shabbat meals Dallas",
-      "our_position": "not found",
-      "top_competitor": "Dallas Kosher — https://www.dallaskosher.org/restaurants ; Meat Point (meatpointdallas.com) ranks with its Friday Shabbat takeout menu, plus Chabad of Dallas and Shaare Tefilla"
+      "our_position": "not found — but the /shabbat page is now technically fixed and eligible to rank for the first time (see recommendations)",
+      "top_competitor": "Dallas Kosher — https://www.dallaskosher.org/restaurants ; plus Chabad of Dallas, Shaare Tefilla hospitality, Shabbat 500 DFW (shabbat500dfw.com), OneTable Dallas and Gourmet Palate"
     },
     {
       "keyword": "kosher meal delivery Texas",
       "our_position": "not found",
-      "top_competitor": "Shef — https://shef.com/homemade-food-delivery/austin-tx/kosher-food ; Uber Eats/Postmates category pages; Oh Mama Kitchen (Houston) is the only single-brand site ranking"
+      "top_competitor": "Shef — https://shef.com/homemade-food-delivery/austin-tx/78701/kosher-food ; Uber Eats/Postmates category pages; Oh Mama Kitchen of Houston (ohmamakitchen-htx.com) is the only single-brand kitchen ranking statewide"
     },
     {
       "keyword": "Jewish catering Dallas",
-      "our_position": "position ~8",
-      "top_competitor": "JGourmet at the Aaron Family JCC — https://www.jccdallas.org/jgourmet ; then Dallas Kosher catering directory and A Taste of the World"
+      "our_position": "position ~8 — unchanged from last week",
+      "top_competitor": "JGourmet at the Aaron Family JCC — https://www.jccdallas.org/jgourmet (now also live at its own domain jgourmetdallas.com); then dallaskosher.org catering directory and A Taste of the World"
+    },
+    {
+      "keyword": "kosher Shabbat meal delivery Dallas order online (bonus long-tail check)",
+      "our_position": "position ~3 — NEW, best ranking of any term tested",
+      "top_competitor": "dallaskosher.org/restaurants and Postmates. THR outranks Aderet, K Market and the Uber Eats/DoorDash category pages here."
     }
   ],
   "competitor_alerts": [
-    "NEW COMPETITOR: Shi-Ya Modern Asian Cuisine, a kosher sushi concept, opened June 30, 2026 at 7114 Campbell Road inside Meat Point. It earned Dallas Observer coverage in the 'June restaurant openings' roundup — that press link is exactly the kind of local backlink THR has none of.",
-    "Meat Point (meatpointdallas.com) now ranks on page 1 for 'Shabbat meals Dallas' on the strength of a Friday hot-meal takeout menu. THR sells a weekly Shabbat Box and does not rank at all for that term — this is the single biggest head-to-head loss this week.",
-    "Simcha Kosher Catering's YELP PAGE (11 reviews) outranks THR for 'kosher catering Dallas'. THR did not surface a Yelp listing in any of the seven searches run this week, including the Yelp-restricted 'kosher Dallas site:yelp.com' query, where the top-10 list was Aderet, Meat Point, Milk and Honey, CCCP Market, Weinberger's, Cattleack, Tokyo Bar, Midtown Pizza, Deli News and Benny's Bagels. THR is absent from Yelp's kosher Dallas category entirely.",
-    "dallaskosher.org (the local VAAD directory) appears in the top 3 for five of the seven target keywords. THR does not appear on its /restaurants or /new-page-1 (catering) listings — the highest-authority local citation in this niche is missing a THR entry.",
-    "Delivery keywords are owned by aggregators: DoorDash, Uber Eats and Postmates take nearly all of page 1 for 'kosher delivery Dallas' and 'kosher meal delivery Texas'. THR's in-house-delivery-only model means it is invisible on the highest-intent delivery searches."
+    "WIN — The /shabbat page is fixed and live. Last week it served the homepage title with a canonical pointing at the homepage and a body that read only 'Loading this week's Shabbat menu...'. It now returns the correct title ('Shabbat Box | Kosher Shabbat Meals Delivered in Dallas'), a self-referencing canonical, and fully crawlable content including this week's menu (Lemon Herb Grilled Chicken, Pesto Roasted Potatoes, Garlic Green Beans, Summer Kale Salad) and all three price tiers ($65 / $115 / $225). Expect indexing to take 1–3 weeks.",
+    "WIN — THR is now listed on dallaskosher.org, on BOTH the /restaurants page and the /new-page-1 catering page, with a 2026 kosher certificate PDF. That was last week's #3 recommendation and it is done. This is the highest-authority local citation in the niche.",
+    "PROBLEM WITH THAT WIN — the Dallas Kosher catering listing's 'Click for contact' button points to https://thehungryroostertx.com/page/catering, which does not exist (there is no /page route in the app; the real URL is /catering). Every prospect who clicks THR's link from the single most authoritative kosher directory in Dallas lands on a 404, and the backlink passes no equity to the catering page. Competitor listings on the same page (AKC, A Taste of the World, Simcha, Gourmet Palate) all link correctly and all include a phone number in the listing text — THR's listing has no phone number or address at all.",
+    "NEW COMPETITOR — Olive & Fig (2909 W 15th St, Plano) has appeared on the Dallas Kosher restaurant list as an upscale Mediterranean restaurant and bar, positioned on 'elevated' dining and events. That is the same 'elevated / creative catering' language THR uses in its own Dallas Kosher blurb, so it competes directly for simcha and event budgets.",
+    "NEW COMPETITOR — Shi-Ya Modern Asian Cuisine, a 100% kosher sushi concept from the Meat Point owners, opened at 7114 Campbell Road and was covered by the Dallas Observer in its June 2026 restaurant-openings roundup (https://www.dallasobserver.com/food-drink/new-dallas-restaurants-opened-june-2026-40693920/). That is exactly the kind of local press backlink THR still has zero of.",
+    "COMPETITOR MOMENTUM — JGourmet, which outranks THR for 'Jewish catering Dallas', has opened its new Kosher Dairy Kitchen and cafe at the JCC and now runs a dedicated domain (jgourmetdallas.com) alongside its jccdallas.org page. It is building a second ranking asset for the same keyword THR is stuck at ~#8 for.",
+    "STRUCTURAL — Yelp pages appeared in the results for five of the seven target keywords. THR does have a Yelp listing (yelp.com/biz/the-hungry-rooster-dallas, last updated June 2026), but it did not surface anywhere in the 'kosher Dallas site:yelp.com' top 10, which this week was Aderet, Meat Point, Milk and Honey, CCCP Market, Weinberger's, Cattleack, Tokyo Bar, Midtown Pizza, Deli News and Benny's Bagels. Simcha ranks with only 11 reviews, so the bar to displace them is low.",
+    "STRUCTURAL — Delivery keywords remain owned by aggregators. DoorDash, Uber Eats and Postmates take nearly all of page 1 for both 'kosher delivery Dallas' and 'kosher meal delivery Texas'. THR is named inside those aggregator pages but has no owned URL competing there."
   ],
   "recommendations": [
     {
       "priority": "high",
-      "action": "Fix the live /shabbat page — it is serving the wrong metadata and no crawlable content. The deployed page returns the generic homepage title ('The Hungry Rooster | Kosher Kitchen & Catering · Dallas, TX'), a canonical pointing at https://thehungryroostertx.com (the homepage, not /shabbat), and a body that reads only 'Loading this week's Shabbat menu...'. Redeploy so the version in app/shabbat/page.tsx goes live.",
-      "reason": "The source code already has the correct metadata (title 'Shabbat Box | Kosher Shabbat Meals Delivered in Dallas', canonical '/shabbat') and a server-side Supabase fetch specifically commented 'so crawlers see real menu content instead of Loading...'. That fix is not on production. A self-referencing-to-homepage canonical tells Google to drop /shabbat from the index entirely, which fully explains why THR is absent for 'Shabbat meals Dallas' while Meat Point ranks."
+      "action": "Email or call Dallas Kosher (info@dallaskosher.org / 214-739-6535) and ask them to fix the broken link in THR's catering listing: change https://thehungryroostertx.com/page/catering to https://www.thehungryroostertx.com/catering. While you have them, ask them to add the address (1499 Regal Row, Suite 206, Dallas, TX 75247) and phone (945-215-7907) to both the catering and restaurant listings.",
+      "reason": "Verified this run: the 'Click for contact' link on https://www.dallaskosher.org/new-page-1 points at a /page/catering route that does not exist in the app. The listing was just won — the highest-authority citation in Dallas kosher — and it currently sends every click to a 404 and passes no link equity to /catering, the page that is stuck at ~#10 for 'kosher catering Dallas'. Every competitor on that page lists a phone number; THR lists none."
     },
     {
       "priority": "high",
-      "action": "Claim and build out a Yelp business listing for The Hungry Rooster, and push the first 20–30 reviews to it from the 288-name VIP customer list already in the repo (thr-vip-customers-288.csv).",
-      "reason": "Yelp category and business pages appeared in the top results for five of seven keywords, and Simcha Kosher Catering's Yelp page (only 11 reviews) currently outranks THR's own website for 'kosher catering Dallas'. THR appears nowhere in Yelp's Dallas kosher top-10. A listing with 25+ reviews would likely displace competitors with single-digit review counts."
+      "action": "Add a defensive redirect in next.config.ts from /page/:slug* to /:slug* (permanent), so /page/catering resolves to /catering regardless of whether Dallas Kosher updates the link.",
+      "reason": "The directory link may take weeks to be edited on a Squarespace site maintained by a volunteer organization. A 301 recovers the traffic and the link equity immediately and costs about three lines of config. It also catches any other stale /page/... links pointing at the site."
     },
     {
       "priority": "high",
-      "action": "Get The Hungry Rooster listed on dallaskosher.org — both the /restaurants page and the /new-page-1 catering page. Contact Dallas Kosher at 214-739-6535.",
-      "reason": "dallaskosher.org ranked in the top 3 for 'kosher food Dallas', 'kosher catering Dallas', 'kosher restaurant Dallas', 'Shabbat meals Dallas' and 'Jewish catering Dallas' this week. It is the authoritative local kashrut directory and the highest-value citation in the market, and THR is not on it."
+      "action": "Fix the openingHours in the homepage JSON-LD (app/page.tsx line 31). It currently reads ['Mo-Th 10:00-20:00', 'Su 10:00-18:00'] but the footer and the /menu page both say Mon-Fri 9am-2pm CST. While in that object, correct the Facebook URL in sameAs from facebook.com/thehungryrooster to facebook.com/thehungryroostertx to match the real profile linked in the footer.",
+      "reason": "Carried over unfixed from last week. Google cross-checks JSON-LD hours against the Google Business Profile and the on-page footer; a three-way conflict suppresses the hours rich result and undermines trust in the whole Restaurant entity. The sameAs URL is also wrong, which breaks the entity link to the Facebook page and wastes the strongest social signal available."
     },
     {
       "priority": "high",
-      "action": "Fix the conflicting business hours between the homepage JSON-LD and the site footer. app/page.tsx declares openingHours 'Mo-Th 10:00-20:00, Su 10:00-18:00' while the footer and /menu page both say 'Mon-Fri 9am-2pm CST'.",
-      "reason": "Contradictory hours between structured data and on-page content is a direct local-SEO trust signal failure — Google cross-checks schema against page text and the Google Business Profile. It also means anyone seeing THR in a local pack gets the wrong hours."
+      "action": "Add aggregateRating and a Review array to the homepage Restaurant JSON-LD, populated from the reviews already stored in Supabase and rendered on /reviews.",
+      "reason": "THR is already collecting first-party reviews (app/reviews/page.tsx pulls customer_name, rating, body from Supabase) but none of that is exposed to search engines as structured data, so no star rating shows in the SERP. Competitors ranking above THR — Simcha with 11 Yelp reviews — win on visible social proof. This converts review data THR already owns into gold stars on a result it already has."
+    },
+    {
+      "priority": "high",
+      "action": "Make /reviews server-rendered and give it a metadata export (title: 'Reviews | The Hungry Rooster — Kosher Kitchen & Catering Dallas'). It is currently a 'use client' component with no metadata block at all.",
+      "reason": "/reviews is listed in sitemap.ts at priority 0.6, so Google is being invited to crawl a page that returns no title, no description and no review text in the initial HTML — the exact failure mode that was just fixed on /shabbat. Review-rich pages are how competitors rank; THR's is invisible."
     },
     {
       "priority": "medium",
-      "action": "Add JSON-LD to /catering (Service + Offer schema with the $115 package price and the 10–200+ guest range) and to /menu (Menu / MenuItem schema using the existing item names and prices).",
-      "reason": "Structured data currently exists only on the homepage (Restaurant) and blog posts (BlogPosting). /catering is THR's best-ranking page type and /menu already has clean, priced items — both are one step from rich results, and competitors ranking above THR have no structured data at all."
+      "action": "Double down on the long-tail Shabbat cluster now that /shabbat works. THR ranked ~#3 for 'kosher Shabbat meal delivery Dallas order online' this week — the best result of any term tested. Publish two supporting posts: 'What Comes in a Shabbat Box' and 'Shabbat Dinner Delivery in Dallas: Order Deadlines, Delivery Zones and Free Delivery over $100', and internally link both to /shabbat.",
+      "reason": "This is the one place THR beats Aderet, K Market and the delivery apps head-to-head. Head terms like 'Shabbat meals Dallas' are locked up by dallaskosher.org, Chabad and synagogue hospitality pages that no restaurant will outrank; the buying-intent long tail is winnable and already showing traction."
     },
     {
       "priority": "medium",
-      "action": "Publish a blog post targeting 'kosher delivery Dallas' framed as an alternative to the delivery apps — e.g. 'Kosher Delivery in Dallas: Why We Deliver Ourselves Instead of Using DoorDash'. Interlink it from /menu and /dinner.",
-      "reason": "DoorDash, Uber Eats and Postmates occupy nearly all of page 1 for 'kosher delivery Dallas' and 'kosher meal delivery Texas'. THR cannot outrank aggregators on the head term, but no single-brand Dallas site owns the comparison angle, and THR's in-house delivery is a genuine differentiator worth a page."
+      "action": "Add JSON-LD to /catering (Service + Offer, using the real $115 starting package price, the $100 order minimum and the 10–200+ guest range already on the page) and to /menu (Menu + MenuItem, using the existing item names and prices such as Big Cluck Burrito $16, Chicken & Waffles $18).",
+      "reason": "Confirmed this run that only app/page.tsx and app/blog/[slug]/page.tsx contain any schema.org markup. /catering and /menu are the two highest-priority URLs in sitemap.ts (0.9 each) and both carry rich, price-bearing content that is currently invisible as structured data. Offer and Menu markup are what produce price and menu rich results for restaurant queries."
     },
     {
       "priority": "medium",
-      "action": "Restart the blog. The only two posts are dated July 18 and July 25, 2025 — 13 months stale. Ship at least one post a month, starting with 'Shabbat Dinner Delivery in Dallas: What's in This Week's Box'.",
-      "reason": "Both existing posts are declared in sitemap.ts with priority 0.8 and changeFrequency 'monthly', so Google is being told to expect updates that never come. A stale blog with two posts cannot compete with dallaskosher.org and Chabad pages that are updated continuously."
+      "action": "Restart the blog. The only two posts are dated July 18 and July 25, 2025 — now 13 months stale. Ship one post a month, starting with 'Kosher Delivery in Dallas: Why We Deliver Ourselves Instead of Using DoorDash'.",
+      "reason": "Blog posts are the only URLs on the site besides the homepage carrying JSON-LD, and /blog sits in the sitemap at 0.7 with nothing new to crawl. A delivery-angle post is the only realistic way to compete on 'kosher delivery Dallas', where DoorDash, Uber Eats and Postmates own the entire first page and no owned THR URL appears."
     },
     {
       "priority": "low",
-      "action": "Pitch Dallas Observer, Dallasites101 and DOJLife.com on a THR story — a new-concept angle works (Rico Saucey is listed as 'Coming Soon' on the homepage), as does the Esther's Cart roaming food cart.",
-      "reason": "Shi-Ya got Dallas Observer coverage for its June 30 opening and immediately became discoverable for Dallas kosher queries. Dallasites101 and DOJLife both surfaced in this week's searches as local outlets that already cover the kosher scene, and THR has an unlaunched concept and a mobile cart that are natural news hooks."
+      "action": "Pitch Dallas Observer, Dallasites101 and DOJLife.com on a THR story — the Rico Saucey launch (still marked 'Coming Soon' on the homepage) or the Esther's Cart roaming food cart are both natural news hooks.",
+      "reason": "Shi-Ya earned a Dallas Observer link simply by opening in June. THR has three distinct concepts running out of one kitchen and no local press coverage. Local editorial backlinks are the missing ingredient behind why dallaskosher.org and Yelp outrank THR's own domain for its own category."
     }
   ],
   "quick_wins": [
-    "Redeploy the site — the /shabbat metadata and server-side rendering fix is already written in app/shabbat/page.tsx but is not live. Zero new work, likely the highest-impact change on this list.",
-    "Correct the openingHours values in the homepage jsonLd object in app/page.tsx to match the actual Mon-Fri 9am-2pm CST hours shown in the footer.",
-    "Email the 94 SMS-opted-in customers (thr-sms-opted-in-94.csv) and the 288 VIP customers with a direct link to the existing /review page — competitors are ranking on review volume alone.",
-    "Call Dallas Kosher at 214-739-6535 and ask to be added to both the restaurants and catering directory pages.",
-    "Add /dinner to a nav link — it is in sitemap.ts at priority 0.8 and is linked only from the blog footer CTA, so it gets almost no internal link equity."
+    "Email info@dallaskosher.org today asking them to change THR's catering link from /page/catering to /catering — the new directory backlink is currently pointing at a 404.",
+    "Ship the /page/:slug* → /:slug* redirect in next.config.ts so the broken directory link works even before Dallas Kosher edits it.",
+    "Edit two lines in app/page.tsx: openingHours to 'Mo-Fr 09:00-14:00', and the Facebook sameAs URL to facebook.com/thehungryroostertx.",
+    "Add a metadata export to app/reviews/page.tsx (splitting it into layout.tsx like /menu and /catering already do) so the page stops returning the generic homepage title.",
+    "Text the 94 SMS-opted-in customers (thr-sms-opted-in-94.csv) a link to the Yelp listing, not just the on-site /review form — Yelp pages outrank owned sites for five of seven target keywords and Simcha ranks with just 11 reviews."
   ],
-  "summary": "The Hungry Rooster ranks on page 1 for only 2 of 7 target keywords this week — 'kosher catering Dallas' (~#10) and 'Jewish catering Dallas' (~#8) — and is absent for all food, restaurant, delivery and Shabbat terms. The biggest single problem is technical: the live /shabbat page is serving the homepage title and a canonical tag pointing at the homepage, with no crawlable menu content, even though the correct code already exists in the repo, which is almost certainly why competitor Meat Point ranks for 'Shabbat meals Dallas' and THR does not. Off-site, THR has no Yelp listing and no entry in the dallaskosher.org directory, the two properties that dominate these search results, while a new kosher competitor (Shi-Ya) opened in June and picked up Dallas Observer coverage."
+  "summary": "Two of last week's high-priority fixes landed: the /shabbat page now serves correct metadata and fully crawlable menu content, and The Hungry Rooster is finally listed on dallaskosher.org on both the restaurant and catering pages. The catch is that the new Dallas Kosher catering listing links to /page/catering, a URL that does not exist, so the best backlink in the niche currently dumps every visitor on a 404. Rankings are otherwise flat — still page 1 for 'kosher catering Dallas' (~#10) and 'Jewish catering Dallas' (~#8) only — but a bonus check found THR at roughly #3 for 'kosher Shabbat meal delivery Dallas order online', the first evidence that the long-tail Shabbat strategy is working."
 }

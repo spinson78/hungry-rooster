@@ -34,13 +34,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Account setup is not complete" }, { status: 403 });
 
     // Insert transaction
-    await supabase.from("school_transactions").insert({
+    const { error: acctErr } = await supabase.from("school_transactions").insert({
       account_id,
       type: "purchase",
       amount: total,
       description,
-      items,
     });
+    if (acctErr) {
+      console.error("school_transactions purchase insert error:", JSON.stringify(acctErr));
+      return NextResponse.json({ error: "DB insert failed: " + acctErr.message }, { status: 500 });
+    }
 
     // Increment balance
     const newBalance = (Number(acct.balance) || 0) + total;
@@ -53,13 +56,16 @@ export async function POST(req: NextRequest) {
   }
 
   if (payment_type === "cash") {
-    await supabase.from("school_transactions").insert({
+    const { error: cashErr } = await supabase.from("school_transactions").insert({
       account_id: null,
       type: "cash_sale",
       amount: total,
       description,
-      items,
     });
+    if (cashErr) {
+      console.error("school_transactions cash_sale insert error:", JSON.stringify(cashErr));
+      return NextResponse.json({ error: "DB insert failed: " + cashErr.message }, { status: 500 });
+    }
     const change = cash_received ? Math.max(0, cash_received - total) : 0;
     return NextResponse.json({ success: true, change });
   }
@@ -68,14 +74,17 @@ export async function POST(req: NextRequest) {
     // Card payment via Stripe Terminal — PaymentIntent was already confirmed by the Terminal SDK.
     // This endpoint just records the transaction for reporting.
     const { stripe_payment_intent_id } = body;
-    await supabase.from("school_transactions").insert({
+    const cardDesc = stripe_payment_intent_id ? `${description} [${stripe_payment_intent_id}]` : description;
+    const { error: cardErr } = await supabase.from("school_transactions").insert({
       account_id: null,
       type: "card_sale",
       amount: total,
-      description,
-      items,
-      stripe_payment_intent_id: stripe_payment_intent_id || null,
+      description: cardDesc,
     });
+    if (cardErr) {
+      console.error("school_transactions card_sale insert error:", JSON.stringify(cardErr));
+      return NextResponse.json({ error: "DB insert failed: " + cardErr.message }, { status: 500 });
+    }
     return NextResponse.json({ success: true });
   }
 
