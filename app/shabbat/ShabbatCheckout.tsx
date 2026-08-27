@@ -47,14 +47,14 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
 
   const [selectedSize, setSelectedSize] = useState<typeof SIZES[0]>(SIZES[0]);
   const [addons, setAddons] = useState({
-    greens:  { selected: false, choice: "Kale" },
-    dessert: { selected: false },
-    babka:   { selected: false, choice: "Chocolate" },
-    salmon:  { selected: false },
-    chicken: { selected: false },
-    nuggets: { selected: false },
-    boureka: { selected: false },
-    caesar:  { selected: false },
+    greens:  { qty: 0, choice: "Kale" },
+    dessert: { qty: 0 },
+    babka:   { qty: 0, choice: "Chocolate" },
+    salmon:  { qty: 0 },
+    chicken: { qty: 0 },
+    nuggets: { qty: 0 },
+    boureka: { qty: 0 },
+    caesar:  { qty: 0 },
   });
 
   const [form, setForm] = useState({
@@ -102,28 +102,28 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
 
   const getTotal = () => {
     let total = selectedSize.price;
-    if (addons.greens.selected)   total += 15;
-    if (addons.dessert.selected)  total += 25;
-    if (addons.babka.selected)    total += 18;
-    if (addons.salmon.selected)   total += 48;
-    if (addons.chicken.selected)  total += 36;
-    if (addons.nuggets.selected)  total += 28;
-    if (addons.boureka.selected)  total += 18;
-    if (addons.caesar.selected)   total += 6.50;
+    total += 15    * addons.greens.qty;
+    total += 25    * addons.dessert.qty;
+    total += 18    * addons.babka.qty;
+    total += 48    * addons.salmon.qty;
+    total += 36    * addons.chicken.qty;
+    total += 28    * addons.nuggets.qty;
+    total += 18    * addons.boureka.qty;
+    total += 6.50  * addons.caesar.qty;
     return total;
   };
 
   const buildLineItems = () => {
     const items: { price_data: { currency: string; product_data: { name: string; description: string }; unit_amount: number }; quantity: number }[] = [];
     items.push({ price_data: { currency: "usd", product_data: { name: `Shabbat Box — ${selectedSize.label}`, description: `${menu?.protein}, ${menu?.side1}, ${menu?.side2}, ${menu?.extra}` }, unit_amount: selectedSize.price * 100 }, quantity: 1 });
-    if (addons.greens.selected)   items.push({ price_data: { currency: "usd", product_data: { name: `Certified Greens (${addons.greens.choice})`, description: "Choice of kale or romaine" }, unit_amount: 1500 }, quantity: 1 });
-    if (addons.dessert.selected)  items.push({ price_data: { currency: "usd", product_data: { name: menu?.dessert ? `Friday Night Dessert — ${menu.dessert}` : "Friday Night Dessert Add On", description: menu?.dessert || "Check socials for this week" }, unit_amount: 2500 }, quantity: 1 });
-    if (addons.babka.selected)    items.push({ price_data: { currency: "usd", product_data: { name: `Signature Babka (${addons.babka.choice})`, description: "Chocolate or cinnamon" }, unit_amount: 1800 }, quantity: 1 });
-    if (addons.salmon.selected)   items.push({ price_data: { currency: "usd", product_data: { name: "Roasted Salmon Add On (6 filets)", description: "6 x 6oz filets" }, unit_amount: 4800 }, quantity: 1 });
-    if (addons.chicken.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "6pc Grilled Chicken", description: "6 pieces grilled chicken" }, unit_amount: 3600 }, quantity: 1 });
-    if (addons.nuggets.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "30pc Chicken Nuggets", description: "30 piece chicken nuggets" }, unit_amount: 2800 }, quantity: 1 });
-    if (addons.boureka.selected)  items.push({ price_data: { currency: "usd", product_data: { name: "Boureka Box", description: "4 large Potato & Onion Bourekas" }, unit_amount: 1800 }, quantity: 1 });
-    if (addons.caesar.selected)   items.push({ price_data: { currency: "usd", product_data: { name: "8 oz Caesar Dressing", description: "House Caesar dressing, 8 oz" }, unit_amount: 650 }, quantity: 1 });
+    if (addons.greens.qty > 0)   items.push({ price_data: { currency: "usd", product_data: { name: `Certified Greens (${addons.greens.choice})`, description: "Choice of kale or romaine" }, unit_amount: 1500 }, quantity: addons.greens.qty });
+    if (addons.dessert.qty > 0)  items.push({ price_data: { currency: "usd", product_data: { name: menu?.dessert ? `Friday Night Dessert — ${menu.dessert}` : "Friday Night Dessert Add On", description: menu?.dessert || "Check socials for this week" }, unit_amount: 2500 }, quantity: addons.dessert.qty });
+    if (addons.babka.qty > 0)    items.push({ price_data: { currency: "usd", product_data: { name: `Signature Babka (${addons.babka.choice})`, description: "Chocolate or cinnamon" }, unit_amount: 1800 }, quantity: addons.babka.qty });
+    if (addons.salmon.qty > 0)   items.push({ price_data: { currency: "usd", product_data: { name: "Roasted Salmon Add On (6 filets)", description: "6 x 6oz filets" }, unit_amount: 4800 }, quantity: addons.salmon.qty });
+    if (addons.chicken.qty > 0)  items.push({ price_data: { currency: "usd", product_data: { name: "6pc Grilled Chicken", description: "6 pieces grilled chicken" }, unit_amount: 3600 }, quantity: addons.chicken.qty });
+    if (addons.nuggets.qty > 0)  items.push({ price_data: { currency: "usd", product_data: { name: "30pc Chicken Nuggets", description: "30 piece chicken nuggets" }, unit_amount: 2800 }, quantity: addons.nuggets.qty });
+    if (addons.boureka.qty > 0)  items.push({ price_data: { currency: "usd", product_data: { name: "Boureka Box", description: "4 large Potato & Onion Bourekas" }, unit_amount: 1800 }, quantity: addons.boureka.qty });
+    if (addons.caesar.qty > 0)   items.push({ price_data: { currency: "usd", product_data: { name: "8 oz Caesar Dressing", description: "House Caesar dressing, 8 oz" }, unit_amount: 650 }, quantity: addons.caesar.qty });
     if (bakeryMenu) {
       bakeryMenu.items.filter(i => selectedBakery[i.name]).forEach(i => {
         items.push({ price_data: { currency: "usd", product_data: { name: `🥐 ${i.name}`, description: i.description || "Esther's Friday Bakery" }, unit_amount: Math.round(i.price * 100) }, quantity: 1 });
@@ -136,14 +136,14 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     const bakeryAddons = bakeryMenu ? bakeryMenu.items.filter(i => selectedBakery[i.name]).map(i => ({ name: `🥐 ${i.name}` })) : [];
     return [
       { name: `Shabbat Box — ${selectedSize.label}`, protein: menu?.protein, side1: menu?.side1, side2: menu?.side2, extra: menu?.extra },
-      ...(addons.greens.selected  ? [{ name: `Certified Greens — ${addons.greens.choice}` }] : []),
-      ...(addons.dessert.selected ? [{ name: menu?.dessert ? `Friday Night Dessert — ${menu.dessert}` : "Friday Night Dessert Add On" }] : []),
-      ...(addons.babka.selected   ? [{ name: `Signature Babka — ${addons.babka.choice}` }] : []),
-      ...(addons.salmon.selected  ? [{ name: "Roasted Salmon Add On (6 filets)" }] : []),
-      ...(addons.chicken.selected ? [{ name: "6pc Grilled Chicken" }] : []),
-      ...(addons.nuggets.selected ? [{ name: "30pc Chicken Nuggets" }] : []),
-      ...(addons.boureka.selected ? [{ name: "Boureka Box — 4 large Potato & Onion Bourekas" }] : []),
-      ...(addons.caesar.selected  ? [{ name: "8 oz Caesar Dressing" }] : []),
+      ...(addons.greens.qty > 0  ? [{ name: `${addons.greens.qty}× Certified Greens — ${addons.greens.choice}` }] : []),
+      ...(addons.dessert.qty > 0 ? [{ name: `${addons.dessert.qty}× ` + (menu?.dessert ? `Friday Night Dessert — ${menu.dessert}` : "Friday Night Dessert Add On") }] : []),
+      ...(addons.babka.qty > 0   ? [{ name: `${addons.babka.qty}× Signature Babka — ${addons.babka.choice}` }] : []),
+      ...(addons.salmon.qty > 0  ? [{ name: `${addons.salmon.qty}× Roasted Salmon Add On (6 filets)` }] : []),
+      ...(addons.chicken.qty > 0 ? [{ name: `${addons.chicken.qty}× 6pc Grilled Chicken` }] : []),
+      ...(addons.nuggets.qty > 0 ? [{ name: `${addons.nuggets.qty}× 30pc Chicken Nuggets` }] : []),
+      ...(addons.boureka.qty > 0 ? [{ name: `${addons.boureka.qty}× Boureka Box` }] : []),
+      ...(addons.caesar.qty > 0  ? [{ name: `${addons.caesar.qty}× 8 oz Caesar Dressing` }] : []),
       ...bakeryAddons,
     ];
   };
@@ -178,7 +178,7 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
     }
     if (!menu) return;
     if (!upsellShown) {
-      const missingAny = !addons.greens.selected || !addons.babka.selected || !addons.salmon.selected;
+      const missingAny = addons.greens.qty === 0 || addons.babka.qty === 0 || addons.salmon.qty === 0;
       if (missingAny) {
         setUpsellShown(true);
         setShowUpsell(true);
@@ -293,16 +293,20 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
             <p className="font-bold mb-4 text-sm uppercase tracking-wide text-zinc-300">Add-ons</p>
             <div className="space-y-3">
 
-              <div className={`p-4 rounded-xl border transition-colors ${addons.greens.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <label className="flex items-center justify-between cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" checked={addons.greens.selected} onChange={(e) => setAddons({ ...addons, greens: { ...addons.greens, selected: e.target.checked } })} className="accent-yellow-400" />
-                    <div><p className="font-bold text-sm">Certified Greens</p><p className="text-zinc-500 text-xs">Choice of kale or romaine</p></div>
+              {/* Certified Greens */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.greens.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">Certified Greens</p><p className="text-zinc-500 text-xs">Choice of kale or romaine · +$15 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, greens: { ...addons.greens, qty: Math.max(0, addons.greens.qty - 1) } })} disabled={addons.greens.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.greens.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, greens: { ...addons.greens, qty: addons.greens.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
                   </div>
-                  <span className="text-zinc-400 text-sm">+$15</span>
-                </label>
-                {addons.greens.selected && (
-                  <div className="flex gap-3 mt-3 ml-7">
+                </div>
+                {addons.greens.qty > 0 && (
+                  <div className="flex gap-3 mt-3">
                     {["Kale", "Romaine"].map((g) => (
                       <label key={g} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition-colors ${addons.greens.choice === g ? "border-yellow-400 text-yellow-400" : "border-zinc-600 text-zinc-400"}`}>
                         <input type="radio" name="greens" checked={addons.greens.choice === g} onChange={() => setAddons({ ...addons, greens: { ...addons.greens, choice: g } })} className="hidden" />{g}
@@ -312,24 +316,34 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
                 )}
               </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.dessert.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" checked={addons.dessert.selected} onChange={(e) => setAddons({ ...addons, dessert: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">Friday Night Dessert{menu?.dessert ? ` — ${menu.dessert}` : ""}</p><p className="text-zinc-500 text-xs">{menu?.dessert ? "This week's featured dessert" : "Check our socials for this week's dessert"}</p></div>
-                </div>
-                <span className="text-zinc-400 text-sm">+$25</span>
-              </label>
-
-              <div className={`p-4 rounded-xl border transition-colors ${addons.babka.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <label className="flex items-center justify-between cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" checked={addons.babka.selected} onChange={(e) => setAddons({ ...addons, babka: { ...addons.babka, selected: e.target.checked } })} className="accent-yellow-400" />
-                    <div><p className="font-bold text-sm">Signature Babka</p><p className="text-zinc-500 text-xs">Choice of chocolate or cinnamon</p></div>
+              {/* Friday Night Dessert */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.dessert.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">Friday Night Dessert{menu?.dessert ? ` — ${menu.dessert}` : ""}</p><p className="text-zinc-500 text-xs">{menu?.dessert ? "This week's featured dessert" : "Check our socials for this week's dessert"} · +$25 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, dessert: { qty: Math.max(0, addons.dessert.qty - 1) } })} disabled={addons.dessert.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.dessert.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, dessert: { qty: addons.dessert.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
                   </div>
-                  <span className="text-zinc-400 text-sm">+$18</span>
-                </label>
-                {addons.babka.selected && (
-                  <div className="flex gap-3 mt-3 ml-7">
+                </div>
+              </div>
+
+              {/* Signature Babka */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.babka.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">Signature Babka</p><p className="text-zinc-500 text-xs">Choice of chocolate or cinnamon · +$18 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, babka: { ...addons.babka, qty: Math.max(0, addons.babka.qty - 1) } })} disabled={addons.babka.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.babka.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, babka: { ...addons.babka, qty: addons.babka.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
+                  </div>
+                </div>
+                {addons.babka.qty > 0 && (
+                  <div className="flex gap-3 mt-3">
                     {["Chocolate", "Cinnamon"].map((b) => (
                       <label key={b} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition-colors ${addons.babka.choice === b ? "border-yellow-400 text-yellow-400" : "border-zinc-600 text-zinc-400"}`}>
                         <input type="radio" name="babka" checked={addons.babka.choice === b} onChange={() => setAddons({ ...addons, babka: { ...addons.babka, choice: b } })} className="hidden" />{b}
@@ -339,45 +353,75 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
                 )}
               </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.salmon.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" checked={addons.salmon.selected} onChange={(e) => setAddons({ ...addons, salmon: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">Roasted Salmon Add On</p><p className="text-zinc-500 text-xs">6 x 6oz filets</p></div>
+              {/* Roasted Salmon */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.salmon.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">Roasted Salmon Add On</p><p className="text-zinc-500 text-xs">6 x 6oz filets · +$48 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, salmon: { qty: Math.max(0, addons.salmon.qty - 1) } })} disabled={addons.salmon.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.salmon.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, salmon: { qty: addons.salmon.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
+                  </div>
                 </div>
-                <span className="text-zinc-400 text-sm">+$48</span>
-              </label>
+              </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.chicken.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" checked={addons.chicken.selected} onChange={(e) => setAddons({ ...addons, chicken: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">6pc Grilled Chicken</p><p className="text-zinc-500 text-xs">6 pieces of grilled chicken</p></div>
+              {/* 6pc Grilled Chicken */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.chicken.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">6pc Grilled Chicken</p><p className="text-zinc-500 text-xs">6 pieces of grilled chicken · +$36 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, chicken: { qty: Math.max(0, addons.chicken.qty - 1) } })} disabled={addons.chicken.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.chicken.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, chicken: { qty: addons.chicken.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
+                  </div>
                 </div>
-                <span className="text-zinc-400 text-sm">+$36</span>
-              </label>
+              </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.nuggets.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" checked={addons.nuggets.selected} onChange={(e) => setAddons({ ...addons, nuggets: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">30pc Chicken Nuggets</p><p className="text-zinc-500 text-xs">30 piece chicken nuggets</p></div>
+              {/* 30pc Chicken Nuggets */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.nuggets.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">30pc Chicken Nuggets</p><p className="text-zinc-500 text-xs">30 piece chicken nuggets · +$28 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, nuggets: { qty: Math.max(0, addons.nuggets.qty - 1) } })} disabled={addons.nuggets.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.nuggets.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, nuggets: { qty: addons.nuggets.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
+                  </div>
                 </div>
-                <span className="text-zinc-400 text-sm">+$28</span>
-              </label>
+              </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.boureka.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" checked={addons.boureka.selected} onChange={(e) => setAddons({ ...addons, boureka: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">Boureka Box</p><p className="text-zinc-500 text-xs">4 large Potato &amp; Onion Bourekas</p></div>
+              {/* Boureka Box */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.boureka.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">Boureka Box</p><p className="text-zinc-500 text-xs">4 large Potato &amp; Onion Bourekas · +$18 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, boureka: { qty: Math.max(0, addons.boureka.qty - 1) } })} disabled={addons.boureka.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.boureka.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, boureka: { qty: addons.boureka.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
+                  </div>
                 </div>
-                <span className="text-zinc-400 text-sm">+$18</span>
-              </label>
+              </div>
 
-              <label className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors ${addons.caesar.selected ? "border-yellow-400 bg-zinc-800" : "border-zinc-700"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" checked={addons.caesar.selected} onChange={(e) => setAddons({ ...addons, caesar: { selected: e.target.checked } })} className="accent-yellow-400" />
-                  <div><p className="font-bold text-sm">8 oz Caesar Dressing</p><p className="text-zinc-500 text-xs">House Caesar dressing, 8 oz</p></div>
+              {/* Caesar Dressing */}
+              <div className={`p-4 rounded-xl border transition-colors ${addons.caesar.qty > 0 ? "border-yellow-400 bg-zinc-800/50" : "border-zinc-700"}`}>
+                <div className="flex items-center justify-between">
+                  <div><p className="font-bold text-sm">8 oz Caesar Dressing</p><p className="text-zinc-500 text-xs">House Caesar dressing, 8 oz · +$6.50 each</p></div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAddons({ ...addons, caesar: { qty: Math.max(0, addons.caesar.qty - 1) } })} disabled={addons.caesar.qty === 0}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">−</button>
+                    <span className="w-5 text-center font-black text-yellow-400 text-sm">{addons.caesar.qty}</span>
+                    <button onClick={() => setAddons({ ...addons, caesar: { qty: addons.caesar.qty + 1 } })}
+                      className="w-8 h-8 rounded-full border border-zinc-600 font-black hover:border-yellow-400 transition-colors flex items-center justify-center text-sm">+</button>
+                  </div>
                 </div>
-                <span className="text-zinc-400 text-sm">+$6.50</span>
-              </label>
+              </div>
 
             </div>
           </div>
@@ -495,18 +539,18 @@ export default function ShabbatCheckout({ initialMenu, initialIsOpen }: Props) {
             <p className="text-zinc-300 font-bold mb-1">Is your table complete?</p>
             <p className="text-zinc-500 text-sm mb-6 leading-relaxed">Don&apos;t forget — you can add Certified Greens, Signature Babka, and Roasted Salmon to complete your Shabbat spread.</p>
             <div className="space-y-3 mb-6 text-left">
-              {!addons.greens.selected && (
-                <button onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+              {addons.greens.qty === 0 && (
+                <button onClick={() => { setAddons({ ...addons, greens: { ...addons.greens, qty: 1 } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
                   <span className="font-bold text-sm">Add Certified Greens</span><span className="text-yellow-400 font-black text-sm">+$15</span>
                 </button>
               )}
-              {!addons.babka.selected && (
-                <button onClick={() => { setAddons({ ...addons, babka: { ...addons.babka, selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+              {addons.babka.qty === 0 && (
+                <button onClick={() => { setAddons({ ...addons, babka: { ...addons.babka, qty: 1 } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
                   <span className="font-bold text-sm">Add Signature Babka</span><span className="text-yellow-400 font-black text-sm">+$18</span>
                 </button>
               )}
-              {!addons.salmon.selected && (
-                <button onClick={() => { setAddons({ ...addons, salmon: { selected: true } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
+              {addons.salmon.qty === 0 && (
+                <button onClick={() => { setAddons({ ...addons, salmon: { qty: 1 } }); setShowUpsell(false); }} className="w-full flex items-center justify-between bg-zinc-800 hover:border-yellow-400 border border-zinc-700 rounded-xl px-4 py-3 transition-colors">
                   <span className="font-bold text-sm">Add Roasted Salmon (6 filets)</span><span className="text-yellow-400 font-black text-sm">+$48</span>
                 </button>
               )}
