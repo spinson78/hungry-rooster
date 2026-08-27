@@ -164,6 +164,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── Fred's Bucks — handled by /api/coop/fredbucks/success ────────────────
+    if (meta.teacher_name && meta.coupons_total) {
+      console.log(`Fred's Bucks session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
     // ── School account setup sessions — handled by /api/school/setup-confirm ──
     if (meta.student_pin || meta.billing_preference) {
       console.log(`School setup session ${session.id} — skipping regular order insert`);
