@@ -41,13 +41,11 @@ export default function SimanimPopup({ orderHref = "/rosh-hashanah" }: Props) {
         </button>
 
         {/* Image */}
-        <div className="w-full h-48 sm:h-56 overflow-hidden bg-zinc-900 flex-shrink-0">
-          <img
-            src="/simanim.png"
-            alt="Edible Focaccia Simanim Board"
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <img
+          src="/simanim.png"
+          alt="Edible Focaccia Simanim Board"
+          className="w-full h-auto block"
+        />
 
         {/* Content */}
         <div className="px-6 py-5">
