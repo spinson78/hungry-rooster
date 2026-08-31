@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import SimanimPopup from "@/app/components/SimanimPopup";
 
 // ── Menu data ──────────────────────────────────────────────────────────────
 
@@ -223,6 +224,8 @@ export default function RoshHashanahPage() {
   return (
     <main className="min-h-screen bg-black text-white">
 
+      <SimanimPopup orderHref="#order" />
+
       {/* Header */}
       <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-10 text-center">
         <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-3">Holiday Catering by The Hungry Rooster</p>
@@ -254,7 +257,7 @@ export default function RoshHashanahPage() {
         </div>
 
         {/* Box sizes */}
-        <div>
+        <div id="order">
           <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Choose Your Box Size</h2>
           <div className="space-y-3">
             {BOX_SIZES.map(box => {
