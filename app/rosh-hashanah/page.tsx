@@ -405,6 +405,20 @@ export default function RoshHashanahPage() {
             <p className="text-zinc-600 text-xs text-center">Powered by Stripe · Delivered {DELIVERY}</p>
           </div>
         )}
+
+        {/* Simanim Board photo */}
+        <div className="rounded-2xl overflow-hidden border border-zinc-800">
+          <img
+            src="/simanim.png"
+            alt="Edible Focaccia Simanim Board"
+            className="w-full h-auto block"
+          />
+          <div className="bg-zinc-900 px-5 py-4 text-center">
+            <p className="font-black text-lg">Edible Focaccia Simanim Board</p>
+            <p className="text-yellow-400 font-bold">$200 · Add it to your order above</p>
+          </div>
+        </div>
+
       </div>
 
       {/* Upsell Modal */}

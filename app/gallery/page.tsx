@@ -77,6 +77,9 @@ const PHOTOS: Photo[] = [
   p(F2, "Pineapple Upside Down Bakery.jpeg","Pineapple Upside Down Cake"),
   p(F2, "Esther Event.jpeg",                "Esther's Cart at an Event"),
 
+  // ── Holiday specials ──
+  { src: "/simanim.png", alt: "Edible Focaccia Simanim Board — Rosh Hashanah" },
+
   // ── Public folder extras ──
   p("", "Lox Catering Display.jpeg",        "Lox Catering Display"),
   p("", "Artisan Bagels.jpeg",              "Artisan Bagels"),
