@@ -413,9 +413,20 @@ export default function RoshHashanahPage() {
             alt="Edible Focaccia Simanim Board"
             className="w-full h-auto block"
           />
-          <div className="bg-zinc-900 px-5 py-4 text-center">
-            <p className="font-black text-lg">Edible Focaccia Simanim Board</p>
-            <p className="text-yellow-400 font-bold">$200 · Add it to your order above</p>
+          <div className="bg-zinc-900 px-6 py-5">
+            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Meet the Rosh Hashanah Showstopper!</p>
+            <p className="font-black text-xl mb-0.5">Edible Focaccia Simanim Board</p>
+            <p className="text-yellow-400 font-black text-base mb-3">$200</p>
+            <p className="text-zinc-300 text-sm mb-2 leading-relaxed">
+              The gift that shows off <em>and</em> feeds the table — a full sheet of house-made focaccia loaded with holiday magic:
+            </p>
+            <p className="text-zinc-500 text-xs leading-relaxed mb-3">
+              Roasted Apple Chutney · Pomegranate Vinaigrette · Date Harissa · Texas Caviar · Beet Hummus · Caramelized Leek Confit · Squash Baba Ganoush · Cracked Pepper Pickled Herring · Moroccan Carrot Salad · Classic Honey Jar
+            </p>
+            <p className="text-zinc-300 text-sm font-bold">
+              Always fun. Always innovative. Always delicious.{" "}
+              <span className="font-normal text-zinc-500">One giant sheet of yumminess. One seriously unforgettable Rosh Hashanah table.</span>
+            </p>
           </div>
         </div>
 
