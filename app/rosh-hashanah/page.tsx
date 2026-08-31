@@ -338,6 +338,44 @@ export default function RoshHashanahPage() {
           </div>
         ))}
 
+        {/* Simanim Board — page closer */}
+        <div className="rounded-2xl overflow-hidden border border-zinc-800">
+          <img
+            src="/simanim.png"
+            alt="Edible Focaccia Simanim Board"
+            className="w-full h-auto block"
+          />
+          <div className="bg-zinc-900 px-6 py-6 space-y-3">
+            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest">Meet the Rosh Hashanah Showstopper!</p>
+            <div className="flex items-baseline justify-between">
+              <p className="font-black text-xl">Edible Focaccia Simanim Board</p>
+              <p className="text-yellow-400 font-black text-lg">$200</p>
+            </div>
+            <p className="text-zinc-300 text-sm leading-relaxed">
+              The gift that shows off <em>and</em> feeds the table — a full sheet of house-made focaccia loaded with holiday magic:
+            </p>
+            <p className="text-zinc-500 text-xs leading-relaxed">
+              Roasted Apple Chutney · Pomegranate Vinaigrette · Date Harissa · Texas Caviar · Beet Hummus · Caramelized Leek Confit · Squash Baba Ganoush · Cracked Pepper Pickled Herring · Moroccan Carrot Salad · Classic Honey Jar
+            </p>
+            <p className="text-zinc-300 text-sm font-bold">
+              Always fun. Always innovative. Always delicious.{" "}
+              <span className="font-normal text-zinc-500">One giant sheet of yumminess. One seriously unforgettable Rosh Hashanah table.</span>
+            </p>
+
+            {/* Qty selector */}
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+              <p className="text-sm text-zinc-400 font-bold">Add to my order</p>
+              <div className="flex items-center gap-3">
+                <button onClick={() => adjustAddon(SIMANIM.id, -1)} disabled={simanimQty === 0}
+                  className="w-9 h-9 rounded-full border border-zinc-700 font-black text-lg disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center">−</button>
+                <span className="w-6 text-center font-black text-xl text-yellow-400">{simanimQty}</span>
+                <button onClick={() => adjustAddon(SIMANIM.id, 1)}
+                  className="w-9 h-9 rounded-full border border-zinc-700 font-black text-lg hover:border-yellow-400 transition-colors flex items-center justify-center">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Customer info + order summary (shown when anything is selected) */}
         {subtotal > 0 && (
           <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 space-y-5">
@@ -428,44 +466,6 @@ export default function RoshHashanahPage() {
             <p className="text-zinc-600 text-xs text-center">Powered by Stripe · Delivered {DELIVERY}</p>
           </div>
         )}
-
-        {/* Simanim Board — page closer */}
-        <div className="rounded-2xl overflow-hidden border border-zinc-800">
-          <img
-            src="/simanim.png"
-            alt="Edible Focaccia Simanim Board"
-            className="w-full h-auto block"
-          />
-          <div className="bg-zinc-900 px-6 py-6 space-y-3">
-            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest">Meet the Rosh Hashanah Showstopper!</p>
-            <div className="flex items-baseline justify-between">
-              <p className="font-black text-xl">Edible Focaccia Simanim Board</p>
-              <p className="text-yellow-400 font-black text-lg">$200</p>
-            </div>
-            <p className="text-zinc-300 text-sm leading-relaxed">
-              The gift that shows off <em>and</em> feeds the table — a full sheet of house-made focaccia loaded with holiday magic:
-            </p>
-            <p className="text-zinc-500 text-xs leading-relaxed">
-              Roasted Apple Chutney · Pomegranate Vinaigrette · Date Harissa · Texas Caviar · Beet Hummus · Caramelized Leek Confit · Squash Baba Ganoush · Cracked Pepper Pickled Herring · Moroccan Carrot Salad · Classic Honey Jar
-            </p>
-            <p className="text-zinc-300 text-sm font-bold">
-              Always fun. Always innovative. Always delicious.{" "}
-              <span className="font-normal text-zinc-500">One giant sheet of yumminess. One seriously unforgettable Rosh Hashanah table.</span>
-            </p>
-
-            {/* Qty selector */}
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-              <p className="text-sm text-zinc-400 font-bold">Add to my order</p>
-              <div className="flex items-center gap-3">
-                <button onClick={() => adjustAddon(SIMANIM.id, -1)} disabled={simanimQty === 0}
-                  className="w-9 h-9 rounded-full border border-zinc-700 font-black text-lg disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center">−</button>
-                <span className="w-6 text-center font-black text-xl text-yellow-400">{simanimQty}</span>
-                <button onClick={() => adjustAddon(SIMANIM.id, 1)}
-                  className="w-9 h-9 rounded-full border border-zinc-700 font-black text-lg hover:border-yellow-400 transition-colors flex items-center justify-center">+</button>
-              </div>
-            </div>
-          </div>
-        </div>
 
       </div>
 
