@@ -193,7 +193,7 @@ export default function RoshHashanahPage() {
   };
 
   const handleSubmit = async () => {
-    if (totalBoxes === 0) { setError("Please select at least one box."); return; }
+    if (subtotal < 50) { setError("Minimum order is $50. Add a few more items to continue."); return; }
     if (!form.name || !form.phone || !form.address) { setError("Please fill in your name, phone, and delivery address."); return; }
 
     // Upsell check — salmon, brisket, or honey cake not added
@@ -256,6 +256,12 @@ export default function RoshHashanahPage() {
           </div>
         </div>
 
+        {/* Min order + free delivery callout */}
+        <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-3">
+          <p className="text-sm text-zinc-300"><span className="font-black text-white">$50 minimum order.</span> Mix and match anything on the page — no box required.</p>
+          <span className="ml-4 shrink-0 text-green-400 font-black text-sm">Free Delivery</span>
+        </div>
+
         {/* Box sizes */}
         <div id="order">
           <h2 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Choose Your Box Size</h2>
@@ -315,8 +321,8 @@ export default function RoshHashanahPage() {
           </div>
         ))}
 
-        {/* Customer info + order summary (shown when a box is selected) */}
-        {totalBoxes > 0 && (
+        {/* Customer info + order summary (shown when anything is selected) */}
+        {subtotal > 0 && (
           <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 space-y-5">
             <h3 className="font-black text-sm uppercase tracking-widest text-zinc-400">Delivery Info</h3>
 
@@ -372,6 +378,9 @@ export default function RoshHashanahPage() {
               ))}
               <div className="flex justify-between text-sm text-zinc-500 pt-2 border-t border-zinc-800">
                 <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-green-400">
+                <span>Delivery</span><span>Free</span>
               </div>
               <div className="flex justify-between text-sm text-zinc-500">
                 <span>Tax (8.25%)</span><span>${tax.toFixed(2)}</span>
