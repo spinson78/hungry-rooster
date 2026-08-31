@@ -176,6 +176,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── Rosh Hashanah orders — handled by /api/rosh-hashanah/success ─────────
+    if (meta.order_type === "rosh_hashanah") {
+      console.log(`Rosh Hashanah session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
     // ── Akiba Lunch orders — handled by /api/akiba-lunch/success ─────────────
     if (meta.student_name && meta.cart) {
       console.log(`Akiba Lunch session ${session.id} — skipping regular order insert`);

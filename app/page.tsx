@@ -46,6 +46,20 @@ export default function Home() {
       {/* NAVBAR */}
       <NavBar />
 
+      {/* ROSH HASHANAH HOLIDAY BANNER */}
+      <a href="/rosh-hashanah" className="block bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 text-black hover:from-yellow-400 hover:via-amber-300 hover:to-yellow-400 transition-colors">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🍎🍯</span>
+            <div>
+              <p className="font-black text-sm leading-tight">Rosh Hashanah Holiday Catering is Open!</p>
+              <p className="text-xs font-bold opacity-75">Order by Sep 9 · Delivery Friday Sep 11 · Shana Tova!</p>
+            </div>
+          </div>
+          <span className="font-black text-sm whitespace-nowrap border-2 border-black/20 px-4 py-1.5 rounded-full">Order Now →</span>
+        </div>
+      </a>
+
       {/* HERO */}
       <section className="px-6 py-20 md:py-32 max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1 flex justify-center">
