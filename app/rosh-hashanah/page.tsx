@@ -62,10 +62,12 @@ const ADDON_CATEGORIES: AddonCategory[] = [
       { id: "chicken_breast", label: "Honey Apple Chicken Breast", detail: "6 pc", price: 45 },
       { id: "nuggets", label: "Signature Rooster Nuggets", price: 30 },
       { id: "dip_clique", label: "Holiday Dip Clique", price: 25 },
-      { id: "focaccia_board", label: "Edible Focaccia Simanim Board", price: 200 },
     ],
   },
 ];
+
+// Standalone — rendered as the page closer, not in the add-on list
+const SIMANIM = { id: "focaccia_board", label: "Edible Focaccia Simanim Board", price: 200 };
 
 // ── Cutoff / delivery helpers ───────────────────────────────────────────────
 
@@ -96,7 +98,8 @@ export default function RoshHashanahPage() {
   const addonTotal = ADDON_CATEGORIES.flatMap(c => c.items).reduce(
     (sum, a) => sum + a.price * (addonQtys[a.id] || 0), 0
   );
-  const subtotal = boxTotal + addonTotal;
+  const simanimQty = addonQtys[SIMANIM.id] || 0;
+  const subtotal = boxTotal + addonTotal + SIMANIM.price * simanimQty;
   const tax = subtotal * 0.0825;
   const grandTotal = subtotal + tax + tipAmount;
   const totalBoxes = Object.values(boxQtys).reduce((a, b) => a + b, 0);
@@ -142,15 +145,29 @@ export default function RoshHashanahPage() {
       });
     });
 
+    if (simanimQty > 0) items.push({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: SIMANIM.label,
+          description: "Rosh Hashanah Showstopper",
+        },
+        unit_amount: SIMANIM.price * 100,
+      },
+      quantity: simanimQty,
+    });
+
     return items;
   };
 
   const buildSummaries = () => {
     const boxes = BOX_SIZES.filter(b => (boxQtys[b.id] || 0) > 0)
       .map(b => `${boxQtys[b.id]}× ${b.label}`).join(", ");
-    const addons = ADDON_CATEGORIES.flatMap(c => c.items)
+    const addonParts = ADDON_CATEGORIES.flatMap(c => c.items)
       .filter(a => (addonQtys[a.id] || 0) > 0)
-      .map(a => `${addonQtys[a.id]}× ${a.label}`).join(", ");
+      .map(a => `${addonQtys[a.id]}× ${a.label}`);
+    if (simanimQty > 0) addonParts.push(`${simanimQty}× ${SIMANIM.label}`);
+    const addons = addonParts.join(", ");
     return { boxes, addons };
   };
 
@@ -376,6 +393,12 @@ export default function RoshHashanahPage() {
                   <span className="font-bold">${(a.price * (addonQtys[a.id] || 0)).toFixed(2)}</span>
                 </div>
               ))}
+              {simanimQty > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">{simanimQty}× {SIMANIM.label}</span>
+                  <span className="font-bold">${(SIMANIM.price * simanimQty).toFixed(2)}</span>
+                </div>
+              ))}
               <div className="flex justify-between text-sm text-zinc-500 pt-2 border-t border-zinc-800">
                 <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
               </div>
@@ -406,27 +429,41 @@ export default function RoshHashanahPage() {
           </div>
         )}
 
-        {/* Simanim Board photo */}
+        {/* Simanim Board — page closer */}
         <div className="rounded-2xl overflow-hidden border border-zinc-800">
           <img
             src="/simanim.png"
             alt="Edible Focaccia Simanim Board"
             className="w-full h-auto block"
           />
-          <div className="bg-zinc-900 px-6 py-5">
-            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-1">Meet the Rosh Hashanah Showstopper!</p>
-            <p className="font-black text-xl mb-0.5">Edible Focaccia Simanim Board</p>
-            <p className="text-yellow-400 font-black text-base mb-3">$200</p>
-            <p className="text-zinc-300 text-sm mb-2 leading-relaxed">
+          <div className="bg-zinc-900 px-6 py-6 space-y-3">
+            <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest">Meet the Rosh Hashanah Showstopper!</p>
+            <div className="flex items-baseline justify-between">
+              <p className="font-black text-xl">Edible Focaccia Simanim Board</p>
+              <p className="text-yellow-400 font-black text-lg">$200</p>
+            </div>
+            <p className="text-zinc-300 text-sm leading-relaxed">
               The gift that shows off <em>and</em> feeds the table — a full sheet of house-made focaccia loaded with holiday magic:
             </p>
-            <p className="text-zinc-500 text-xs leading-relaxed mb-3">
+            <p className="text-zinc-500 text-xs leading-relaxed">
               Roasted Apple Chutney · Pomegranate Vinaigrette · Date Harissa · Texas Caviar · Beet Hummus · Caramelized Leek Confit · Squash Baba Ganoush · Cracked Pepper Pickled Herring · Moroccan Carrot Salad · Classic Honey Jar
             </p>
             <p className="text-zinc-300 text-sm font-bold">
               Always fun. Always innovative. Always delicious.{" "}
               <span className="font-normal text-zinc-500">One giant sheet of yumminess. One seriously unforgettable Rosh Hashanah table.</span>
             </p>
+
+            {/* Qty selector */}
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+              <p className="text-sm text-zinc-400 font-bold">Add to my order</p>
+              <div className="flex items-center gap-3">
+                <button onClick={() => adjustAddon(SIMANIM.id, -1)} disabled={simanimQty === 0}
+                  className="w-9 h-9 rounded-full border border-zinc-700 font-black text-lg disabled:opacity-30 hover:border-yellow-400 transition-colors flex items-center justify-center">−</button>
+                <span className="w-6 text-center font-black text-xl text-yellow-400">{simanimQty}</span>
+                <button onClick={() => adjustAddon(SIMANIM.id, 1)}
+                  className="w-9 h-9 rounded-full border border-zinc-700 font-black text-lg hover:border-yellow-400 transition-colors flex items-center justify-center">+</button>
+              </div>
+            </div>
           </div>
         </div>
 
