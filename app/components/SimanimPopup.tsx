@@ -29,19 +29,19 @@ export default function SimanimPopup({ orderHref = "/rosh-hashanah" }: Props) {
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={dismiss} />
 
       {/* Panel */}
-      <div className="relative z-10 bg-zinc-950 border border-zinc-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div className="relative z-10 bg-zinc-950 border border-zinc-800 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
 
         {/* Close */}
         <button
           onClick={dismiss}
-          className="absolute top-4 right-4 z-20 text-zinc-500 hover:text-white transition-colors text-2xl leading-none font-black"
+          className="absolute top-4 right-4 z-20 text-zinc-500 hover:text-white transition-colors text-2xl leading-none font-black bg-zinc-950/80 rounded-full w-8 h-8 flex items-center justify-center"
           aria-label="Close"
         >
           ×
         </button>
 
         {/* Image */}
-        <div className="w-full aspect-[16/9] overflow-hidden bg-zinc-900">
+        <div className="w-full h-48 sm:h-56 overflow-hidden bg-zinc-900 flex-shrink-0">
           <img
             src="/simanim.png"
             alt="Edible Focaccia Simanim Board"
@@ -50,7 +50,7 @@ export default function SimanimPopup({ orderHref = "/rosh-hashanah" }: Props) {
         </div>
 
         {/* Content */}
-        <div className="px-7 py-6">
+        <div className="px-6 py-5">
           <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-2">
             Meet the Rosh Hashanah Showstopper!
           </p>
@@ -59,17 +59,16 @@ export default function SimanimPopup({ orderHref = "/rosh-hashanah" }: Props) {
           </h2>
           <p className="text-yellow-400 font-black text-lg mb-3">$200</p>
 
-          <p className="text-zinc-300 text-sm mb-4 leading-relaxed">
+          <p className="text-zinc-300 text-sm mb-3 leading-relaxed">
             The gift that shows off <em>and</em> feeds the table. A full sheet of house-made focaccia loaded with holiday magic:
           </p>
 
-          <p className="text-zinc-400 text-xs leading-relaxed mb-4">
+          <p className="text-zinc-400 text-xs leading-relaxed mb-3">
             Roasted Apple Chutney · Pomegranate Vinaigrette · Date Harissa · Texas Caviar · Beet Hummus · Caramelized Leek Confit · Squash Baba Ganoush · Cracked Pepper Pickled Herring · Moroccan Carrot Salad · Classic Honey Jar
           </p>
 
-          <p className="text-zinc-300 text-sm font-bold mb-5">
-            Always fun. Always innovative. Always delicious.
-            <br />
+          <p className="text-zinc-300 text-sm font-bold mb-4">
+            Always fun. Always innovative. Always delicious.{" "}
             <span className="font-normal text-zinc-400">One giant sheet of yumminess. One seriously unforgettable Rosh Hashanah table.</span>
           </p>
 
