@@ -398,7 +398,7 @@ export default function RoshHashanahPage() {
                   <span className="text-zinc-400">{simanimQty}× {SIMANIM.label}</span>
                   <span className="font-bold">${(SIMANIM.price * simanimQty).toFixed(2)}</span>
                 </div>
-              ))}
+              )}
               <div className="flex justify-between text-sm text-zinc-500 pt-2 border-t border-zinc-800">
                 <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
               </div>
