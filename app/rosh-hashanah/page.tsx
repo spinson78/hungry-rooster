@@ -61,6 +61,7 @@ const ADDON_CATEGORIES: AddonCategory[] = [
       { id: "chicken_breast", label: "Honey Apple Chicken Breast", detail: "6 pc", price: 45 },
       { id: "nuggets", label: "Signature Rooster Nuggets", price: 30 },
       { id: "dip_clique", label: "Holiday Dip Clique", price: 25 },
+      { id: "focaccia_board", label: "Edible Focaccia Simanim Board", price: 200 },
     ],
   },
 ];
