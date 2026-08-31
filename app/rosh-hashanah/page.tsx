@@ -210,7 +210,6 @@ export default function RoshHashanahPage() {
   if (closed) {
     return (
       <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
-        <p className="text-6xl mb-4">🍎🍯</p>
         <h1 className="text-3xl font-black mb-2 text-center">Ordering is Closed</h1>
         <p className="text-zinc-400 text-center max-w-md">
           Rosh Hashanah ordering closed September 9th. We hope you have a sweet and happy new year!
@@ -225,15 +224,14 @@ export default function RoshHashanahPage() {
 
       {/* Header */}
       <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-10 text-center">
-        <p className="text-5xl mb-3">🍎🍯🌿</p>
+        <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-3">Holiday Catering by The Hungry Rooster</p>
         <h1 className="text-4xl font-black tracking-tight">Rosh Hashanah</h1>
-        <p className="text-yellow-400 font-bold text-lg mt-1">Holiday Catering by The Hungry Rooster</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
-          <span className="bg-green-500/15 text-green-400 border border-green-500/20 text-xs font-bold px-4 py-2 rounded-full">
-            ✅ Orders Open Now
+          <span className="bg-zinc-900 text-green-400 border border-zinc-700 text-xs font-bold px-4 py-2 rounded-full">
+            Orders Open Now
           </span>
           <span className="bg-zinc-900 text-zinc-400 border border-zinc-800 text-xs font-bold px-4 py-2 rounded-full">
-            ⏰ Order by Tuesday Sep 9 at Midnight · 🚚 Delivery Friday Sep 11
+            Order by Tuesday Sep 9 at Midnight · Delivery Friday Sep 11
           </span>
         </div>
       </div>
@@ -242,6 +240,7 @@ export default function RoshHashanahPage() {
 
         {/* What's in the box */}
         <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+          <p className="font-black text-lg mb-0.5">Shabbat Box</p>
           <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-3">Every Box Includes</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {BOX_CONTENTS.map(item => (
