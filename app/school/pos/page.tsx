@@ -237,7 +237,7 @@ export default function SchoolPOS() {
       if (processResult.error) throw new Error(processResult.error.message);
       if (processResult.paymentIntent?.status !== "succeeded") throw new Error("Payment did not succeed");
 
-      await fetch("/api/school/purchase", {
+      const recordRes = await fetch("/api/school/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -247,8 +247,14 @@ export default function SchoolPOS() {
           stripe_payment_intent_id: processResult.paymentIntent.id,
         }),
       });
-
-      setSuccessMsg(`✓ Card payment of $${total.toFixed(2)} successful`);
+      if (!recordRes.ok) {
+        const recErr = await recordRes.json().catch(() => ({}));
+        console.error("Card sale record failed:", recErr);
+        // Payment already captured — still show success but log the error
+        setSuccessMsg(`✓ Card payment of $${total.toFixed(2)} successful (log error — contact admin)`);
+      } else {
+        setSuccessMsg(`✓ Card payment of $${total.toFixed(2)} successful`);
+      }
       setStep("success");
       setTimeout(() => resetPOS(), 4000);
     } catch (err) {

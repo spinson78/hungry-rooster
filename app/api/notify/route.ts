@@ -87,8 +87,8 @@ Sent automatically by The Hungry Rooster ordering system.
     </div>
   `;
 
-  // Internal notification to THR team — catering and group orders only
-  const needsInternalNotify = order_type === "catering" || order_type === "catering_inquiry" || order_type === "group_order" || order_type === "group_inquiry";
+  // Internal notification to THR team — all order types
+  const needsInternalNotify = true;
   if (needsInternalNotify) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
