@@ -53,7 +53,7 @@ export default function SchoolPOS() {
   const categories = allCategories.filter(c => c !== "Shabbat" || isFriday);
 
   // ── Fred Bucks ─────────────────────────────────────────────────────────
-  const [posTab, setPosTab] = useState<"order" | "fredbucks">("order");
+  const [posTab, setPosTab] = useState<"order" | "fredbucks" | "celebrations">("order");
   const [fbPurchases, setFbPurchases] = useState<FBPurchase[]>([]);
   const [fbLoading, setFbLoading] = useState(false);
   const [fbRedeemId, setFbRedeemId] = useState<string | null>(null);
@@ -202,6 +202,7 @@ export default function SchoolPOS() {
     });
     const data = await res.json();
     if (data.success) {
+      await recordCelebrationIfPending();
       setSuccessMsg(`✓ $${total.toFixed(2)} added to ${accountInfo.student_name}'s tab. New balance: $${data.new_balance.toFixed(2)}`);
       setStep("success");
       setTimeout(() => resetPOS(), 5000);
@@ -247,6 +248,7 @@ export default function SchoolPOS() {
           stripe_payment_intent_id: processResult.paymentIntent.id,
         }),
       });
+      await recordCelebrationIfPending();
       if (!recordRes.ok) {
         const recErr = await recordRes.json().catch(() => ({}));
         console.error("Card sale record failed:", recErr);
@@ -272,6 +274,7 @@ export default function SchoolPOS() {
     });
     const data = await res.json();
     if (data.success) {
+      await recordCelebrationIfPending();
       setSuccessMsg(`✓ Cash sale $${total.toFixed(2)}${received >= total ? ` — Change: $${data.change.toFixed(2)}` : ""}`);
       setStep("success");
       setTimeout(() => resetPOS(), 4000);
@@ -305,6 +308,95 @@ export default function SchoolPOS() {
     else if (step === "cash_entry") setCashReceived(p => p.slice(0, -1));
   };
 
+  // ── Celebrations ──────────────────────────────────────────────────────
+  const CELEB_TOPPINGS = ["Sprinkles", "Parve Choco Chips", "Reese's Pieces", "Trail Mix", "Cherries"];
+  const CELEB_LABEL: Record<string, string> = {
+    froyo: "Frozen Yogurt Party",
+    cupcakes: "Cupcakes",
+    celebration_pack: "Coop Celebration Pack",
+  };
+  const [celebType, setCelebType] = useState<"froyo" | "cupcakes" | "celebration_pack" | null>(null);
+  const [celebForm, setCelebForm] = useState({
+    purchaser_name: "", classroom: "", kids_name: "",
+    delivery_date: "", delivery_time: "",
+    student_count: "", quantity: "1",
+    cupcake_flavor: "chocolate", special_requests: "",
+  });
+  const [celebToppings, setCelebToppings] = useState<string[]>([]);
+  const [celebError, setCelebError] = useState("");
+  const pendingCelebOrder = useRef<Record<string, unknown> | null>(null);
+
+  const updCeleb = (k: string, v: string) => setCelebForm(p => ({ ...p, [k]: v }));
+  const toggleCelebTopping = (t: string) => {
+    setCelebToppings(prev =>
+      prev.includes(t) ? prev.filter(x => x !== t) : prev.length < 2 ? [...prev, t] : prev
+    );
+  };
+
+  const celebTotal = (() => {
+    if (celebType === "froyo") return (parseInt(celebForm.student_count) || 0) * 5;
+    if (celebType === "cupcakes") return (parseInt(celebForm.quantity) || 1) * 36;
+    if (celebType === "celebration_pack") return (parseInt(celebForm.quantity) || 1) * 100;
+    return 0;
+  })();
+
+  function minCelebDate() {
+    const d = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    return d.toISOString().split("T")[0];
+  }
+
+  const recordCelebrationIfPending = async () => {
+    if (!pendingCelebOrder.current) return;
+    const data = pendingCelebOrder.current;
+    pendingCelebOrder.current = null;
+    try {
+      await fetch("/api/coopcelebrate/pos-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error("Celebration order recording failed:", err);
+    }
+  };
+
+  const submitCelebration = (mode: PaymentMode) => {
+    setCelebError("");
+    if (!celebType) return;
+    if (!celebForm.purchaser_name || !celebForm.classroom || !celebForm.delivery_date || !celebForm.delivery_time) {
+      setCelebError("Please fill in all required fields."); return;
+    }
+    if (celebType === "froyo" && (!celebForm.student_count || parseInt(celebForm.student_count) < 1)) {
+      setCelebError("Please enter number of students."); return;
+    }
+    if (celebType === "celebration_pack" && celebToppings.length < 2) {
+      setCelebError("Please select exactly 2 toppings."); return;
+    }
+    if (celebTotal <= 0) { setCelebError("Invalid order total."); return; }
+
+    // Store celebration data for after payment succeeds
+    pendingCelebOrder.current = {
+      order_type: celebType,
+      ...celebForm,
+      toppings: celebToppings,
+      payment_method: mode === "cash" ? "cash" : mode === "card" ? "card" : "account",
+      total: celebTotal,
+      source: "pos",
+    };
+
+    // Populate cart with a synthetic item so existing payment flows work
+    setCart([{
+      id: `celeb_${celebType}`,
+      name: CELEB_LABEL[celebType],
+      price: celebTotal,
+      category: "Celebration",
+      emoji: "🎉",
+      qty: 1,
+    }]);
+
+    openPayment(mode);
+  };
+
   const visibleItems = menu.filter(m => m.category === activeCategory);
 
   return (
@@ -325,6 +417,10 @@ export default function SchoolPOS() {
             <button onClick={() => setPosTab("fredbucks")}
               className={`px-4 py-1.5 rounded-full text-sm font-black transition-colors ${posTab === "fredbucks" ? "bg-yellow-400 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"}`}>
               🐓 Fred&apos;s Bucks
+            </button>
+            <button onClick={() => setPosTab("celebrations")}
+              className={`px-4 py-1.5 rounded-full text-sm font-black transition-colors ${posTab === "celebrations" ? "bg-teal-400 text-black" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"}`}>
+              🎉 Celebrations
             </button>
           </div>
         </div>
@@ -424,6 +520,170 @@ export default function SchoolPOS() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Celebrations Panel ─────────────────────────────────────────── */}
+      {posTab === "celebrations" && (
+        <div className="flex-1 overflow-y-auto p-5 max-w-2xl mx-auto w-full">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-black text-xl">🎉 Celebration Order</h2>
+            <p className="text-xs text-zinc-600 font-bold">48-hr notice required</p>
+          </div>
+
+          {/* Product picker */}
+          <div className="space-y-2 mb-5">
+            <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Choose Type</p>
+            {(["froyo", "cupcakes", "celebration_pack"] as const).map(t => (
+              <button key={t} onClick={() => { setCelebType(t); setCelebError(""); }}
+                className={`w-full text-left border-2 rounded-2xl p-4 transition-all ${celebType === t ? "border-teal-400 bg-teal-400/10" : "border-zinc-800 bg-zinc-950 hover:border-zinc-600"}`}>
+                <div className="flex justify-between items-center">
+                  <p className="font-black">{CELEB_LABEL[t]}</p>
+                  <p className="text-teal-400 font-black text-sm">
+                    {t === "froyo" ? "$5/student" : t === "cupcakes" ? "$36/dozen" : "$100/pack"}
+                  </p>
+                </div>
+                <p className="text-zinc-500 text-xs mt-0.5">
+                  {t === "froyo" ? "Froyo, spoon & sprinkles included" : t === "cupcakes" ? "Chocolate or Vanilla · sold by dozen" : "12 cupcakes + 12 froyo · 2 toppings"}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {celebType && (
+            <div className="space-y-4">
+
+              {/* Cupcake flavor */}
+              {(celebType === "cupcakes" || celebType === "celebration_pack") && (
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Flavor *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["chocolate", "vanilla"].map(f => (
+                      <button key={f} onClick={() => updCeleb("cupcake_flavor", f)}
+                        className={`py-3 rounded-xl font-bold text-sm capitalize border-2 transition-colors ${celebForm.cupcake_flavor === f ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Toppings */}
+              {celebType === "celebration_pack" && (
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Yogurt Toppings (pick 2) *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {CELEB_TOPPINGS.map(t => (
+                      <button key={t} onClick={() => toggleCelebTopping(t)}
+                        className={`py-2 px-3 rounded-xl text-sm font-bold border-2 transition-colors ${celebToppings.includes(t) ? "border-teal-400 bg-teal-400/10 text-teal-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"} ${!celebToppings.includes(t) && celebToppings.length >= 2 ? "opacity-40 cursor-not-allowed" : ""}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-zinc-600 text-xs mt-1">{celebToppings.length}/2 selected</p>
+                </div>
+              )}
+
+              {/* Quantity / student count */}
+              {celebType === "froyo" && (
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Students *</label>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => updCeleb("student_count", String(Math.max(1, parseInt(celebForm.student_count || "0") - 1)))}
+                      className="w-10 h-10 rounded-full border border-zinc-700 font-black text-lg hover:border-teal-400 transition-colors flex items-center justify-center">−</button>
+                    <span className="text-2xl font-black text-teal-400 w-8 text-center">{celebForm.student_count || 0}</span>
+                    <button onClick={() => updCeleb("student_count", String(parseInt(celebForm.student_count || "0") + 1))}
+                      className="w-10 h-10 rounded-full border border-zinc-700 font-black text-lg hover:border-teal-400 transition-colors flex items-center justify-center">+</button>
+                    <span className="text-zinc-500 text-sm">= <span className="text-teal-400 font-bold">${celebTotal.toFixed(2)}</span></span>
+                  </div>
+                </div>
+              )}
+              {(celebType === "cupcakes" || celebType === "celebration_pack") && (
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Quantity ({celebType === "cupcakes" ? "dozens" : "packs"}) *</label>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => updCeleb("quantity", String(Math.max(1, parseInt(celebForm.quantity) - 1)))}
+                      className="w-10 h-10 rounded-full border border-zinc-700 font-black text-lg hover:border-yellow-400 transition-colors flex items-center justify-center">−</button>
+                    <span className="text-2xl font-black text-yellow-400 w-8 text-center">{celebForm.quantity}</span>
+                    <button onClick={() => updCeleb("quantity", String(parseInt(celebForm.quantity) + 1))}
+                      className="w-10 h-10 rounded-full border border-zinc-700 font-black text-lg hover:border-yellow-400 transition-colors flex items-center justify-center">+</button>
+                    <span className="text-zinc-500 text-sm">= <span className="text-yellow-400 font-bold">${celebTotal.toFixed(2)}</span></span>
+                  </div>
+                </div>
+              )}
+
+              {/* Purchaser name */}
+              <div>
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Purchaser Name *</label>
+                <input type="text" placeholder="Parent / teacher name" value={celebForm.purchaser_name} onChange={e => updCeleb("purchaser_name", e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+              </div>
+
+              {/* Kids name */}
+              {(celebType === "cupcakes" || celebType === "celebration_pack") && (
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Child&apos;s Name</label>
+                  <input type="text" placeholder="Birthday kid" value={celebForm.kids_name} onChange={e => updCeleb("kids_name", e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                </div>
+              )}
+
+              {/* Classroom */}
+              <div>
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Classroom *</label>
+                <input type="text" placeholder="e.g. Mrs. Cohen — 3rd Grade" value={celebForm.classroom} onChange={e => updCeleb("classroom", e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+              </div>
+
+              {/* Delivery date */}
+              <div>
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Delivery Date * <span className="normal-case font-normal text-zinc-600">(48 hrs min)</span></label>
+                <input type="date" min={minCelebDate()} value={celebForm.delivery_date} onChange={e => updCeleb("delivery_date", e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400 text-sm" />
+              </div>
+
+              {/* Delivery time */}
+              <div>
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Time Needed *</label>
+                <input type="time" value={celebForm.delivery_time} onChange={e => updCeleb("delivery_time", e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400 text-sm" />
+              </div>
+
+              {/* Special requests */}
+              <div>
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Notes</label>
+                <textarea placeholder="Allergies, notes…" value={celebForm.special_requests} onChange={e => updCeleb("special_requests", e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm resize-none h-16" />
+              </div>
+
+              {/* Notice */}
+              <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-center">
+                <p className="text-zinc-400 text-xs font-bold">⚠️ Once placed, no changes can be made.</p>
+              </div>
+
+              {celebError && <p className="text-red-400 text-sm font-bold">{celebError}</p>}
+
+              {/* Payment buttons */}
+              <div className="space-y-2 pt-2 border-t border-zinc-800">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-zinc-400 font-bold">Total</span>
+                  <span className="text-2xl font-black text-yellow-400">${celebTotal.toFixed(2)}</span>
+                </div>
+                <button onClick={() => submitCelebration("account")}
+                  className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
+                  <span>📋</span> Account Tab
+                </button>
+                <button onClick={() => submitCelebration("card")}
+                  className={`w-full font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2 ${terminalStatus === "connected" ? "bg-teal-500 hover:bg-teal-400 text-black" : "bg-zinc-800 text-zinc-500 border border-zinc-700"}`}>
+                  <span>💳</span> {terminalStatus === "connected" ? "Card" : "Card (no reader)"}
+                </button>
+                <button onClick={() => submitCelebration("cash")}
+                  className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
+                  <span>💵</span> Cash
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
