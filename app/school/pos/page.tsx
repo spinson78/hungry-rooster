@@ -19,7 +19,7 @@ declare global {
 }
 interface StripeTerminalInstance {
   discoverReaders: (opts: object) => Promise<{ discoveredReaders: StripeReader[] }>;
-  connectReader: (reader: StripeReader) => Promise<{ error?: { message: string } }>;
+  connectReader: (reader: StripeReader, opts?: { fail_if_in_use?: boolean }) => Promise<{ error?: { message: string } }>;
   collectPaymentMethod: (clientSecret: string) => Promise<{ paymentIntent?: { id: string }; error?: { message: string } }>;
   processPayment: (pi: object) => Promise<{ paymentIntent?: { id: string; status: string }; error?: { message: string } }>;
   getConnectionStatus: () => string;
@@ -140,7 +140,7 @@ export default function SchoolPOS() {
   const connectReader = async (reader: StripeReader) => {
     if (!terminalRef.current) return;
     setTerminalStatus("connecting");
-    const result = await terminalRef.current.connectReader(reader);
+    const result = await terminalRef.current.connectReader(reader, { fail_if_in_use: false });
     if (result.error) {
       alert(`Connection failed: ${result.error.message}`);
       setTerminalStatus("not_connected");
