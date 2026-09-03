@@ -213,8 +213,17 @@ export default function SchoolPOS() {
   };
 
   const processCard = async () => {
-    if (!terminalRef.current || terminalStatus !== "connected") {
+    if (!terminalRef.current) {
       setErrorMsg("Card reader not connected. Tap the reader icon to connect.");
+      setStep("error");
+      return;
+    }
+    // Check actual SDK connection status (not just React state)
+    const actualStatus = terminalRef.current.getConnectionStatus();
+    if (actualStatus !== "connected") {
+      setTerminalStatus("not_connected");
+      setConnectedReader(null);
+      setErrorMsg("Reader disconnected. Tap the reader icon to reconnect, then try again.");
       setStep("error");
       return;
     }
