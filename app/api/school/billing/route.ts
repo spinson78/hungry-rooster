@@ -78,22 +78,27 @@ export async function GET(req: NextRequest) {
           await supabase.from("school_accounts").update({ stripe_customer_id: customerId }).eq("id", acct.id);
         }
 
-        // Create invoice item first, then create invoice that collects it
-        await stripe.invoiceItems.create({
-          customer: customerId,
-          amount: amountCents,
-          currency: "usd",
-          description: `Weekly COOP tab — ${acct.student_name}`,
-        });
+        // Clean up any stale pending invoice items from failed previous runs
+        const pendingItems = await stripe.invoiceItems.list({ customer: customerId, pending: true });
+        for (const item of pendingItems.data) {
+          await stripe.invoiceItems.del(item.id);
+        }
 
-        // auto_advance:false keeps it as a draft so we can finalize explicitly
+        // Create empty draft invoice (auto_advance:false = stays draft until we finalize)
         const invoice = await stripe.invoices.create({
           customer: customerId,
           collection_method: "send_invoice",
           days_until_due: 7,
           auto_advance: false,
-          pending_invoice_items_behavior: "include",
           metadata: { account_id: acct.id, student_name: acct.student_name },
+        });
+
+        // Add line item directly to this invoice using newer Stripe API
+        await stripe.invoices.addLines(invoice.id, {
+          lines: [{
+            amount: amountCents,
+            description: `Weekly COOP tab — ${acct.student_name}`,
+          }],
         });
 
         const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
