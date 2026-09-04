@@ -268,6 +268,21 @@ export default function SchoolTab() {
     fetchAccounts();
   };
 
+  const [unfreezeAllLoading, setUnfreezeAllLoading] = useState(false);
+  const unfreezeAll = async () => {
+    setUnfreezeAllLoading(true);
+    const frozen = accounts.filter(a => a.status === "frozen");
+    await Promise.all(frozen.map(a =>
+      fetch("/api/school/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unfreeze", account_id: a.id }),
+      })
+    ));
+    await fetchAccounts();
+    setUnfreezeAllLoading(false);
+  };
+
   const toggleMenuItem = async (item: MenuItem) => {
     await fetch("/api/school/menu", {
       method: "PATCH",
@@ -938,6 +953,17 @@ export default function SchoolTab() {
                   <p className="text-red-400 text-xs">Failed accounts: {billingResult.failures.join(", ")}</p>
                 )}
               </div>
+            </div>
+          )}
+
+          {accounts.filter(a => a.status === "frozen").length > 0 && (
+            <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-2xl p-5 mb-2">
+              <h3 className="font-black mb-1 text-red-400">⛔ Frozen Accounts</h3>
+              <p className="text-zinc-400 text-sm mb-3">Frozen accounts are skipped by billing. Unfreeze them first, then run billing.</p>
+              <button onClick={unfreezeAll} disabled={unfreezeAllLoading}
+                className="bg-green-500 text-black font-black px-5 py-2 rounded-full text-sm disabled:opacity-50 hover:bg-green-400 transition-colors">
+                {unfreezeAllLoading ? "Unfreezing…" : `✓ Unfreeze All (${accounts.filter(a => a.status === "frozen").length})`}
+              </button>
             </div>
           )}
 
