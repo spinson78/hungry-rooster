@@ -78,19 +78,20 @@ export async function GET(req: NextRequest) {
           await supabase.from("school_accounts").update({ stripe_customer_id: customerId }).eq("id", acct.id);
         }
 
-        // Create invoice item + invoice, then send
-        await stripe.invoiceItems.create({
-          customer: customerId,
-          amount: amountCents,
-          currency: "usd",
-          description: `Weekly COOP tab — ${acct.student_name}`,
-        });
-
+        // Create invoice first (empty draft), then attach line item explicitly
         const invoice = await stripe.invoices.create({
           customer: customerId,
           collection_method: "send_invoice",
           days_until_due: 7,
           metadata: { account_id: acct.id, student_name: acct.student_name },
+        });
+
+        await stripe.invoiceItems.create({
+          customer: customerId,
+          invoice: invoice.id,
+          amount: amountCents,
+          currency: "usd",
+          description: `Weekly COOP tab — ${acct.student_name}`,
         });
 
         const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);

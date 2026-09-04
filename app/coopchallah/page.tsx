@@ -46,11 +46,30 @@ const CUTOFFS: Record<Tab, string> = {
 };
 
 // Check if a tab's ordering window is closed
+function isWeeklyClosed(): boolean {
+  // Closed: Wednesday 11 PM through Friday noon (America/Chicago, handles CDT/CST automatically)
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    weekday: "short",
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(now);
+  const dayStr = parts.find(p => p.type === "weekday")?.value ?? "";
+  const hour = parseInt(parts.find(p => p.type === "hour")?.value ?? "0");
+  const day = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(dayStr);
+
+  if (day === 3 && hour >= 23) return true; // Wednesday after 11 PM
+  if (day === 4) return true;               // All day Thursday
+  if (day === 5 && hour < 12) return true;  // Friday before noon (after pickup reopens)
+  return false;
+}
+
 function isClosed(tab: Tab): boolean {
   const now = Date.now();
   if (tab === "semester1" || tab === "fullyear") return now > new Date("2026-08-27T04:00:00Z").getTime();
   if (tab === "semester2") return now > new Date("2027-01-06T05:00:00Z").getTime();
-  return false; // weekly never "closes"
+  return isWeeklyClosed();
 }
 
 function getNextFriday(): string {

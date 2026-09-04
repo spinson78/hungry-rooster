@@ -20,10 +20,29 @@ const PACKAGE_LABELS: Record<string, string> = {
   fy_2challah_1babka:   "Full Year · 2 Challah + 1 Babka",
 };
 
+function isWeeklyOrderClosed(): boolean {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    weekday: "short",
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(now);
+  const dayStr = parts.find(p => p.type === "weekday")?.value ?? "";
+  const hour = parseInt(parts.find(p => p.type === "hour")?.value ?? "0");
+  const day = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(dayStr);
+  return (day === 3 && hour >= 23) || day === 4 || (day === 5 && hour < 12);
+}
+
 export async function POST(req: NextRequest) {
   const { name, phone, order_type, package: pkg, babka_flavor, is_installment } = await req.json();
   if (!name || !phone || !order_type || !pkg) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  // Block weekly orders after Wednesday 11 PM through Friday noon (America/Chicago)
+  if (order_type === "weekly" && isWeeklyOrderClosed()) {
+    return NextResponse.json({ error: "Weekly orders are closed. Cutoff is Wednesday at 11 PM." }, { status: 400 });
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
