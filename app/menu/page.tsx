@@ -226,16 +226,8 @@ type MenuItem = {
 };
 
 function getDallasBusinessStatus() {
-  const now = new Date();
-  // Dallas = Central Time (America/Chicago)
-  const dallas = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
-  const day = dallas.getDay(); // 0=Sun, 1=Mon … 5=Fri, 6=Sat
-  const mins = dallas.getHours() * 60 + dallas.getMinutes();
-  const isWeekday = day >= 1 && day <= 5;
-  if (!isWeekday) return { open: false, msg: "Online ordering is available Mon–Fri, 9 am – 2 pm. We're closed on weekends." };
-  if (mins < 9 * 60)  return { open: false, msg: "We open at 9 am today. Online ordering will be available then." };
-  if (mins >= 14 * 60) return { open: false, msg: "Online ordering has closed for today (2 pm cutoff). We'll be back tomorrow at 9 am!" };
-  return { open: true, msg: "" };
+  // TEMPORARY: closed today — remove this block to reopen
+  return { open: false, msg: "We're closed today. Online ordering will be back on Monday!" };
 }
 
 export default function MenuPage() {

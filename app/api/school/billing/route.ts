@@ -31,8 +31,11 @@ export async function GET(req: NextRequest) {
   let invoiced = 0;
   const failures: string[] = [];
 
+  console.log(`Billing: found ${accounts.length} accounts with balances`);
+
   for (const acct of accounts) {
     const amountCents = Math.round(Number(acct.balance) * 100);
+    console.log(`Processing ${acct.student_name}: balance=${acct.balance} cents=${amountCents} pref=${acct.billing_preference}`);
     if (amountCents < 50) continue; // Stripe minimum
 
     try {
@@ -96,8 +99,13 @@ export async function GET(req: NextRequest) {
         // Add line item directly to this invoice using newer Stripe API
         await stripe.invoices.addLines(invoice.id, {
           lines: [{
-            amount: amountCents,
-            description: `Weekly COOP tab — ${acct.student_name}`,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            price_data: {
+              currency: "usd",
+              product_data: { name: `Weekly COOP tab — ${acct.student_name}` },
+              unit_amount: amountCents,
+            } as any,
+            quantity: 1,
           }],
         });
 
