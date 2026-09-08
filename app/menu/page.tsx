@@ -224,6 +224,7 @@ type MenuItem = {
   tag: string;
   addons: { label: string; price: number }[];
   sizes?: { label: string; price: number }[];
+  soldOut?: boolean;
 };
 
 function getDallasBusinessStatus() {
