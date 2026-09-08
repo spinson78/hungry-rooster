@@ -112,6 +112,7 @@ const menu = {
       price: 16.5,
       description: "BBQ brisket on a house made bun. Served with chips and a pickle.",
       tag: "",
+      soldOut: true,
       addons: [],
     },
     {
@@ -538,19 +539,21 @@ export default function MenuPage() {
           {(menu[activeCategory as keyof typeof menu] as MenuItem[]).map((item) => (
             <div
               key={item.name}
-              className="bg-zinc-900 border border-zinc-800 hover:border-teal-500 rounded-2xl p-6 flex justify-between items-start gap-4 transition-colors cursor-pointer"
-              onClick={() => openModal(item)}
+              className={`bg-zinc-900 border rounded-2xl p-6 flex justify-between items-start gap-4 transition-colors ${item.soldOut ? "border-zinc-800 opacity-50 cursor-not-allowed" : "border-zinc-800 hover:border-teal-500 cursor-pointer"}`}
+              onClick={() => !item.soldOut && openModal(item)}
             >
               <div className="flex-1">
-                {item.tag && (
+                {item.soldOut ? (
+                  <span className="text-red-400 text-xs font-bold uppercase tracking-wide">Sold Out</span>
+                ) : item.tag ? (
                   <span className="text-yellow-400 text-xs font-bold uppercase tracking-wide">{item.tag}</span>
-                )}
+                ) : null}
                 <h3 className="text-lg font-black mt-1 mb-2">{item.name}</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed">{item.description}</p>
               </div>
               <div className="flex flex-col items-end gap-3 shrink-0">
                 <span className="text-white font-black text-lg">${item.price.toFixed(2)}</span>
-                <button className="bg-teal-500 hover:bg-teal-400 text-black font-black w-9 h-9 rounded-full text-xl transition-colors flex items-center justify-center">
+                <button disabled={item.soldOut} className="bg-teal-500 hover:bg-teal-400 disabled:bg-zinc-700 disabled:cursor-not-allowed text-black font-black w-9 h-9 rounded-full text-xl transition-colors flex items-center justify-center">
                   +
                 </button>
               </div>
