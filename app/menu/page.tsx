@@ -112,7 +112,6 @@ const menu = {
       price: 16.5,
       description: "BBQ brisket on a house made bun. Served with chips and a pickle.",
       tag: "",
-      soldOut: true,
       addons: [],
     },
     {
@@ -227,9 +226,18 @@ type MenuItem = {
   soldOut?: boolean;
 };
 
-function getDallasBusinessStatus() {
-  // TEMPORARY: closed today — remove this block to reopen
-  return { open: false, msg: "We're closed today. Online ordering will be back on Monday!" };
+function getDallasBusinessStatus(closedDates: string[] = []) {
+  const now = new Date();
+  const dallas = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const todayStr = dallas.toISOString().split("T")[0];
+  if (closedDates.includes(todayStr)) return { open: false, msg: "We're closed today. Check back soon!" };
+  const day = dallas.getDay();
+  const mins = dallas.getHours() * 60 + dallas.getMinutes();
+  const isWeekday = day >= 1 && day <= 5;
+  if (!isWeekday) return { open: false, msg: "Online ordering is available Mon–Fri, 9 am – 2 pm. We're closed on weekends." };
+  if (mins < 9 * 60) return { open: false, msg: "We open at 9 am today. Online ordering will be available then." };
+  if (mins >= 14 * 60) return { open: false, msg: "Online ordering has closed for today (2 pm cutoff). We'll be back tomorrow at 9 am!" };
+  return { open: true, msg: "" };
 }
 
 export default function MenuPage() {
@@ -274,6 +282,7 @@ export default function MenuPage() {
   const [giftCodeErr, setGiftCodeErr] = useState("");
   const [checkingGift, setCheckingGift] = useState(false);
   const [bizStatus, setBizStatus] = useState(() => getDallasBusinessStatus());
+  const [soldOutItems, setSoldOutItems] = useState<string[]>([]);
 
   const categories = Object.keys(menu);
 
@@ -376,10 +385,23 @@ export default function MenuPage() {
     setCheckingDelivery(false);
   };
 
-  // Refresh business-hours status every minute
+  // Fetch site settings (closures + sold-out items) then refresh hourly
   useEffect(() => {
-    setBizStatus(getDallasBusinessStatus());
-    const t = setInterval(() => setBizStatus(getDallasBusinessStatus()), 60000);
+    const applySettings = async () => {
+      try {
+        const res = await fetch("/api/site-settings");
+        const data = await res.json();
+        const closedDates: string[] = data.closed_dates?.map((d: { date: string } | string) =>
+          typeof d === "string" ? d : d.date
+        ) || [];
+        setSoldOutItems(data.sold_out_items || []);
+        setBizStatus(getDallasBusinessStatus(closedDates));
+      } catch {
+        setBizStatus(getDallasBusinessStatus());
+      }
+    };
+    applySettings();
+    const t = setInterval(applySettings, 60000);
     return () => clearInterval(t);
   }, []);
 
@@ -540,11 +562,11 @@ export default function MenuPage() {
           {(menu[activeCategory as keyof typeof menu] as MenuItem[]).map((item) => (
             <div
               key={item.name}
-              className={`bg-zinc-900 border rounded-2xl p-6 flex justify-between items-start gap-4 transition-colors ${item.soldOut ? "border-zinc-800 opacity-50 cursor-not-allowed" : "border-zinc-800 hover:border-teal-500 cursor-pointer"}`}
-              onClick={() => !item.soldOut && openModal(item)}
+              className={`bg-zinc-900 border rounded-2xl p-6 flex justify-between items-start gap-4 transition-colors ${(item.soldOut || soldOutItems.includes(item.name)) ? "border-zinc-800 opacity-50 cursor-not-allowed" : "border-zinc-800 hover:border-teal-500 cursor-pointer"}`}
+              onClick={() => !(item.soldOut || soldOutItems.includes(item.name)) && openModal(item)}
             >
               <div className="flex-1">
-                {item.soldOut ? (
+                {(item.soldOut || soldOutItems.includes(item.name)) ? (
                   <span className="text-red-400 text-xs font-bold uppercase tracking-wide">Sold Out</span>
                 ) : item.tag ? (
                   <span className="text-yellow-400 text-xs font-bold uppercase tracking-wide">{item.tag}</span>
@@ -554,7 +576,7 @@ export default function MenuPage() {
               </div>
               <div className="flex flex-col items-end gap-3 shrink-0">
                 <span className="text-white font-black text-lg">${item.price.toFixed(2)}</span>
-                <button disabled={item.soldOut} className="bg-teal-500 hover:bg-teal-400 disabled:bg-zinc-700 disabled:cursor-not-allowed text-black font-black w-9 h-9 rounded-full text-xl transition-colors flex items-center justify-center">
+                <button disabled={item.soldOut || soldOutItems.includes(item.name)} className="bg-teal-500 hover:bg-teal-400 disabled:bg-zinc-700 disabled:cursor-not-allowed text-black font-black w-9 h-9 rounded-full text-xl transition-colors flex items-center justify-center">
                   +
                 </button>
               </div>
