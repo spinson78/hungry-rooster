@@ -205,16 +205,12 @@ export default function ShabbatSection() {
             </>
           )}
 
+          {/* HOLIDAY CLOSURE — remove to reopen */}
           <div className="mt-auto pt-2">
-            {bakeryOpen ? (
-              <a href="/esther" className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-black px-6 py-3 rounded-full text-sm transition-colors">
-                Order Fred&apos;s Fixins&apos;
-              </a>
-            ) : (
-              <a href="/esther" className="inline-block border-2 border-zinc-600 text-zinc-400 hover:border-yellow-400 hover:text-yellow-400 font-black px-6 py-3 rounded-full text-sm transition-colors">
-                View Fred&apos;s Fixins&apos;
-              </a>
-            )}
+            <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-xl px-4 py-3 text-center">
+              <p className="text-yellow-400 font-black text-sm">🍎 Closed for the Holiday</p>
+              <p className="text-zinc-500 text-xs mt-1">Back after Yom Tov — Shana Tova!</p>
+            </div>
           </div>
         </div>
 

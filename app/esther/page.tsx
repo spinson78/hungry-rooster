@@ -64,7 +64,7 @@ export default function EstherPage() {
         const m = data[0];
         setMenu(m);
         const cutoff = new Date(m.cutoff_time);
-        setIsOpen(m.is_active && now < cutoff && m.quantity_remaining > 0);
+        setIsOpen(false); // HOLIDAY CLOSURE — restore to: m.is_active && now < cutoff && m.quantity_remaining > 0
       }
       setLoading(false);
     };
@@ -203,6 +203,12 @@ export default function EstherPage() {
       <NavBar />
 
       <div className="px-6 py-12 max-w-2xl mx-auto">
+
+        {/* HOLIDAY CLOSURE — remove to reopen */}
+        <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-2xl px-6 py-5 mb-6 text-center">
+          <p className="text-yellow-400 font-black text-lg">🍎 Closed for the Holiday</p>
+          <p className="text-zinc-400 text-sm mt-1">Fred&apos;s Fixins&apos; ordering is temporarily paused. We&apos;ll be back soon — Shana Tova!</p>
+        </div>
 
         {/* HEADER */}
         <div className="mb-4">
