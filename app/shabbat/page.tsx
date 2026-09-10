@@ -51,7 +51,12 @@ export default async function ShabbatPage() {
             Add-ons include salmon, babka, greens, and dessert.
           </p>
         )}
-        <ShabbatCheckout initialMenu={initialMenu} initialIsOpen={initialIsOpen} />
+        {/* HOLIDAY CLOSURE — remove to reopen */}
+        <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-2xl px-6 py-5 mb-6 text-center">
+          <p className="text-yellow-400 font-black text-lg">🍎 Closed for the Holiday</p>
+          <p className="text-zinc-400 text-sm mt-1">Shabbat Box ordering is temporarily paused. We'll be back soon — Shana Tova!</p>
+        </div>
+        <ShabbatCheckout initialMenu={initialMenu} initialIsOpen={false} />
       </div>
     </main>
   );
