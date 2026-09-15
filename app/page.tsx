@@ -3,6 +3,7 @@ import DinnerDropSection from "./components/DinnerDropSection";
 import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
+import YomKippurPopup from "./components/YomKippurPopup";
 import JoinListSection from "./components/JoinListSection";
 
 export const metadata: Metadata = {
@@ -238,6 +239,7 @@ export default function Home() {
       </footer>
 
       <ShabbatReminderPopup />
+      <YomKippurPopup />
     </main>
   );
 }

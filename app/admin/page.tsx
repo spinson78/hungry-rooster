@@ -503,10 +503,36 @@ export default function AdminPage() {
     if (tab === "bakery-orders") fetchBakeryOrders();
     if (tab === "catering-orders") fetchCateringOrders();
     if (tab === "group-orders") fetchGroupOrders();
+    if (tab === "menus") loadCurrentBakery();
   }, [authed, tab]);
 
   const updateDinner = (index: number, field: keyof DinnerEntry, value: string | number) => {
     setDinners((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
+  };
+
+  const loadCurrentBakery = async () => {
+    const now = new Date().toISOString();
+    const { data } = await supabase
+      .from("bakery_menus")
+      .select("*")
+      .gte("cutoff_time", now)
+      .order("cutoff_time", { ascending: true })
+      .limit(1);
+    if (!data || data.length === 0) return;
+    const b = data[0];
+    setBakeryWeekOf(b.week_of);
+    const filled: BakeryItem[] = EMPTY_BAKERY_ITEMS();
+    (b.items || []).forEach((item: { name: string; price: number; description: string; quantity?: number | null }, i: number) => {
+      if (i < filled.length) {
+        filled[i] = {
+          name: item.name || "",
+          price: item.price != null ? String(item.price) : "",
+          description: item.description || "",
+          quantity: item.quantity != null ? String(item.quantity) : "",
+        };
+      }
+    });
+    setBakeryItems(filled);
   };
 
   const loadCurrentWeek = async () => {
@@ -610,6 +636,11 @@ export default function AdminPage() {
 
     // Save bakery menu — uses its own week_of date
     const validBakeryItems = bakeryItems.filter(i => i.name.trim() && i.price.trim());
+    if (validBakeryItems.length > 0 && !bakeryWeekOf) {
+      alert("⚠️ Please set the Fred's Fixins' week date before saving.");
+      setSaving(false);
+      return;
+    }
     if (bakeryWeekOf && validBakeryItems.length > 0) {
       const monday = getMondayOfWeek(bakeryWeekOf);
       const revealDate = new Date(monday + "T02:00:00Z");
