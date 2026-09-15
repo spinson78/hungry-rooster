@@ -3,7 +3,6 @@ import DinnerDropSection from "./components/DinnerDropSection";
 import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
-import SimanimPopup from "./components/SimanimPopup";
 import JoinListSection from "./components/JoinListSection";
 
 export const metadata: Metadata = {
@@ -46,6 +45,20 @@ export default function Home() {
 
       {/* NAVBAR */}
       <NavBar />
+
+      {/* YOM KIPPUR BREAK FAST BANNER */}
+      <a href="/yom-kippur" className="block bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 text-white hover:from-blue-800 hover:via-indigo-800 hover:to-blue-800 transition-colors border-b border-indigo-700/50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🕍</span>
+            <div>
+              <p className="font-black text-sm leading-tight">Yom Kippur Break Fast — Order Now!</p>
+              <p className="text-xs font-bold opacity-75">Order by Sep 20 @ 10 AM · Delivery Sunday evening · G&apos;mar Chatimah Tovah</p>
+            </div>
+          </div>
+          <span className="font-black text-sm whitespace-nowrap border-2 border-white/20 px-4 py-1.5 rounded-full">Order Now →</span>
+        </div>
+      </a>
 
       {/* HERO */}
       <section className="px-6 py-20 md:py-32 max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
@@ -225,7 +238,6 @@ export default function Home() {
       </footer>
 
       <ShabbatReminderPopup />
-      <SimanimPopup />
     </main>
   );
 }

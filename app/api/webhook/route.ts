@@ -182,9 +182,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // ── Rosh Hashanah orders — handled by /api/rosh-hashanah/success ─────────
-    if (meta.order_type === "rosh_hashanah") {
-      console.log(`Rosh Hashanah session ${session.id} — skipping regular order insert`);
+    // ── Yom Kippur orders — handled by /api/yom-kippur/success ──────────────
+    if (meta.order_type === "yom_kippur") {
+      console.log(`Yom Kippur session ${session.id} — skipping regular order insert`);
       return NextResponse.json({ received: true });
     }
 

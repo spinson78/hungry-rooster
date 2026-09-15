@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { isClosedToday } from "@/lib/isClosedToday";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const TAX_RATE = 0.0825;
 
 export async function POST(req: NextRequest) {
+  const closure = await isClosedToday();
+  if (closure.closed) {
+    return NextResponse.json(
+      { error: `We're closed today${closure.reason ? ` — ${closure.reason}` : ""}. Check back soon!` },
+      { status: 503 }
+    );
+  }
+
   const body = await req.json();
   const { metadata, dinnerLabel, price, tipAmount, quantity = 1 } = body;
   const unitAmount = price ? Math.round(price * 100) : 8500;
