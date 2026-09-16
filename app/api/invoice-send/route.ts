@@ -23,18 +23,64 @@ export async function POST(req: NextRequest) {
     ? inv.customer_email.replace(/^[<\s]+|[>\s]+$/g, "").trim() || undefined
     : undefined;
 
-  // Create Stripe checkout session
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    customer_email: cleanEmail,
-    line_items: (inv.line_items as LineItem[]).map(item => ({
+  // Build Stripe line items (mirrors invoice-checkout logic)
+  type StripeLineItem = { price_data: { currency: string; product_data: { name: string }; unit_amount: number }; quantity: number };
+  const stripeLineItems: StripeLineItem[] = [];
+
+  // Taxable line items
+  (inv.line_items as LineItem[]).forEach(item => {
+    if (!item.description || item.qty * item.rate <= 0) return;
+    stripeLineItems.push({
       price_data: {
         currency: "usd",
         product_data: { name: item.description || "Service" },
         unit_amount: Math.round(item.qty * item.rate * 100),
       },
       quantity: 1,
-    })),
+    });
+  });
+
+  // Tax (8.25%) — skipped if tax_exempt
+  const subtotal = (inv.line_items as LineItem[]).reduce((s: number, i: LineItem) => s + i.qty * i.rate, 0);
+  const tax = subtotal * 0.0825;
+  if (tax > 0 && !inv.tax_exempt) {
+    stripeLineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Sales Tax (8.25%)" },
+        unit_amount: Math.round(tax * 100),
+      },
+      quantity: 1,
+    });
+  }
+
+  // Non-taxable fees
+  if (inv.delivery_fee > 0) {
+    stripeLineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Delivery Fee" },
+        unit_amount: Math.round(inv.delivery_fee * 100),
+      },
+      quantity: 1,
+    });
+  }
+  if (inv.service_fee > 0) {
+    stripeLineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Service Fee" },
+        unit_amount: Math.round(inv.service_fee * 100),
+      },
+      quantity: 1,
+    });
+  }
+
+  // Create Stripe checkout session
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer_email: cleanEmail,
+    line_items: stripeLineItems,
     success_url: `${baseUrl}/invoice/${inv.id}/paid`,
     cancel_url: `${baseUrl}/invoice/${inv.id}`,
     metadata: { invoice_id: inv.id, invoice_number: inv.invoice_number },
