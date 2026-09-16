@@ -40,8 +40,8 @@ export default function YomKippurPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.phone || !form.address) {
-      setError("Please fill in your name, phone, and delivery address.");
+    if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
+      setError("Please fill in your name, phone number, and delivery address.");
       return;
     }
     setLoading(true);
@@ -50,7 +50,15 @@ export default function YomKippurPage() {
       const res = await fetch("/api/yom-kippur/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, quantity, tip }),
+        body: JSON.stringify({
+          customer_name: form.name,
+          customer_email: form.email,
+          customer_phone: form.phone,
+          customer_address: form.address,
+          special_requests: form.special_requests,
+          quantity,
+          tip,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Something went wrong."); setLoading(false); return; }
