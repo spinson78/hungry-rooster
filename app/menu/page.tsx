@@ -939,6 +939,7 @@ export default function MenuPage() {
                       <input
                         type="date"
                         min={new Date().toISOString().split("T")[0]}
+                        max={(() => { const d = new Date(); d.setDate(d.getDate() + 10); return d.toISOString().split("T")[0]; })()}
                         value={scheduledDate}
                         onChange={e => {
                           const d = new Date(e.target.value + "T12:00:00");

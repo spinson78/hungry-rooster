@@ -34,12 +34,21 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json();
 
-  // Block scheduled orders targeting a weekend date
+  // Block scheduled orders targeting a weekend or more than 10 days out
   if (body.scheduled_for) {
-    const scheduledDay = new Date(body.scheduled_for).getDay();
+    const scheduledDate = new Date(body.scheduled_for);
+    const scheduledDay = scheduledDate.getDay();
     if (scheduledDay === 0 || scheduledDay === 6) {
       return NextResponse.json(
         { error: "We are not open on weekends. Please choose a Monday–Friday date." },
+        { status: 400 }
+      );
+    }
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 10);
+    if (scheduledDate > maxDate) {
+      return NextResponse.json(
+        { error: "Orders can only be scheduled up to 10 days in advance." },
         { status: 400 }
       );
     }
