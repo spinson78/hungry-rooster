@@ -212,6 +212,29 @@ export default function SchoolTab() {
     else setSelectedAccount(null);
   };
 
+  const doMarkPaid = async () => {
+    if (!selectedAccount) return;
+    const balance = Number(selectedAccount.balance);
+    if (balance <= 0) { alert("Balance is already zero."); return; }
+    if (!confirm(`Mark $${balance.toFixed(2)} as paid and unfreeze the account?`)) return;
+    setAdjusting(true);
+    // Credit the full balance
+    await fetch("/api/school/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "adjust", account_id: selectedAccount.id, amount: -balance, description: "Invoice payment received" }),
+    });
+    // Unfreeze
+    await fetch("/api/school/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unfreeze", account_id: selectedAccount.id }),
+    });
+    setAdjusting(false);
+    await fetchAccounts();
+    await openAccount(selectedAccount);
+  };
+
   const doAdjust = async () => {
     if (!selectedAccount || !adjustAmount) return;
     setAdjusting(true);
@@ -331,6 +354,12 @@ export default function SchoolTab() {
             ) : (
               <button onClick={() => setShowFreezeForm(true)} className="bg-red-500/20 text-red-400 border border-red-500/30 font-black px-4 py-2 rounded-full text-sm">⛔ Freeze</button>
             )}
+            {selectedAccount.status === "frozen" && selectedAccount.billing_preference === "invoice" && Number(selectedAccount.balance) > 0 && (
+              <button onClick={doMarkPaid} disabled={adjusting}
+                className="bg-green-500 hover:bg-green-400 text-black font-black px-4 py-2 rounded-full text-sm disabled:opacity-50">
+                {adjusting ? "Saving…" : `✓ Mark Invoice Paid ($${Number(selectedAccount.balance).toFixed(2)})`}
+              </button>
+            )}
             <button onClick={() => setShowAdjust(true)} className="bg-zinc-800 text-white font-black px-4 py-2 rounded-full text-sm border border-zinc-700">± Adjust Balance</button>
             <button onClick={() => doRemind(selectedAccount.id)} disabled={reminding === selectedAccount.id}
               className="bg-zinc-800 text-yellow-400 font-black px-4 py-2 rounded-full text-sm border border-zinc-700 disabled:opacity-50">
@@ -368,7 +397,7 @@ export default function SchoolTab() {
         {showAdjust && (
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 mb-6">
             <h3 className="font-black mb-3">Manual Balance Adjustment</h3>
-            <p className="text-zinc-500 text-sm mb-4">Positive = add credit. Negative = add charge.</p>
+            <p className="text-zinc-500 text-sm mb-4">Negative = credit (reduces balance). Positive = charge (increases balance).</p>
             <div className="flex gap-3 mb-3">
               <input type="number" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} placeholder="e.g. 5.00 or -3.50"
                 className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400" />
