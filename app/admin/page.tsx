@@ -13,6 +13,7 @@ import ChallahTab from "@/app/components/ChallahTab";
 import CelebrationTab from "@/app/components/CelebrationTab";
 import YomKippurTab from "@/app/components/YomKippurTab";
 import OperationsTab from "@/app/components/OperationsTab";
+import TimeclockTab from "@/app/components/TimeclockTab";
 
 function RecoverOrderPanel() {
   const [sessionId, setSessionId] = useState("");
@@ -279,7 +280,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school" | "challah" | "yom-kippur" | "celebrations" | "operations">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school" | "challah" | "yom-kippur" | "celebrations" | "operations" | "timeclock">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -926,6 +927,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("yom-kippur")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "yom-kippur" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🕍 Yom Kippur
           </button>
+          <button onClick={() => setTab("timeclock")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "timeclock" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            ⏱️ Timeclock
+          </button>
           <button onClick={() => setTab("celebrations")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "celebrations" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🎉 Celebrations
           </button>
@@ -1478,6 +1482,7 @@ This cannot be undone.`);
         {tab === "yom-kippur" && <YomKippurTab />}
         {tab === "celebrations" && <CelebrationTab />}
         {tab === "operations" && <OperationsTab />}
+        {tab === "timeclock" && <TimeclockTab />}
 
         {/* RECOVER ORDER TAB */}
         {tab === "recover" && <RecoverOrderPanel />}
