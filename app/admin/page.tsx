@@ -1475,7 +1475,6 @@ This cannot be undone.`);
         {/* SCHOOL COFFEE SHOP TAB */}
         {tab === "school" && <SchoolTab />}
         {tab === "challah" && <ChallahTab />}
-        {tab === "yom-kippur" && <YomKippurTab />}
         {tab === "celebrations" && <CelebrationTab />}
         {tab === "operations" && <OperationsTab />}
         {tab === "timeclock" && <TimeclockTab />}
