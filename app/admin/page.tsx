@@ -484,6 +484,12 @@ export default function AdminPage() {
     setClearing(false);
   };
 
+  const deleteOrder = async (id: string, name: string, refreshFn: () => void) => {
+    if (!window.confirm(`Delete ${name}'s pending order? This cannot be undone.`)) return;
+    await supabase.from("orders").delete().eq("id", id);
+    refreshFn();
+  };
+
   const markOrderComplete = async (id: string, type: "dinner" | "shabbat" | "bakery" | "catering") => {
     await fetch("/api/admin/complete-order", {
       method: "POST",
@@ -816,18 +822,28 @@ export default function AdminPage() {
                     </div>
                   );
                 })()}
-                {order.status !== "complete" && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Mark ${order.customer_name}'s order as complete?`)) {
-                        markOrderComplete(order.id, clearType);
-                      }
-                    }}
-                    className="text-green-400 hover:text-green-300 font-bold text-sm border border-green-400/30 px-4 py-2 rounded-full transition-colors"
-                  >
-                    ✓ Mark Complete
-                  </button>
-                )}
+                <div className="flex gap-2 flex-wrap">
+                  {order.status !== "complete" && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Mark ${order.customer_name}'s order as complete?`)) {
+                          markOrderComplete(order.id, clearType);
+                        }
+                      }}
+                      className="text-green-400 hover:text-green-300 font-bold text-sm border border-green-400/30 px-4 py-2 rounded-full transition-colors"
+                    >
+                      ✓ Mark Complete
+                    </button>
+                  )}
+                  {order.status === "pending_payment" && (
+                    <button
+                      onClick={() => deleteOrder(order.id, order.customer_name, refreshFn)}
+                      className="text-red-400 hover:text-red-300 font-bold text-sm border border-red-400/30 px-4 py-2 rounded-full transition-colors"
+                    >
+                      🗑 Delete
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -177,7 +177,7 @@ export default function InvoiceTab() {
         const { data: updated } = await supabase.from("invoices").select("*").eq("id", target.id).single();
         if (updated) setSelected(updated as Invoice);
         if (data.email_failed) {
-          setActionMsg("Payment link generated! Email couldn't send (domain not verified yet) — copy the link below to send manually.");
+          setActionMsg(`⚠️ Payment link generated but email failed to send — copy the link below to share manually. Error: ${data.email_error || "unknown"}`);
         } else {
           setActionMsg("Invoice sent! Customer will receive an email with payment link.");
         }

@@ -76,6 +76,18 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Safety fallback — Stripe requires at least one line item
+  if (stripeLineItems.length === 0) {
+    stripeLineItems.push({
+      price_data: {
+        currency: "usd",
+        product_data: { name: "Invoice Services" },
+        unit_amount: Math.round((inv.total || 0) * 100),
+      },
+      quantity: 1,
+    });
+  }
+
   // Create Stripe checkout session
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -163,8 +175,8 @@ export async function POST(req: NextRequest) {
   if (!emailRes.ok) {
     const err = await emailRes.text();
     console.error("Resend error:", err);
-    // Email failed but Stripe link is saved — return partial success so UI can show the link
-    return NextResponse.json({ success: true, email_failed: true, checkout_url: session.url });
+    // Email failed but Stripe link is saved — return partial success so UI can show the link + error
+    return NextResponse.json({ success: true, email_failed: true, email_error: err, checkout_url: session.url });
   }
 
   return NextResponse.json({ success: true, checkout_url: session.url });
