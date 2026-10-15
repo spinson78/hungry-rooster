@@ -509,7 +509,7 @@ export default function AdminPage() {
     if (tab === "bakery-orders") fetchBakeryOrders();
     if (tab === "catering-orders") fetchCateringOrders();
     if (tab === "group-orders") fetchGroupOrders();
-    if (tab === "menus") loadCurrentBakery();
+    if (tab === "menus") { loadCurrentBakery(); loadCurrentWeek(); }
   }, [authed, tab]);
 
   const updateDinner = (index: number, field: keyof DinnerEntry, value: string | number) => {
@@ -553,7 +553,7 @@ export default function AdminPage() {
       .gte("date", from)
       .lte("date", to)
       .order("date", { ascending: true });
-    if (!data || data.length === 0) { alert("No upcoming dinners found in the database."); return; }
+    if (!data || data.length === 0) return;
     setDinners(prev => prev.map(d => {
       const match = data.find((row: { day_of_week: string; date: string; protein: string; side1: string; side2: string; extra: string; quantity_available: number; quantity_remaining: number; price: number }) => row.day_of_week === d.day);
       if (!match) return d;
@@ -676,6 +676,9 @@ export default function AdminPage() {
 
     setSaving(false);
     setSaved(true);
+    // Reload so the form reflects what's now in the DB (quantity_remaining, etc.)
+    await loadCurrentWeek();
+    await loadCurrentBakery();
   };
 
   const renderOrderTab = () => {
