@@ -973,7 +973,22 @@ export default function AdminPage() {
               <div className="space-y-6">
                 {dinners.map((dinner, i) => (
                   <div key={dinner.day} className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
-                    <h3 className="font-black text-lg mb-4 text-yellow-400">{dinner.day}</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-black text-lg text-yellow-400">{dinner.day}</h3>
+                      {dinner.date && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete dinner entry for ${dinner.date}?`)) return;
+                            const { error } = await supabase.from("dinner_menus").delete().eq("date", dinner.date);
+                            if (error) { alert("Delete failed: " + error.message); return; }
+                            await loadCurrentWeek();
+                          }}
+                          className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 hover:border-red-400 px-3 py-1 rounded-full transition-colors"
+                        >
+                          🗑 Delete
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="text-xs text-zinc-400 uppercase tracking-wide mb-1 block">Date</label>
