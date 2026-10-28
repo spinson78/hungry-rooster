@@ -696,7 +696,15 @@ export default function AdminPage() {
       <div>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h2 className="text-xl font-black">{label}</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {(isShabbat || isBakery) && (
+              <button
+                onClick={() => window.open(`/admin/labels?type=${isBakery ? "bakery" : "shabbat"}`, "_blank")}
+                className="text-sm font-black px-4 py-2 rounded-full border border-yellow-400/40 text-yellow-400 hover:bg-yellow-400 hover:text-black transition-colors"
+              >
+                🖨 Print Labels
+              </button>
+            )}
             {completedCount > 0 && (
               <button
                 onClick={() => clearCompleted(clearType)}
