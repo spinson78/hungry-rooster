@@ -426,6 +426,19 @@ export default function CateringPage() {
   const handleQuoteSubmit = async () => {
     if (!quoteForm.name || !quoteForm.phone || !quoteForm.email || !quoteForm.event_date) { setError("Please fill in your name, phone, email, and event date."); return; }
     setSubmitting(true); setError("");
+    // Save to Supabase for admin tracking
+    await supabase.from("catering_inquiries").insert({
+      name: quoteForm.name,
+      phone: quoteForm.phone,
+      email: quoteForm.email,
+      event_date: quoteForm.event_date,
+      headcount: quoteForm.headcount,
+      event_type: quoteForm.event_type,
+      location: quoteForm.location,
+      budget: quoteForm.budget,
+      notes: quoteForm.notes,
+    });
+    // Also fire the email notification
     await submitNotify({ order_type: "catering_inquiry", customer_name: quoteForm.name, customer_phone: quoteForm.phone, customer_email: quoteForm.email, customer_address: quoteForm.location || "TBD", special_requests: `Event: ${quoteForm.event_type} · Headcount: ${quoteForm.headcount} · Budget: ${quoteForm.budget} · Notes: ${quoteForm.notes}`, items: [], total: 0 });
     setSubmitted(true); setSubmitting(false);
   };

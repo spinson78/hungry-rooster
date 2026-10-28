@@ -13,6 +13,7 @@ import ChallahTab from "@/app/components/ChallahTab";
 import CelebrationTab from "@/app/components/CelebrationTab";
 import OperationsTab from "@/app/components/OperationsTab";
 import TimeclockTab from "@/app/components/TimeclockTab";
+import CateringInquiriesTab from "@/app/components/CateringInquiriesTab";
 
 function RecoverOrderPanel() {
   const [sessionId, setSessionId] = useState("");
@@ -279,7 +280,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school" | "challah" | "celebrations" | "operations" | "timeclock">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "catering-inquiries" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school" | "challah" | "celebrations" | "operations" | "timeclock">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
@@ -914,6 +915,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("catering-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-orders" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🍽️ Catering
           </button>
+          <button onClick={() => setTab("catering-inquiries")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "catering-inquiries" ? "bg-purple-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            📋 Inquiries
+          </button>
           <button onClick={() => setTab("group-orders")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "group-orders" ? "bg-orange-500 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🏢 Group Orders
           </button>
@@ -1520,6 +1524,7 @@ This cannot be undone.`);
         {tab === "celebrations" && <CelebrationTab />}
         {tab === "operations" && <OperationsTab />}
         {tab === "timeclock" && <TimeclockTab />}
+        {tab === "catering-inquiries" && <CateringInquiriesTab />}
 
         {/* RECOVER ORDER TAB */}
         {tab === "recover" && <RecoverOrderPanel />}
