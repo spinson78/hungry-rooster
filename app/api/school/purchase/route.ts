@@ -132,5 +132,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
+  if (payment_type === "zelle_venmo") {
+    const { error: zvErr } = await supabase.from("school_transactions").insert({
+      account_id: null,
+      type: "zelle_venmo_pending",
+      amount: total,
+      description: `PENDING VERIFICATION — ${description}`,
+    });
+    if (zvErr) {
+      console.error("school_transactions zelle_venmo insert error:", JSON.stringify(zvErr));
+      return NextResponse.json({ error: "DB insert failed: " + zvErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
   return NextResponse.json({ error: "Invalid payment_type" }, { status: 400 });
 }

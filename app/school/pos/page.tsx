@@ -3,9 +3,14 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 type MenuItem = { id: string; name: string; price: number; category: string; emoji: string };
 type CartItem = MenuItem & { qty: number };
-type PaymentMode = null | "account" | "card" | "cash" | "qr";
-type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "qr_waiting" | "success" | "error";
+type PaymentMode = null | "account" | "card" | "cash" | "qr" | "zelle_venmo";
+type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "qr_waiting" | "zelle_venmo_pending" | "success" | "error";
 type FBPurchase = { id: string; teacher_name: string; teacher_email: string; school_name: string; amount_paid: number; coupons_total: number; coupons_redeemed: number; ref_code: string; created_at: string };
+
+// ── Update these with your actual Zelle / Venmo details ──────────────────────
+const ZELLE_CONTACT = "(214) 555-0100"; // phone or email registered with Zelle
+const VENMO_HANDLE  = "@HungryRooster";  // your Venmo username
+// ─────────────────────────────────────────────────────────────────────────────
 
 declare global {
   interface Window {
@@ -873,6 +878,14 @@ export default function SchoolPOS() {
                     <span>📱</span> Scan to Pay
                   </button>
 
+                  {/* Zelle / Venmo */}
+                  <button
+                    onClick={() => { setPaymentMode("zelle_venmo"); setStep("zelle_venmo_pending"); }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>💸</span> Zelle / Venmo
+                  </button>
+
                   <button onClick={clearCart}
                     className="w-full text-zinc-700 hover:text-red-400 text-xs py-1.5 transition-colors font-bold">
                     Clear Order
@@ -885,6 +898,9 @@ export default function SchoolPOS() {
                   </div>
                   <div className="w-full bg-purple-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
                     <span>📱</span> Scan to Pay
+                  </div>
+                  <div className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
+                    <span>💸</span> Zelle / Venmo
                   </div>
                 </div>
               )}
@@ -926,6 +942,53 @@ export default function SchoolPOS() {
               onClick={resetPOS}
               className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold"
             >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Zelle / Venmo Modal ───────────────────────────────────────── */}
+      {step === "zelle_venmo_pending" && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm text-center">
+            <h2 className="font-black text-2xl mb-1">Zelle or Venmo</h2>
+            <p className="text-zinc-400 text-sm mb-6">Send <span className="text-white font-black text-xl">${total.toFixed(2)}</span> to either:</p>
+
+            <div className="space-y-3 mb-6">
+              <div className="bg-zinc-800 rounded-2xl px-5 py-4">
+                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-1">Zelle</p>
+                <p className="text-white font-black text-lg">{ZELLE_CONTACT}</p>
+              </div>
+              <div className="bg-zinc-800 rounded-2xl px-5 py-4">
+                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-1">Venmo</p>
+                <p className="text-white font-black text-lg">{VENMO_HANDLE}</p>
+              </div>
+            </div>
+
+            <p className="text-yellow-400 text-xs font-bold mb-6">
+              ⚠️ Include your name in the memo so we can match it
+            </p>
+
+            <button
+              onClick={async () => {
+                // Record sale and immediately clear for next student
+                await fetch("/api/school/purchase", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    payment_type: "zelle_venmo",
+                    items: cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
+                    total,
+                  }),
+                });
+                resetPOS();
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl text-lg transition-colors mb-3"
+            >
+              ✓ I've Sent It
+            </button>
+            <button onClick={resetPOS} className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold">
               Cancel
             </button>
           </div>
