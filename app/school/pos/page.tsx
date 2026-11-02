@@ -751,10 +751,6 @@ export default function SchoolPOS() {
                   className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
                   <span>📱</span> Scan to Pay
                 </button>
-                <button onClick={() => submitCelebration("cash")}
-                  className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
-                  <span>💵</span> Cash
-                </button>
               </div>
             </div>
           )}
@@ -877,12 +873,6 @@ export default function SchoolPOS() {
                     <span>📱</span> Scan to Pay
                   </button>
 
-                  {/* Cash */}
-                  <button onClick={() => openPayment("cash")}
-                    className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2">
-                    <span>💵</span> Cash
-                  </button>
-
                   <button onClick={clearCart}
                     className="w-full text-zinc-700 hover:text-red-400 text-xs py-1.5 transition-colors font-bold">
                     Clear Order
@@ -895,9 +885,6 @@ export default function SchoolPOS() {
                   </div>
                   <div className="w-full bg-purple-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
                     <span>📱</span> Scan to Pay
-                  </div>
-                  <div className="w-full bg-green-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
-                    <span>💵</span> Cash
                   </div>
                 </div>
               )}
