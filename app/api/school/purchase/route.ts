@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // Records any POS transaction: account tab, card sale, or cash sale
 export async function POST(req: NextRequest) {
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
     // Verify account is active
     const { data: acct } = await supabase
       .from("school_accounts")
-      .select("id, status, student_name, balance")
+      .select("id, status, student_name, balance, billing_preference, stripe_customer_id, stripe_payment_method_id")
       .eq("id", account_id)
       .single();
 
@@ -33,7 +36,48 @@ export async function POST(req: NextRequest) {
     if (acct.status === "pending_setup")
       return NextResponse.json({ error: "Account setup is not complete" }, { status: 403 });
 
-    // Insert transaction
+    // ── Auto Charge: charge card immediately ──────────────────────────
+    if (acct.billing_preference === "auto_charge") {
+      if (!acct.stripe_payment_method_id || !acct.stripe_customer_id) {
+        return NextResponse.json({ error: "No card on file — account setup may be incomplete" }, { status: 403 });
+      }
+      try {
+        const pi = await stripe.paymentIntents.create({
+          amount: Math.round(total * 100),
+          currency: "usd",
+          customer: acct.stripe_customer_id,
+          payment_method: acct.stripe_payment_method_id,
+          confirm: true,
+          off_session: true,
+          description: `COOP — ${acct.student_name}: ${description}`,
+          metadata: { account_id: acct.id, student_name: acct.student_name },
+        });
+
+        if (pi.status !== "succeeded") {
+          throw new Error(`Payment status: ${pi.status}`);
+        }
+
+        await supabase.from("school_transactions").insert({
+          account_id,
+          type: "auto_charge_purchase",
+          amount: total,
+          description: `${description} [auto-charged ${pi.id}]`,
+        });
+
+        return NextResponse.json({ success: true, auto_charged: true, new_balance: Number(acct.balance), student_name: acct.student_name });
+      } catch (err) {
+        const msg = (err as Error).message || "Card charge failed";
+        console.error("Auto-charge purchase failed:", msg);
+        // Freeze account on payment failure
+        await supabase.from("school_accounts").update({
+          status: "frozen",
+          freeze_reason: "Card charge failed at POS",
+        }).eq("id", account_id);
+        return NextResponse.json({ error: `Card declined — account paused. ${msg}` }, { status: 402 });
+      }
+    }
+
+    // ── Charge on Friday (invoice): add to running tab ─────────────────
     const { error: acctErr } = await supabase.from("school_transactions").insert({
       account_id,
       type: "purchase",
@@ -52,7 +96,7 @@ export async function POST(req: NextRequest) {
       .update({ balance: newBalance })
       .eq("id", account_id);
 
-    return NextResponse.json({ success: true, new_balance: newBalance, student_name: acct.student_name });
+    return NextResponse.json({ success: true, auto_charged: false, new_balance: newBalance, student_name: acct.student_name });
   }
 
   if (payment_type === "cash") {

@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 type MenuItem = { id: string; name: string; price: number; category: string; emoji: string };
 type CartItem = MenuItem & { qty: number };
-type PaymentMode = null | "account" | "card" | "cash";
-type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "success" | "error";
+type PaymentMode = null | "account" | "card" | "cash" | "qr";
+type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "qr_waiting" | "success" | "error";
 type FBPurchase = { id: string; teacher_name: string; teacher_email: string; school_name: string; amount_paid: number; coupons_total: number; coupons_redeemed: number; ref_code: string; created_at: string };
 
 declare global {
@@ -43,6 +43,9 @@ export default function SchoolPOS() {
   const [connectedReader, setConnectedReader] = useState<StripeReader | null>(null);
   const [showReaderModal, setShowReaderModal] = useState(false);
   const terminalRef = useRef<StripeTerminalInstance | null>(null);
+  const [qrSession, setQrSession] = useState<{ session_id: string; url: string } | null>(null);
+  const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const qrTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
@@ -203,7 +206,10 @@ export default function SchoolPOS() {
     const data = await res.json();
     if (data.success) {
       await recordCelebrationIfPending();
-      setSuccessMsg(`✓ $${total.toFixed(2)} added to ${accountInfo.student_name}'s tab. New balance: $${data.new_balance.toFixed(2)}`);
+      const msg = data.auto_charged
+        ? `✓ $${total.toFixed(2)} charged to ${accountInfo.student_name}'s card on file`
+        : `✓ $${total.toFixed(2)} added to ${accountInfo.student_name}'s tab. New balance: $${data.new_balance.toFixed(2)}`;
+      setSuccessMsg(msg);
       setStep("success");
       setTimeout(() => resetPOS(), 5000);
     } else {
@@ -274,6 +280,67 @@ export default function SchoolPOS() {
     }
   };
 
+  const initiateQRPayment = async () => {
+    if (cart.length === 0) return;
+    setPaymentMode("qr");
+    setStep("card_processing"); // show "loading" briefly
+    try {
+      const description = cart.map(i => `${i.qty}× ${i.name}`).join(", ");
+      const res = await fetch("/api/school/qr-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount_cents: Math.round(total * 100), description }),
+      });
+      const data = await res.json();
+      if (!data.session_id) throw new Error("Failed to create payment session");
+
+      setQrSession({ session_id: data.session_id, url: data.url });
+      setStep("qr_waiting");
+
+      // Poll every 2 seconds for payment
+      qrPollRef.current = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/school/qr-checkout/status?session_id=${data.session_id}`);
+          const status = await statusRes.json();
+          if (status.paid) {
+            clearInterval(qrPollRef.current!);
+            qrPollRef.current = null;
+            if (qrTimeoutRef.current) { clearTimeout(qrTimeoutRef.current); qrTimeoutRef.current = null; }
+
+            // Record transaction
+            await fetch("/api/school/purchase", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                payment_type: "card",
+                items: cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
+                total,
+                stripe_payment_intent_id: status.payment_intent,
+              }),
+            });
+            await recordCelebrationIfPending();
+            setQrSession(null);
+            setSuccessMsg(`✓ Payment of $${total.toFixed(2)} received`);
+            setStep("success");
+            setTimeout(() => resetPOS(), 4000);
+          }
+        } catch { /* ignore poll errors */ }
+      }, 2000);
+
+      // Auto-cancel after 10 minutes
+      qrTimeoutRef.current = setTimeout(() => {
+        if (qrPollRef.current) { clearInterval(qrPollRef.current); qrPollRef.current = null; }
+        setQrSession(null);
+        setErrorMsg("Payment timed out — QR code expired. Please try again.");
+        setStep("error");
+      }, 10 * 60 * 1000);
+
+    } catch (err) {
+      setErrorMsg((err as Error).message || "Failed to create QR payment");
+      setStep("error");
+    }
+  };
+
   const processCash = async () => {
     const received = parseFloat(cashReceived) || 0;
     const res = await fetch("/api/school/purchase", {
@@ -294,6 +361,9 @@ export default function SchoolPOS() {
   };
 
   const resetPOS = () => {
+    if (qrPollRef.current) { clearInterval(qrPollRef.current); qrPollRef.current = null; }
+    if (qrTimeoutRef.current) { clearTimeout(qrTimeoutRef.current); qrTimeoutRef.current = null; }
+    setQrSession(null);
     setStep("pos");
     setPaymentMode(null);
     clearCart();
@@ -403,7 +473,13 @@ export default function SchoolPOS() {
       qty: 1,
     }]);
 
-    openPayment(mode);
+    if (mode === "card") {
+      // QR pay — initiateQRPayment reads cart, but cart setState is async.
+      // Use a small delay so state settles first.
+      setTimeout(() => initiateQRPayment(), 50);
+    } else {
+      openPayment(mode);
+    }
   };
 
   const visibleItems = menu.filter(m => m.category === activeCategory);
@@ -434,18 +510,7 @@ export default function SchoolPOS() {
           </div>
         </div>
 
-        {/* Reader status */}
-        <button
-          onClick={() => terminalStatus === "connected" ? null : discoverReaders()}
-          className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full border transition-colors ${
-            terminalStatus === "connected" ? "border-green-500 text-green-400 bg-green-500/10"
-            : terminalStatus === "connecting" ? "border-yellow-500 text-yellow-400 animate-pulse"
-            : "border-zinc-700 text-zinc-500 hover:border-zinc-500"
-          }`}
-        >
-          <span className={`w-2 h-2 rounded-full ${terminalStatus === "connected" ? "bg-green-400" : "bg-zinc-600"}`} />
-          {terminalStatus === "connected" ? (connectedReader?.label || "Reader") : terminalStatus === "connecting" ? "Connecting…" : "Connect Reader"}
-        </button>
+        <div className="text-xs text-zinc-600 font-bold">📱 Scan to Pay · Account Tab</div>
       </div>
 
       {/* ── Fred's Bucks Panel ─────────────────────────────────────────── */}
@@ -683,8 +748,8 @@ export default function SchoolPOS() {
                   <span>📋</span> Account Tab
                 </button>
                 <button onClick={() => submitCelebration("card")}
-                  className={`w-full font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2 ${terminalStatus === "connected" ? "bg-teal-500 hover:bg-teal-400 text-black" : "bg-zinc-800 text-zinc-500 border border-zinc-700"}`}>
-                  <span>💳</span> {terminalStatus === "connected" ? "Card" : "Card (no reader)"}
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
+                  <span>📱</span> Scan to Pay
                 </button>
                 <button onClick={() => submitCelebration("cash")}
                   className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl text-sm transition-colors flex items-center justify-center gap-2">
@@ -804,17 +869,12 @@ export default function SchoolPOS() {
                     <span>📋</span> Account Tab
                   </button>
 
-                  {/* Card */}
+                  {/* QR / Scan to Pay */}
                   <button
-                    onClick={() => openPayment("card")}
-                    className={`w-full font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2 ${
-                      terminalStatus === "connected"
-                        ? "bg-teal-500 hover:bg-teal-400 text-black"
-                        : "bg-zinc-800 text-zinc-500 border border-zinc-700"
-                    }`}
+                    onClick={initiateQRPayment}
+                    className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2"
                   >
-                    <span>💳</span>
-                    {terminalStatus === "connected" ? "Card" : "Card (no reader)"}
+                    <span>📱</span> Scan to Pay
                   </button>
 
                   {/* Cash */}
@@ -833,8 +893,8 @@ export default function SchoolPOS() {
                   <div className="w-full bg-yellow-400 text-black font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
                     <span>📋</span> Account Tab
                   </div>
-                  <div className="w-full bg-zinc-800 text-zinc-500 border border-zinc-700 font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
-                    <span>💳</span> Card
+                  <div className="w-full bg-purple-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
+                    <span>📱</span> Scan to Pay
                   </div>
                   <div className="w-full bg-green-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
                     <span>💵</span> Cash
@@ -842,6 +902,45 @@ export default function SchoolPOS() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── QR Pay Modal ──────────────────────────────────────────────── */}
+      {step === "qr_waiting" && qrSession && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm text-center">
+            <h2 className="font-black text-2xl mb-1">Scan to Pay</h2>
+            <p className="text-zinc-400 text-sm mb-5">
+              Point your phone camera at the code below
+            </p>
+
+            {/* QR code */}
+            <div className="bg-white rounded-2xl p-4 inline-block mb-4 shadow-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrSession.url)}&size=240x240&qzone=2&margin=0`}
+                alt="Payment QR code"
+                width={240}
+                height={240}
+                className="block"
+              />
+            </div>
+
+            <p className="text-2xl font-black text-yellow-400 mb-1">${total.toFixed(2)}</p>
+            <p className="text-zinc-500 text-xs mb-4">Apple Pay · Google Pay · Debit · Credit</p>
+
+            <div className="flex items-center justify-center gap-2 text-zinc-600 text-xs animate-pulse mb-5">
+              <span className="w-2 h-2 rounded-full bg-zinc-600 inline-block" />
+              Waiting for payment…
+            </div>
+
+            <button
+              onClick={resetPOS}
+              className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -970,10 +1069,10 @@ export default function SchoolPOS() {
       {step === "card_processing" && (
         <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-10 w-full max-w-xs text-center">
-            <div className="text-6xl mb-5 animate-pulse">💳</div>
-            <h2 className="font-black text-2xl mb-2">Tap, Insert, or Swipe</h2>
+            <div className="text-6xl mb-5 animate-pulse">📱</div>
+            <h2 className="font-black text-2xl mb-2">Generating QR…</h2>
             <p className="text-zinc-500 text-sm mb-1">Total: <span className="text-white font-black text-xl">${total.toFixed(2)}</span></p>
-            <p className="text-zinc-700 text-xs mt-3">Present card on the reader…</p>
+            <p className="text-zinc-700 text-xs mt-3">One moment…</p>
           </div>
         </div>
       )}

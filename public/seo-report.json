@@ -1,37 +1,38 @@
 {
-  "generated_at": "2026-10-19T15:30:00Z",
-  "week": "Week of Oct 19, 2026",
+  "generated_at": "2026-11-02T14:20:00Z",
+  "week": "Week of Nov 02, 2026",
   "keyword_rankings": [
-    {"keyword": "kosher food Dallas", "our_position": "not found", "top_competitor": "Dallas Observer kosher guide (dallasobserver.com); CultureMap Kosher Palate coverage"},
-    {"keyword": "kosher catering Dallas", "our_position": "not found", "top_competitor": "FSR Magazine / D Magazine articles on Fairmont kosher kitchen; Zola directory pages (irrelevant Dallas GA/OR)"},
-    {"keyword": "kosher delivery Dallas", "our_position": "not found", "top_competitor": "Uber Eats Dallas kosher category (ubereats.com/plukup/category/dallas-tx/kosher)"},
-    {"keyword": "kosher restaurant Dallas", "our_position": "not found", "top_competitor": "Dallas Observer Hanukkah kosher guide; Wanderlog Meat Point / Aderet; Kosher Palate on tableagent.com"},
-    {"keyword": "Shabbat meals Dallas", "our_position": "not found", "top_competitor": "jewishdallas.org Shabbat events (Shearith Israel); tedallas.org"},
-    {"keyword": "kosher meal delivery Texas", "our_position": "not found", "top_competitor": "Uber Eats kosher category pages (Houston, Austin, Dallas, Plano, Richardson)"},
-    {"keyword": "Jewish catering Dallas", "our_position": "not found on own domain; only a totallyjewishtravel.com listing of The Hungry Rooster appeared", "top_competitor": "FSR Magazine / D Magazine kosher kitchen articles; Shop K Market (totallyjewishtravel.com)"}
+    { "keyword": "kosher food Dallas", "our_position": "not found", "top_competitor": "Dallas Observer / D Magazine / CBS DFW articles; Aderet, Meat Point, Milk & Honey (dojlife.com/kosher-dallas/restaurants)" },
+    { "keyword": "kosher catering Dallas", "our_position": "not found (only third-party listing totallyjewishtravel.com appears for 'the hungry rooster kitchen and catering')", "top_competitor": "Simcha Kosher Catering (mapquest listing); A Taste of the World Catering; Zola kosher wedding catering directory" },
+    { "keyword": "kosher delivery Dallas", "our_position": "not found", "top_competitor": "Uber Eats Dallas kosher category (ubereats.com/category/dallas-tx/kosher); Aderet Grill & Salad on FoodBoss" },
+    { "keyword": "kosher restaurant Dallas", "our_position": "not found", "top_competitor": "CBS News DFW 'New Kosher Deli Opens In Far North Dallas'; dojlife.com kosher-dallas/restaurants; The Market Local Comfort Cafe (gokosher.com)" },
+    { "keyword": "Shabbat meals Dallas", "our_position": "not found", "top_competitor": "Anash.org Dallas Shabbos meal; Chabad of Dallas; jewishdallas.org (community events dominate; no commercial Shabbat meal-box result)" },
+    { "keyword": "kosher meal delivery Texas", "our_position": "not found", "top_competitor": "Uber Eats Houston/Austin/Dallas kosher category pages; Caviar" },
+    { "keyword": "Jewish catering Dallas", "our_position": "not found (third-party totallyjewishtravel.com listing only)", "top_competitor": "Shop K Market (totallyjewishtravel listing); Simcha Kosher Catering; D Magazine / FSR Magazine kosher kitchen articles" }
   ],
   "competitor_alerts": [
-    "Uber Eats owns 'kosher delivery Dallas' and 'kosher meal delivery Texas' with category pages for Dallas, Plano, Richardson, Irving and Carrollton.",
-    "Press (Dallas Observer, CultureMap, D Magazine) dominates 'kosher food/restaurant Dallas'; The Hungry Rooster appears in none of it.",
-    "A press release 'The Kosher Revolution Comes to Dallas' (einpresswire.com) surfaced for catering queries - review for a possible new entrant.",
-    "Shop K Market (kosher grocery/deli/catering) is listed beside The Hungry Rooster on totallyjewishtravel.com.",
-    "Search tool returned titles/URLs only, so Yelp review counts and exact Google positions could not be verified."
+    "Uber Eats owns the 'kosher delivery Dallas' and 'kosher meal delivery Texas' results with city-level kosher category pages (Dallas, Plano, Richardson, Irving, Coppell).",
+    "CBS News DFW coverage of a new kosher deli in Far North Dallas ranks for 'kosher restaurant Dallas' - a new competitor with press momentum.",
+    "Zola publishes kosher wedding catering directory pages for Dallas and ~10 surrounding suburbs, capturing catering searches.",
+    "Simcha Kosher Catering and A Taste of the World Catering have directory/map listings appearing for catering queries.",
+    "An EIN Presswire release 'The kosher revolution comes to Dallas' appeared for 2026 new-kosher queries - a competitor is doing PR.",
+    "Third-party sites (totallyjewishtravel.com) list The Hungry Rooster, but those listings outrank your own site, which does not appear."
   ],
   "recommendations": [
-    {"priority": "high", "action": "Add LocalBusiness/Restaurant + Caterer JSON-LD (address, hours Mon-Fri 9-2, menu URL, aggregateRating) to the homepage and key pages.", "reason": "Audit found no JSON-LD on thehungryroostertx.com."},
-    {"priority": "high", "action": "Fix /reviews: it only shows 'Loading reviews...' and the homepage links to /review instead. Server-render reviews with Review schema, or redirect /reviews to /review.", "reason": "Crawlers may see an empty page; reviews are a key local ranking signal."},
-    {"priority": "high", "action": "Claim/complete Google Business Profile and Yelp listing and push customers to leave reviews.", "reason": "The site surfaced for none of the 7 target keywords; local pack and directories drive these queries."},
-    {"priority": "high", "action": "Add visible body copy using 'kosher catering Dallas' and 'Jewish catering Dallas' to /catering.", "reason": "The phrase is only in the page title and meta keywords, not visible content."},
-    {"priority": "medium", "action": "Keep /shabbat content-rich year-round (menu, FAQ, delivery zones, 'Shabbat meals Dallas' wording) and add a notify-me signup while closed.", "reason": "Page currently says 'Ordering is not open right now'; results for this term are synagogue event pages."},
-    {"priority": "medium", "action": "Pitch Dallas Observer, CultureMap, D Magazine and jewishdallas.org for kosher roundups; update the totallyjewishtravel.com listing with a link.", "reason": "These outlets own the top results for kosher food/restaurant Dallas."},
-    {"priority": "medium", "action": "Publish blog posts targeting 'kosher meal delivery Texas' and 'kosher delivery Dallas' covering Plano, Richardson, Irving and Carrollton.", "reason": "Only Uber Eats category pages rank; no local content competes."},
-    {"priority": "low", "action": "Add 'kosher food/restaurant Dallas' variants to the homepage title/meta; add lang attribute and labels for emoji icons.", "reason": "Homepage title is 'Kosher Kitchen & Catering'; minor accessibility gaps noted."}
+    { "priority": "high", "action": "Add LocalBusiness/Restaurant + CateringService JSON-LD (name, address, phone, hours, servesCuisine 'Kosher', areaServed Dallas/Plano/Richardson, aggregateRating, menu URL) to the homepage and key pages.", "reason": "The homepage fetch found no JSON-LD structured data; this is a quick technical fix that helps local rich results." },
+    { "priority": "high", "action": "Rewrite the homepage title and meta description to include target keywords, e.g. 'Kosher Catering, Delivery & Shabbat Meals in Dallas | The Hungry Rooster'.", "reason": "Current title is 'Kosher Kitchen & Catering · Dallas, TX' and description is 'Dallas's premier kosher kitchen and catering company' - no 'delivery', 'Shabbat meals' or 'restaurant' terms, and the site did not appear for any of the 7 target keywords." },
+    { "priority": "high", "action": "Claim/optimize Google Business Profile (primary category Kosher restaurant, secondary Caterer) and actively request reviews; also claim Yelp, Uber Eats kosher listing, and Zola/Knot/WeddingWire kosher catering listings.", "reason": "Directories (Uber Eats, Zola, MapQuest, gokosher) fill the results for delivery and catering terms; being listed there captures traffic your own site isn't getting." },
+    { "priority": "high", "action": "Fix the /reviews gap: the site has /review ('Leave a Review') but /reviews isn't linked and the reviews section showed 'Loading reviews...' when fetched. Create a crawlable /reviews page with server-rendered testimonials and Review schema, and add a 301 redirect from /reviews.", "reason": "/reviews could not be found from the homepage nav; JS-loaded reviews may be invisible to search engines." },
+    { "priority": "medium", "action": "Optimize /shabbat for 'Shabbat meals Dallas' and 'kosher Shabbat delivery Dallas': add an H1/intro with those phrases, delivery zones, Friday cutoff info and FAQ schema; add a blog post 'Where to order Shabbat dinner in Dallas'.", "reason": "'Shabbat meals Dallas' results are all community/synagogue events - no commercial Shabbat meal-box competitor ranks, so this is the easiest keyword to win. Your /shabbat page already has strong content (weekly box, free delivery over $100)." },
+    { "priority": "medium", "action": "Create 'kosher delivery Dallas' and 'kosher meal delivery Texas' landing content (delivery areas by suburb: Plano, Richardson, Addison, Coppell, Irving) and link from the menu page.", "reason": "Uber Eats city pages dominate these queries; a dedicated local landing page with delivery zones can compete. /menu title already says 'Kosher Food Delivery & Pickup Dallas' - build on it." },
+    { "priority": "medium", "action": "Expand /catering with sections for weddings, shiva, schools, corporate events, sample menus, and a testimonial; add Jewish catering Dallas wording and Service schema.", "reason": "/catering has a good title ('Kosher Catering Dallas | Full-Service Event Catering') but still doesn't rank for 'kosher catering Dallas' vs Simcha Kosher Catering and Zola listings; more depth and backlinks are needed." },
+    { "priority": "low", "action": "Pursue press/backlinks: pitch Dallas Observer, D Magazine, CBS DFW, Jewish Federation of Greater Dallas (jewishdallas.org), and dojlife.com's kosher Dallas directory.", "reason": "Those outlets dominate 'kosher food Dallas' and 'kosher restaurant Dallas' results and currently don't mention thehungryroostertx.com." }
   ],
   "quick_wins": [
-    "Add JSON-LD LocalBusiness schema to the homepage",
-    "Fix /reviews (server-render or redirect to /review)",
-    "Add a visible 'kosher catering Dallas' heading and paragraph on /catering",
-    "Ask recent customers for Google reviews"
+    "Update homepage title/meta description with 'catering', 'delivery', 'Shabbat meals' and 'Dallas'",
+    "Add LocalBusiness JSON-LD to the homepage",
+    "Submit The Hungry Rooster to dojlife.com kosher Dallas directory and claim the totallyjewishtravel.com listing",
+    "Redirect /reviews to /review (or build /reviews) and link it in the nav"
   ],
-  "summary": "The Hungry Rooster did not appear in the top results for any of the 7 target keywords this week; Uber Eats and local press dominate. The site has good page titles but no structured data, a /reviews page showing only a loading placeholder, and a Shabbat page closed to orders. Schema, reviews and local listings are the highest-impact fixes."
+  "summary": "The Hungry Rooster did not appear in the search results for any of the 7 target keywords this week; third-party directories, Uber Eats, and local news dominate. The site itself has good page titles on /menu, /catering and /shabbat, but the homepage lacks JSON-LD, has a weak meta description, and /reviews is not linked. Priority is structured data, keyword-rich homepage metadata, directory/Google listings and a Shabbat-focused content push, where competition is thinnest."
 }

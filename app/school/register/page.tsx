@@ -10,7 +10,7 @@ export default function SchoolRegisterPage() {
     parent_name: "",
     parent_email: "",
     parent_phone: "",
-    billing_preference: "invoice",
+    billing_preference: "auto_charge",
     notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -54,7 +54,7 @@ export default function SchoolRegisterPage() {
           <div className="text-6xl mb-6">☕</div>
           <h1 className="text-3xl font-black mb-3">Account Created!</h1>
           <p className="text-zinc-400 mb-2">Check your email for the welcome message with your student&apos;s account ID.</p>
-          <p className="text-zinc-500 text-sm">You&apos;ll receive a weekly invoice every Friday for purchases made that week.</p>
+          <p className="text-zinc-500 text-sm">You&apos;ll receive a weekly invoice every Friday for purchases made that week. Payment is due within 7 days.</p>
         </div>
       </main>
     );
@@ -133,11 +133,11 @@ export default function SchoolRegisterPage() {
 
           {/* Billing Preference */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h2 className="font-black mb-4 text-purple-400 text-sm uppercase tracking-widest">Weekly Billing</h2>
+            <h2 className="font-black mb-4 text-purple-400 text-sm uppercase tracking-widest">Billing Method</h2>
             <div className="space-y-3">
               {[
-                { value: "invoice", label: "📧 Send me an invoice", desc: "You'll get a Stripe invoice by email each Friday to pay online. Payment due in 7 days." },
-                { value: "auto_charge", label: "💳 Auto-charge my card", desc: "Your card is charged automatically each Friday. Setup takes 30 seconds on the next screen." },
+                { value: "auto_charge", label: "⚡ Auto Charge", desc: "Your card is charged immediately each time your student uses their account at the counter. Setup takes 30 seconds on the next screen." },
+                { value: "invoice", label: "📅 Charge on Friday", desc: "Purchases build up a tab. You'll get a Stripe invoice by email each Friday for the week's total. Payment due in 7 days." },
               ].map(opt => (
                 <label key={opt.value} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.billing_preference === opt.value ? "border-purple-500 bg-purple-500/10" : "border-zinc-700 hover:border-zinc-500"}`}>
                   <input type="radio" name="billing" value={opt.value} checked={form.billing_preference === opt.value}
@@ -157,7 +157,7 @@ export default function SchoolRegisterPage() {
             className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black py-4 rounded-full text-lg transition-colors">
             {submitting ? "Setting up…" : form.billing_preference === "auto_charge" ? "Continue to Card Setup →" : "Create Account →"}
           </button>
-          <p className="text-zinc-600 text-xs text-center">Powered by Stripe · Accounts billed every Friday</p>
+          <p className="text-zinc-600 text-xs text-center">Powered by Stripe · Secure payment processing</p>
         </div>
       </div>
     </main>

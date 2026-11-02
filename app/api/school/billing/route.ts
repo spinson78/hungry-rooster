@@ -16,11 +16,13 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Get all active accounts with a balance > 0
+  // Get all active invoice accounts with a balance > 0
+  // (auto_charge accounts are charged immediately at purchase, so they never carry a balance)
   const { data: accounts } = await supabase
     .from("school_accounts")
     .select("id, student_name, parent_name, parent_email, balance, billing_preference, stripe_customer_id, stripe_payment_method_id")
     .eq("status", "active")
+    .eq("billing_preference", "invoice")
     .gt("balance", 0);
 
   if (!accounts || accounts.length === 0) {

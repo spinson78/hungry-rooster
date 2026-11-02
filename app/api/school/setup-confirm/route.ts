@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
             <p style="color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;">Student Account ID</p>
             <p style="font-size:42px;font-weight:900;color:#e9c46a;letter-spacing:6px;margin:0;">${account.student_pin}</p>
           </div>
-          <p>Your card on file will be charged automatically each Friday for the week's purchases.</p>
+          <p>Your card on file will be charged automatically each time ${account.student_name} uses the account at the counter — no tab to worry about.</p>
           <p>View your balance and transaction history at any time:<br/>
           <a href="${baseUrl}/school/account" style="color:#2dd4bf;">${baseUrl}/school/account</a></p>
           <p style="color:#71717a;font-size:13px;margin-top:32px;">— The Hungry Rooster Coffee Shop</p>
