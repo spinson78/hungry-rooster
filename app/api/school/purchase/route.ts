@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     // Verify account is active
     const { data: acct } = await supabase
       .from("school_accounts")
-      .select("id, status, student_name, balance, billing_preference, stripe_customer_id, stripe_payment_method_id")
+      .select("id, status, student_name, balance, billing_preference, stripe_customer_id, stripe_payment_method_id, parent_name, parent_email")
       .eq("id", account_id)
       .single();
 
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
           payment_method: acct.stripe_payment_method_id,
           confirm: true,
           off_session: true,
+          receipt_email: acct.parent_email || undefined,
           description: `COOP — ${acct.student_name}: ${description}`,
           metadata: { account_id: acct.id, student_name: acct.student_name },
         });
@@ -95,6 +96,35 @@ export async function POST(req: NextRequest) {
       .from("school_accounts")
       .update({ balance: newBalance })
       .eq("id", account_id);
+
+    // Send purchase notification email to parent
+    if (acct.parent_email && process.env.RESEND_API_KEY) {
+      const now = new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "short", timeStyle: "short" });
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "THE COOP <sales@thehungryroostertx.com>",
+          to: acct.parent_email,
+          subject: `COOP purchase for ${acct.student_name} — $${total.toFixed(2)}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#0a0a0a;color:#fff;padding:28px;border-radius:12px;">
+              <h2 style="color:#e9c46a;margin:0 0 4px;">☕ COOP Purchase</h2>
+              <p style="color:#71717a;font-size:13px;margin:0 0 20px;">${now} · THE COOP by The Hungry Rooster</p>
+              <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px;">
+                <tr><td style="padding:6px 0;color:#888;">Student</td><td style="padding:6px 0;font-weight:bold;">${acct.student_name}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">Items</td><td style="padding:6px 0;">${description}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">Amount</td><td style="padding:6px 0;color:#e9c46a;font-weight:bold;">$${total.toFixed(2)}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">Running Tab</td><td style="padding:6px 0;">$${newBalance.toFixed(2)}</td></tr>
+              </table>
+              <p style="color:#71717a;font-size:12px;border-top:1px solid #27272a;padding-top:16px;margin:0;">
+                This purchase has been added to ${acct.student_name}'s tab. You'll receive a Stripe invoice each Friday for the week's total.
+              </p>
+            </div>
+          `,
+        }),
+      }).catch(err => console.error("Purchase notification email failed:", err));
+    }
 
     return NextResponse.json({ success: true, auto_charged: false, new_balance: newBalance, student_name: acct.student_name });
   }
