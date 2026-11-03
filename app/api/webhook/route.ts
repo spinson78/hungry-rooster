@@ -200,6 +200,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── COOP QR kiosk payments — handled by POS polling, no order record needed ─
+    if (meta.source === "coop_qr_kiosk") {
+      console.log(`COOP QR kiosk session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
     const order_type = meta.order_type || "dinner";
     const total = (session.amount_total || 0) / 100;
 

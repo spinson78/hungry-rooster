@@ -598,10 +598,26 @@ export default function SchoolTab() {
 
       {/* ── SALES LOG VIEW ── */}
       {view === "sales" && (() => {
-        const SALE_LABEL: Record<string, string> = { purchase: "Account Tab", card_sale: "Card", cash_sale: "Cash" };
-        const SALE_COLOR: Record<string, string> = { purchase: "text-yellow-400", card_sale: "text-teal-400", cash_sale: "text-green-400" };
+        const SALE_LABEL: Record<string, string> = {
+          purchase:             "Account Tab",
+          auto_charge_purchase: "Auto Charge",
+          card_sale:            "QR / Card",
+          cash_sale:            "Cash",
+          zelle_venmo_pending:  "Zelle/Venmo",
+          billing_charge:       "Weekly Charge",
+          adjustment:           "Adjustment",
+        };
+        const SALE_COLOR: Record<string, string> = {
+          purchase:             "text-yellow-400",
+          auto_charge_purchase: "text-purple-400",
+          card_sale:            "text-teal-400",
+          cash_sale:            "text-green-400",
+          zelle_venmo_pending:  "text-blue-400",
+          billing_charge:       "text-orange-400",
+          adjustment:           "text-zinc-400",
+        };
         const salesTotal = sales.reduce((s, t) => s + Number(t.amount), 0);
-        const byType = ["purchase", "card_sale", "cash_sale"].map(type => ({
+        const byType = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "billing_charge", "adjustment"].map(type => ({
           type,
           count: sales.filter(t => t.type === type).length,
           total: sales.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0),

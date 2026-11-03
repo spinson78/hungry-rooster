@@ -141,7 +141,7 @@ export default function ReportsTab() {
         supabase
           .from("school_transactions")
           .select("id, type, amount, description, created_at")
-          .in("type", ["purchase", "card_sale", "cash_sale"])
+          .in("type", ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "billing_charge", "adjustment"])
           .order("created_at", { ascending: false }),
       ]);
       setOrders((orderData as OrderRow[]) || []);
@@ -384,9 +384,13 @@ export default function ReportsTab() {
 
         const coopTotal = coopFiltered.reduce((sum, s) => sum + Number(s.amount), 0);
         const coopByType = [
-          { key: "purchase",  label: "Account Tab" },
-          { key: "card_sale", label: "Card"        },
-          { key: "cash_sale", label: "Cash"        },
+          { key: "purchase",             label: "Account Tab"  },
+          { key: "auto_charge_purchase", label: "Auto Charge"  },
+          { key: "card_sale",            label: "QR / Card"    },
+          { key: "cash_sale",            label: "Cash"         },
+          { key: "zelle_venmo_pending",  label: "Zelle/Venmo"  },
+          { key: "billing_charge",       label: "Weekly Charge"},
+          { key: "adjustment",           label: "Adjustment"   },
         ].map(t => ({
           ...t,
           count: coopFiltered.filter(s => s.type === t.key).length,
@@ -414,7 +418,7 @@ export default function ReportsTab() {
             <div className="flex items-center gap-3 mb-6">
               <div>
                 <h2 className="text-xl font-black">🐓 THE COOP</h2>
-                <p className="text-zinc-500 text-sm">Coffee shop sales — account tabs, card, and cash</p>
+                <p className="text-zinc-500 text-sm">All COOP transactions — tabs, auto-charge, QR, cash, Zelle/Venmo, billing</p>
               </div>
             </div>
 
