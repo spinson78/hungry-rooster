@@ -519,7 +519,7 @@ export default function SchoolPOS() {
 
   return (
     <div className="bg-zinc-950 text-white flex flex-col overflow-hidden select-none" style={{ height: "100dvh" }}>
-    <div className="bg-black text-white flex flex-col flex-1 overflow-hidden m-2 rounded-2xl border border-zinc-800" style={{ paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
+    <div className="bg-black text-white flex flex-col flex-1 overflow-hidden m-5 rounded-2xl border-2 border-zinc-700" style={{ paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
 
       {/* ── Fullscreen Prompt ─────────────────────────────────────────── */}
       {showFullscreenPrompt && (
@@ -806,149 +806,116 @@ export default function SchoolPOS() {
         </div>
       )}
 
-      {/* ── Order Mode ─────────────────────────────────────────────────── */}
+      {/* ── Order Mode (portrait-first stacked layout) ─────────────────── */}
       {posTab === "order" && (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-hidden">
 
-          {/* Left: Category tabs + Menu grid */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-
-            {/* Category tabs */}
-            <div className="bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex gap-2 flex-shrink-0 overflow-x-auto">
-              {categories.length === 0 ? (
-                <p className="text-zinc-700 text-sm px-2">Loading menu…</p>
-              ) : categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-5 py-2.5 rounded-full text-sm font-black whitespace-nowrap transition-colors flex-shrink-0 ${
-                    activeCategory === cat
-                      ? "bg-yellow-400 text-black"
-                      : "bg-zinc-900 text-zinc-400 border border-zinc-800 hover:border-zinc-600 hover:text-white"
-                  }`}
-                >
-                  {cat === "Shabbat" ? "✡ Shabbat" : cat}
-                </button>
-              ))}
-              {isFriday && (
-                <span className="ml-auto flex-shrink-0 text-xs text-yellow-400/60 self-center pr-2">Shabbat menu active</span>
-              )}
-            </div>
-
-            {/* Menu grid */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {visibleItems.length === 0 ? (
-                <div className="text-center py-20 text-zinc-700">
-                  <p className="text-4xl mb-3">🍽️</p>
-                  <p className="font-bold">No items in this category</p>
-                  <p className="text-sm mt-1">Add them in Admin → School → Menu</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {visibleItems.map(item => {
-                    const cartItem = cart.find(c => c.id === item.id);
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => addItem(item)}
-                        className={`relative p-4 rounded-2xl border-2 text-left transition-all active:scale-95 ${
-                          cartItem
-                            ? "border-yellow-400 bg-yellow-400/10"
-                            : "border-zinc-800 bg-zinc-950 hover:border-zinc-600 hover:bg-zinc-900"
-                        }`}
-                      >
-                        <p className="text-4xl mb-3 leading-none">{item.emoji}</p>
-                        <p className="font-black text-sm leading-tight text-white">{item.name}</p>
-                        <p className="text-yellow-400 font-black text-base mt-1">${item.price.toFixed(2)}</p>
-                        {cartItem && (
-                          <span className="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-                            {cartItem.qty}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          {/* Category tabs */}
+          <div className="bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex gap-2 flex-shrink-0 overflow-x-auto">
+            {categories.length === 0 ? (
+              <p className="text-zinc-700 text-sm px-2">Loading menu…</p>
+            ) : categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-5 py-3 rounded-full text-base font-black whitespace-nowrap transition-colors flex-shrink-0 ${
+                  activeCategory === cat
+                    ? "bg-yellow-400 text-black"
+                    : "bg-zinc-900 text-zinc-400 border border-zinc-800"
+                }`}
+              >
+                {cat === "Shabbat" ? "✡ Shabbat" : cat}
+              </button>
+            ))}
           </div>
 
-          {/* Right: Order panel */}
-          <div className="w-80 bg-zinc-950 border-l border-zinc-800 flex flex-col flex-shrink-0">
+          {/* Menu grid — fills available space */}
+          <div className="flex-1 overflow-y-auto p-3">
+            {visibleItems.length === 0 ? (
+              <div className="text-center py-16 text-zinc-700">
+                <p className="text-5xl mb-3">🍽️</p>
+                <p className="font-bold">No items in this category</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {visibleItems.map(item => {
+                  const cartItem = cart.find(c => c.id === item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => addItem(item)}
+                      className={`relative p-5 rounded-2xl border-2 text-left transition-all active:scale-95 ${
+                        cartItem
+                          ? "border-yellow-400 bg-yellow-400/10"
+                          : "border-zinc-800 bg-zinc-950"
+                      }`}
+                    >
+                      <p className="text-5xl mb-3 leading-none">{item.emoji}</p>
+                      <p className="font-black text-base leading-tight text-white">{item.name}</p>
+                      <p className="text-yellow-400 font-black text-lg mt-1">${item.price.toFixed(2)}</p>
+                      {cartItem && (
+                        <span className="absolute top-2 right-2 bg-yellow-400 text-black text-sm font-black w-7 h-7 rounded-full flex items-center justify-center shadow-lg">
+                          {cartItem.qty}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-            {/* Cart header */}
-            <div className="px-4 pt-4 pb-2 flex-shrink-0">
-              <p className="text-xs font-black uppercase tracking-widest text-zinc-600">Current Order</p>
-            </div>
-
-            {/* Cart items */}
-            <div className="flex-1 overflow-y-auto px-4">
-              {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full pb-8">
-                  <p className="text-5xl mb-3 opacity-20">🛒</p>
-                  <p className="text-zinc-700 text-sm font-bold">Tap items to add</p>
-                </div>
-              ) : cart.map(item => (
-                <div key={item.id} className="flex items-center gap-2 py-3 border-b border-zinc-800/60">
+          {/* Cart summary — compact scrollable strip, only shown when items in cart */}
+          {cart.length > 0 && (
+            <div className="border-t border-zinc-800 bg-zinc-950 flex-shrink-0 max-h-28 overflow-y-auto px-3 py-2">
+              {cart.map(item => (
+                <div key={item.id} className="flex items-center gap-2 py-1.5">
                   <span className="text-yellow-400 font-black text-sm w-6 text-center">{item.qty}×</span>
-                  <span className="flex-1 text-sm font-bold truncate">{item.name}</span>
+                  <span className="flex-1 text-sm font-bold truncate text-white">{item.name}</span>
                   <span className="text-zinc-400 text-sm font-bold">${(item.price * item.qty).toFixed(2)}</span>
                   <button onClick={() => removeItem(item.id)}
-                    className="text-zinc-700 hover:text-red-400 text-xl leading-none w-6 flex items-center justify-center transition-colors">×</button>
+                    className="text-zinc-700 hover:text-red-400 text-lg leading-none w-6 flex items-center justify-center transition-colors">×</button>
                 </div>
               ))}
             </div>
+          )}
 
-            {/* Total + Payment */}
-            <div className="p-4 border-t border-zinc-800 space-y-3 flex-shrink-0">
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-500 font-bold">Total</span>
-                <span className="text-3xl font-black">${total.toFixed(2)}</span>
-              </div>
-
-              {cart.length > 0 ? (
-                <>
-                  {/* Account Tab */}
-                  <button onClick={() => openPayment("account")}
-                    className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2">
-                    <span>📋</span> Account Tab
-                  </button>
-
-                  {/* QR / Scan to Pay */}
-                  <button
-                    onClick={initiateQRPayment}
-                    className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span>📱</span> Scan to Pay
-                  </button>
-
-                  {/* Zelle / Venmo */}
-                  <button
-                    onClick={() => { setPaymentMode("zelle_venmo"); setStep("zelle_venmo_pending"); }}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span>💸</span> Zelle / Venmo
-                  </button>
-
-                  <button onClick={clearCart}
-                    className="w-full text-zinc-700 hover:text-red-400 text-xs py-1.5 transition-colors font-bold">
-                    Clear Order
-                  </button>
-                </>
-              ) : (
-                <div className="space-y-2 opacity-30 pointer-events-none">
-                  <div className="w-full bg-yellow-400 text-black font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
-                    <span>📋</span> Account Tab
-                  </div>
-                  <div className="w-full bg-purple-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
-                    <span>📱</span> Scan to Pay
-                  </div>
-                  <div className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl text-base flex items-center justify-center gap-2">
-                    <span>💸</span> Zelle / Venmo
-                  </div>
-                </div>
-              )}
+          {/* Total + Payment buttons — always pinned at bottom */}
+          <div className="border-t border-zinc-800 p-3 flex-shrink-0 space-y-2">
+            <div className="flex justify-between items-center px-1 mb-1">
+              <span className="text-zinc-400 font-black text-base uppercase tracking-widest">Total</span>
+              <span className="text-4xl font-black">${total.toFixed(2)}</span>
             </div>
+
+            <div className={`grid gap-2 ${cart.length > 0 ? "" : "opacity-30 pointer-events-none"}`} style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+              <button
+                onClick={() => openPayment("account")}
+                className="bg-yellow-400 hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-sm transition-colors flex flex-col items-center justify-center gap-1"
+              >
+                <span className="text-2xl">📋</span>
+                <span>Account Tab</span>
+              </button>
+              <button
+                onClick={initiateQRPayment}
+                className="bg-purple-600 hover:bg-purple-500 text-white font-black py-5 rounded-2xl text-sm transition-colors flex flex-col items-center justify-center gap-1"
+              >
+                <span className="text-2xl">📱</span>
+                <span>Scan to Pay</span>
+              </button>
+              <button
+                onClick={() => { setPaymentMode("zelle_venmo"); setStep("zelle_venmo_pending"); }}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl text-sm transition-colors flex flex-col items-center justify-center gap-1"
+              >
+                <span className="text-2xl">💸</span>
+                <span>Zelle/Venmo</span>
+              </button>
+            </div>
+
+            {cart.length > 0 && (
+              <button onClick={clearCart} className="w-full text-zinc-700 hover:text-red-400 text-xs py-1 transition-colors font-bold">
+                Clear Order
+              </button>
+            )}
           </div>
         </div>
       )}
