@@ -520,8 +520,6 @@ export default function SchoolPOS() {
               </button>
             )}
           </div>
-        </div>
-      )}
 
       {/* ── QR Pay Modal ──────────────────────────────────────────────── */}
       {step === "qr_waiting" && qrSession && (
@@ -682,6 +680,7 @@ export default function SchoolPOS() {
             )}
           </div>
         </div>
+      )}
       </div>
 
       {/* ── Cash Modal ────────────────────────────────────────────────── */}
