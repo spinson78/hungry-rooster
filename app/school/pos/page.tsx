@@ -48,6 +48,30 @@ export default function SchoolPOS() {
   const [connectedReader, setConnectedReader] = useState<StripeReader | null>(null);
   const [showReaderModal, setShowReaderModal] = useState(false);
   const terminalRef = useRef<StripeTerminalInstance | null>(null);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(true);
+
+  // ── Fullscreen management ─────────────────────────────────────────────────
+  const enterFullscreen = () => {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
+    else if ((el as any).mozRequestFullScreen) (el as any).mozRequestFullScreen();
+    else if ((el as any).msRequestFullscreen) (el as any).msRequestFullscreen();
+    setShowFullscreenPrompt(false);
+  };
+
+  useEffect(() => {
+    const onFSChange = () => {
+      const fsEl = document.fullscreenElement || (document as any).webkitFullscreenElement;
+      if (!fsEl) setShowFullscreenPrompt(true); // re-prompt if they exit
+    };
+    document.addEventListener("fullscreenchange", onFSChange);
+    document.addEventListener("webkitfullscreenchange", onFSChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFSChange);
+      document.removeEventListener("webkitfullscreenchange", onFSChange);
+    };
+  }, []);
   const [qrSession, setQrSession] = useState<{ session_id: string; url: string } | null>(null);
   const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const qrTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -490,7 +514,22 @@ export default function SchoolPOS() {
   const visibleItems = menu.filter(m => m.category === activeCategory);
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col overflow-hidden select-none">
+    <div className="bg-black text-white flex flex-col overflow-hidden select-none" style={{ height: "100dvh", paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
+
+      {/* ── Fullscreen Prompt ─────────────────────────────────────────── */}
+      {showFullscreenPrompt && (
+        <div
+          className="fixed inset-0 bg-black z-[999] flex flex-col items-center justify-center cursor-pointer"
+          onClick={enterFullscreen}
+        >
+          <div className="text-7xl mb-6">☕</div>
+          <h1 className="text-4xl font-black text-white mb-3">THE COOP</h1>
+          <p className="text-zinc-400 text-lg mb-10">by The Hungry Rooster</p>
+          <div className="bg-yellow-400 text-black font-black text-xl px-10 py-5 rounded-full animate-pulse">
+            Tap anywhere to start
+          </div>
+        </div>
+      )}
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="bg-zinc-950 border-b border-zinc-800 px-5 py-3 flex items-center justify-between flex-shrink-0">
