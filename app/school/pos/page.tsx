@@ -57,6 +57,10 @@ export default function SchoolPOS() {
     else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
     else if ((el as any).mozRequestFullScreen) (el as any).mozRequestFullScreen();
     else if ((el as any).msRequestFullscreen) (el as any).msRequestFullscreen();
+    // Lock to portrait if the screen supports it (Android/Chrome; no-op on iOS)
+    if (screen.orientation && (screen.orientation as any).lock) {
+      (screen.orientation as any).lock("portrait").catch(() => {});
+    }
     setShowFullscreenPrompt(false);
   };
 
@@ -514,7 +518,8 @@ export default function SchoolPOS() {
   const visibleItems = menu.filter(m => m.category === activeCategory);
 
   return (
-    <div className="bg-black text-white flex flex-col overflow-hidden select-none" style={{ height: "100dvh", paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
+    <div className="bg-zinc-950 text-white flex flex-col overflow-hidden select-none" style={{ height: "100dvh" }}>
+    <div className="bg-black text-white flex flex-col flex-1 overflow-hidden m-2 rounded-2xl border border-zinc-800" style={{ paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
 
       {/* ── Fullscreen Prompt ─────────────────────────────────────────── */}
       {showFullscreenPrompt && (
@@ -1195,6 +1200,7 @@ export default function SchoolPOS() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
