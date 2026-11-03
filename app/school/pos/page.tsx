@@ -519,7 +519,7 @@ export default function SchoolPOS() {
 
   return (
     <div className="bg-zinc-950 text-white flex flex-col overflow-hidden select-none" style={{ height: "100dvh" }}>
-    <div className="bg-black text-white flex flex-col flex-1 overflow-hidden rounded-2xl border-2 border-zinc-700" style={{ margin: "12px 16px 56px 16px", paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
+    <div className="bg-black text-white flex flex-col flex-1 overflow-hidden rounded-2xl border-2 border-zinc-700" style={{ margin: "12px 16px 180px 16px", paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "env(safe-area-inset-top)" }}>
 
       {/* ── Fullscreen Prompt ─────────────────────────────────────────── */}
       {showFullscreenPrompt && (
