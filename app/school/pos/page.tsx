@@ -7,10 +7,7 @@ type CartItem = MenuItem & { qty: number };
 type PaymentMode = null | "account" | "card" | "cash" | "qr" | "zelle_venmo";
 type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "qr_waiting" | "zelle_venmo_pending" | "success" | "error";
 
-// ── Update these with your actual Zelle / Venmo details ──────────────────────
-const ZELLE_CONTACT = "(214) 555-0100"; // phone or email registered with Zelle
-const VENMO_HANDLE  = "@HungryRooster";  // your Venmo username
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 declare global {
   interface Window {
@@ -557,23 +554,9 @@ export default function SchoolPOS() {
       {step === "zelle_venmo_pending" && (
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm text-center">
-            <h2 className="font-black text-2xl mb-1">Zelle or Venmo</h2>
-            <p className="text-zinc-400 text-sm mb-6">Send <span className="text-white font-black text-xl">${total.toFixed(2)}</span> to either:</p>
-
-            <div className="space-y-3 mb-6">
-              <div className="bg-zinc-800 rounded-2xl px-5 py-4">
-                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-1">Zelle</p>
-                <p className="text-white font-black text-lg">{ZELLE_CONTACT}</p>
-              </div>
-              <div className="bg-zinc-800 rounded-2xl px-5 py-4">
-                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-1">Venmo</p>
-                <p className="text-white font-black text-lg">{VENMO_HANDLE}</p>
-              </div>
-            </div>
-
-            <p className="text-yellow-400 text-xs font-bold mb-6">
-              ⚠️ Include your name in the memo so we can match it
-            </p>
+            <h2 className="font-black text-2xl mb-2">💸 Zelle / Venmo</h2>
+            <p className="text-zinc-400 text-sm mb-2">Total due:</p>
+            <p className="text-white font-black text-4xl mb-8">${total.toFixed(2)}</p>
 
             <button
               onClick={async () => {
