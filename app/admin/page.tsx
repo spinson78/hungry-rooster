@@ -588,10 +588,10 @@ export default function AdminPage() {
 
     for (const dinner of dinners) {
       if (!dinner.date || !dinner.protein) continue;
-      // Reveal: 8PM CDT night before = 1AM UTC on dinner date
-      // Cutoff: 12PM CDT day of = 5PM UTC on dinner date
-      const revealDate = new Date(dinner.date + "T01:00:00Z");
-      const cutoffDate = new Date(dinner.date + "T17:00:00Z");
+      // Reveal: 8PM CST night before = 2AM UTC on dinner date
+      // Cutoff: 12PM CST day of = 6PM UTC on dinner date
+      const revealDate = new Date(dinner.date + "T02:00:00Z");
+      const cutoffDate = new Date(dinner.date + "T18:00:00Z");
 
       const { error: dinnerError } = await supabase.from("dinner_menus").upsert({
         date: dinner.date,
@@ -620,10 +620,10 @@ export default function AdminPage() {
 
     if (shabbat.week_of && shabbat.protein) {
       const monday = getMondayOfWeek(shabbat.week_of);
-      // Reveal: Monday 9PM CDT = Tuesday 2AM UTC
-      const revealDate = new Date(monday + "T02:00:00Z");
-      // Cutoff: Friday 9AM CDT = Friday 2PM UTC
-      const friday = new Date(monday + "T14:00:00Z");
+      // Reveal: Monday 9PM CST = Tuesday 3AM UTC
+      const revealDate = new Date(monday + "T03:00:00Z");
+      // Cutoff: Friday 9AM CST = Friday 3PM UTC
+      const friday = new Date(monday + "T15:00:00Z");
       friday.setUTCDate(friday.getUTCDate() + 4);
 
       await supabase.from("shabbat_menus").upsert({
@@ -650,8 +650,8 @@ export default function AdminPage() {
     }
     if (bakeryWeekOf && validBakeryItems.length > 0) {
       const monday = getMondayOfWeek(bakeryWeekOf);
-      const revealDate = new Date(monday + "T02:00:00Z");
-      const friday = new Date(monday + "T14:00:00Z");
+      const revealDate = new Date(monday + "T03:00:00Z");
+      const friday = new Date(monday + "T15:00:00Z");
       friday.setUTCDate(friday.getUTCDate() + 4);
 
       const itemsJson = validBakeryItems.map(i => ({
