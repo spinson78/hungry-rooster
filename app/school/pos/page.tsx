@@ -46,6 +46,7 @@ export default function SchoolPOS() {
   const [showReaderModal, setShowReaderModal] = useState(false);
   const terminalRef = useRef<StripeTerminalInstance | null>(null);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(true);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // ── Fullscreen management ─────────────────────────────────────────────────
   const enterFullscreen = () => {
@@ -188,7 +189,8 @@ export default function SchoolPOS() {
   };
 
   const confirmAccountPurchase = async () => {
-    if (!accountInfo) return;
+    if (!accountInfo || isConfirming) return;
+    setIsConfirming(true);
     const res = await fetch("/api/school/purchase", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -203,6 +205,7 @@ export default function SchoolPOS() {
       setStep("success");
       setTimeout(() => resetPOS(), 5000);
     } else {
+      setIsConfirming(false);
       setErrorMsg(data.error || "Failed to record purchase");
       setStep("error");
     }
@@ -360,6 +363,7 @@ export default function SchoolPOS() {
     setSuccessMsg("");
     setErrorMsg("");
     setCashReceived("");
+    setIsConfirming(false);
   };
 
   const numpadDigit = (d: string) => {
@@ -655,8 +659,9 @@ export default function SchoolPOS() {
                   </div>
                 </div>
                 <button onClick={confirmAccountPurchase}
-                  className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-lg mb-2 transition-colors">
-                  Confirm ✓
+                  disabled={isConfirming}
+                  className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-5 rounded-2xl text-lg mb-2 transition-colors">
+                  {isConfirming ? "Processing…" : "Confirm ✓"}
                 </button>
                 <button onClick={() => setStep("account_pin")} className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold">← Back</button>
               </>
