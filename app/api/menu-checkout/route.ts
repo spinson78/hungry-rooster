@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    // Enforce 9:00 am–2:45 pm kitchen hours in CST (UTC-6)
-    const cstMinutes = (scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes()) + 6 * 60;
-    const minutesIntoCSTDay = cstMinutes % (24 * 60);
+    // Enforce 9:00 am–2:45 pm kitchen hours in CST (UTC-6): subtract 6h from UTC
+    const utcMins = scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes();
+    const minutesIntoCSTDay = ((utcMins - 6 * 60) + 24 * 60) % (24 * 60);
     if (minutesIntoCSTDay < 9 * 60 || minutesIntoCSTDay > 14 * 60 + 45) {
       return NextResponse.json(
         { error: "Scheduled orders must be between 9:00 AM and 2:45 PM (kitchen hours)." },

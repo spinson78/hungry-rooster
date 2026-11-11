@@ -266,6 +266,7 @@ export default function MenuPage() {
   const [scheduledTime, setScheduledTime] = useState("");
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [confirmed, setConfirmed] = useState<{ order_number: string } | null>(null);
   const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -474,6 +475,7 @@ export default function MenuPage() {
     if (fulfillment === "delivery" && (!deliveryAddress.trim() || !deliveryCityZip.trim())) return;
     if (fulfillment === "delivery" && deliveryFeeErr) return;
     setSubmitting(true);
+    setSubmitError("");
     const items = cart.map(item => ({
       name: item.name,
       qty: item.qty,
@@ -513,6 +515,8 @@ export default function MenuPage() {
     if (data.url) {
       window.location.href = data.url;
     } else {
+      const msg = data.error || "Something went wrong. Please try again or call us.";
+      setSubmitError(msg);
       console.error("Stripe checkout error:", data);
     }
   };
@@ -1047,6 +1051,12 @@ export default function MenuPage() {
                 <p className="text-white font-black text-sm mb-1">🕑 Kitchen is Closed</p>
                 <p className="text-zinc-400 text-xs">{bizStatus.msg}</p>
                 <p className="text-zinc-500 text-xs mt-1">Hours: Mon–Fri · 9 am – 2 pm</p>
+              </div>
+            )}
+
+            {submitError && (
+              <div className="bg-red-950 border border-red-700 rounded-xl px-4 py-3 mb-3 text-center">
+                <p className="text-red-400 text-sm font-bold">⚠️ {submitError}</p>
               </div>
             )}
 
