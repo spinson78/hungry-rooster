@@ -310,17 +310,8 @@ export default function SchoolPOS() {
             qrPollRef.current = null;
             if (qrTimeoutRef.current) { clearTimeout(qrTimeoutRef.current); qrTimeoutRef.current = null; }
 
-            // Record transaction
-            await fetch("/api/school/purchase", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                payment_type: "card",
-                items: cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
-                total,
-                stripe_payment_intent_id: status.payment_intent,
-              }),
-            });
+            // Transaction recording is handled by the Stripe webhook (coop_qr_kiosk source)
+            // — do NOT also call /api/school/purchase here, that causes a duplicate entry.
             setQrSession(null);
             setSuccessMsg(`✓ Payment of $${total.toFixed(2)} received`);
             setStep("success");
