@@ -137,6 +137,8 @@ export default function SchoolTab() {
   const [sales, setSales] = useState<SaleTxn[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesRange, setSalesRange] = useState<"week" | "month" | "ytd" | "all">("month");
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<{ missing_count: number; missing: { stripe_id: string; type: string; amount: number; description: string; created: string }[] } | null>(null);
 
   const fetchSales = useCallback(async (rangeVal: "week" | "month" | "ytd" | "all") => {
     setSalesLoading(true);
@@ -655,7 +657,62 @@ export default function SchoolTab() {
                 </button>
               ))}
               <button onClick={() => fetchSales(salesRange)} className="ml-auto text-zinc-500 text-xs hover:text-white">↺ Refresh</button>
+              <button
+                onClick={async () => {
+                  setReconciling(true);
+                  setReconcileResult(null);
+                  const r = await fetch("/api/school/admin/reconcile?hours=48");
+                  const d = await r.json();
+                  setReconcileResult(d);
+                  setReconciling(false);
+                }}
+                disabled={reconciling}
+                className="text-amber-500 hover:text-amber-400 text-xs font-bold disabled:opacity-50"
+              >
+                {reconciling ? "Checking Stripe…" : "⚡ Reconcile Stripe"}
+              </button>
             </div>
+
+            {/* Reconcile result panel */}
+            {reconcileResult && (
+              <div className="bg-zinc-900 border border-amber-500/30 rounded-xl p-4 mb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-black text-amber-400 text-sm">
+                    {reconcileResult.missing_count === 0
+                      ? "✓ All Stripe charges are recorded — nothing missing"
+                      : `⚠️ ${reconcileResult.missing_count} Stripe charge${reconcileResult.missing_count !== 1 ? "s" : ""} not in sales log`}
+                  </p>
+                  {reconcileResult.missing_count > 0 && (
+                    <button
+                      onClick={async () => {
+                        setReconciling(true);
+                        await fetch("/api/school/admin/reconcile?hours=48", { method: "POST" });
+                        setReconcileResult(null);
+                        setReconciling(false);
+                        fetchSales(salesRange);
+                      }}
+                      disabled={reconciling}
+                      className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black px-4 py-1.5 rounded-full text-xs"
+                    >
+                      Backfill All →
+                    </button>
+                  )}
+                  <button onClick={() => setReconcileResult(null)} className="text-zinc-600 hover:text-white text-xs ml-2">✕</button>
+                </div>
+                {reconcileResult.missing.map(m => (
+                  <div key={m.stripe_id} className="flex justify-between items-center py-1.5 border-t border-zinc-800 text-sm">
+                    <div>
+                      <span className={`text-xs font-bold mr-2 ${m.type === "auto_charge" ? "text-orange-400" : "text-teal-400"}`}>
+                        {m.type === "auto_charge" ? "Auto-charge" : "QR Kiosk"}
+                      </span>
+                      <span className="text-zinc-300">{m.description}</span>
+                      <span className="text-zinc-600 text-xs ml-2">{new Date(m.created).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "short", timeStyle: "short" })}</span>
+                    </div>
+                    <span className="font-black text-white">${m.amount.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Summary cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
