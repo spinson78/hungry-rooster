@@ -954,15 +954,26 @@ export default function MenuPage() {
                       />
                       <input
                         type="time"
+                        min="09:00"
+                        max="14:45"
                         value={scheduledTime}
-                        onChange={e => setScheduledTime(e.target.value)}
+                        onChange={e => {
+                          const t = e.target.value;
+                          if (t && t > "14:45") {
+                            setScheduledTime("14:45");
+                          } else if (t && t < "09:00") {
+                            setScheduledTime("09:00");
+                          } else {
+                            setScheduledTime(t);
+                          }
+                        }}
                         className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400"
                       />
                     </div>
                     <p className="text-zinc-500 text-xs">
                       {fulfillment === "delivery"
-                        ? "Enter the time you want your food to arrive · Mon–Fri only"
-                        : "Enter the time you want to pick up your order · Mon–Fri only"}
+                        ? "Enter the time you want your food to arrive · Mon–Fri · 9 am–2:45 pm only"
+                        : "Enter the time you want to pick up your order · Mon–Fri · 9 am–2:45 pm only"}
                     </p>
                   </div>
                 )}

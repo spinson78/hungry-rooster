@@ -4,8 +4,8 @@ import QRCode from "react-qr-code";
 
 type MenuItem = { id: string; name: string; price: number; category: string; emoji: string };
 type CartItem = MenuItem & { qty: number };
-type PaymentMode = null | "account" | "card" | "cash" | "qr" | "zelle_venmo";
-type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "qr_waiting" | "zelle_venmo_pending" | "success" | "error";
+type PaymentMode = null | "account" | "card" | "cash" | "qr" | "zelle_venmo" | "fred_bucks";
+type Step = "pos" | "account_pin" | "account_confirm" | "card_processing" | "cash_entry" | "qr_waiting" | "zelle_venmo_pending" | "fred_bucks_code" | "fred_bucks_confirm" | "success" | "error";
 
 
 
@@ -47,6 +47,13 @@ export default function SchoolPOS() {
   const terminalRef = useRef<StripeTerminalInstance | null>(null);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  // ── Fred's Bucks state ────────────────────────────────────────────────────
+  const [fbCode, setFbCode] = useState("");
+  const [fbCodeError, setFbCodeError] = useState("");
+  const [fbLooking, setFbLooking] = useState(false);
+  const [fbLookup, setFbLookup] = useState<{ id: string; teacher_name: string; remaining: number } | null>(null);
+  const [fbQty, setFbQty] = useState(1);
 
   // ── Fullscreen management ─────────────────────────────────────────────────
   const enterFullscreen = () => {
@@ -172,9 +179,13 @@ export default function SchoolPOS() {
     setPin("");
     setPinError("");
     setCashReceived("");
+    setFbCode("");
+    setFbCodeError("");
+    setFbLookup(null);
     if (mode === "account") setStep("account_pin");
     else if (mode === "card") processCard();
     else if (mode === "cash") setStep("cash_entry");
+    else if (mode === "fred_bucks") setStep("fred_bucks_code");
   };
 
   const lookupAccount = async () => {
@@ -364,6 +375,67 @@ export default function SchoolPOS() {
     setErrorMsg("");
     setCashReceived("");
     setIsConfirming(false);
+    setFbCode("");
+    setFbCodeError("");
+    setFbLookup(null);
+    setFbQty(1);
+    setFbLooking(false);
+  };
+
+  // Fred's Bucks lookup by ref code
+  const lookupFredBucks = async () => {
+    if (!fbCode.trim()) { setFbCodeError("Enter the code from your coupon sheet."); return; }
+    setFbLooking(true);
+    setFbCodeError("");
+    const res = await fetch(`/api/coop/fredbucks/lookup?ref_code=${encodeURIComponent(fbCode.trim())}`);
+    const data = await res.json();
+    setFbLooking(false);
+    if (data.id) {
+      if (data.remaining === 0) { setFbCodeError("No Fred's Bucks remaining on this code."); return; }
+      setFbLookup(data);
+      const minQty = Math.ceil(total / 5);
+      setFbQty(Math.min(minQty, data.remaining));
+      setStep("fred_bucks_confirm");
+    } else {
+      setFbCodeError(data.error || "Code not found.");
+    }
+  };
+
+  // Fred's Bucks redeem + record transaction
+  const confirmFredBucks = async () => {
+    if (!fbLookup || isConfirming) return;
+    setIsConfirming(true);
+    const items = cart.map(i => ({ name: i.name, qty: i.qty }));
+    const description = items.map(i => `${i.qty}× ${i.name}`).join(", ");
+    // Record redemption against the purchase
+    const redeemRes = await fetch("/api/coop/fredbucks/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ purchase_id: fbLookup.id, quantity: fbQty, note: description }),
+    });
+    const redeemData = await redeemRes.json();
+    if (!redeemData.success) {
+      setIsConfirming(false);
+      setErrorMsg(redeemData.error || "Redemption failed");
+      setStep("error");
+      return;
+    }
+    // Record sale in school_transactions
+    await fetch("/api/school/purchase", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payment_type: "fred_bucks",
+        items,
+        total,
+        fred_bucks_purchase_id: fbLookup.id,
+        fred_bucks_qty: fbQty,
+      }),
+    });
+    const remaining = redeemData.remaining;
+    setSuccessMsg(`✓ ${fbQty} Fred's Buck${fbQty !== 1 ? "s" : ""} redeemed — $${(fbQty * 5).toFixed(2)} applied${remaining > 0 ? ` · ${remaining} remaining` : ""}`);
+    setStep("success");
+    setTimeout(() => resetPOS(), 5000);
   };
 
   const numpadDigit = (d: string) => {
@@ -491,7 +563,7 @@ export default function SchoolPOS() {
               <span className="text-4xl font-black">${total.toFixed(2)}</span>
             </div>
 
-            <div className={`grid gap-2 ${cart.length > 0 ? "" : "opacity-30 pointer-events-none"}`} style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div className={`grid grid-cols-2 gap-2 ${cart.length > 0 ? "" : "opacity-30 pointer-events-none"}`}>
               <button
                 onClick={() => openPayment("account")}
                 className="bg-yellow-400 hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-sm transition-colors flex flex-col items-center justify-center gap-1"
@@ -512,6 +584,13 @@ export default function SchoolPOS() {
               >
                 <span className="text-2xl">💸</span>
                 <span>Zelle/Venmo</span>
+              </button>
+              <button
+                onClick={() => openPayment("fred_bucks")}
+                className="bg-amber-600 hover:bg-amber-500 text-white font-black py-5 rounded-2xl text-sm transition-colors flex flex-col items-center justify-center gap-1"
+              >
+                <span className="text-2xl">🐓</span>
+                <span>Fred's Bucks</span>
               </button>
             </div>
 
@@ -582,6 +661,74 @@ export default function SchoolPOS() {
             </button>
             <button onClick={resetPOS} className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold">
               Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fred's Bucks — Code Entry ────────────────────────────────── */}
+      {step === "fred_bucks_code" && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm text-center">
+            <p className="text-4xl mb-3">🐓</p>
+            <h2 className="font-black text-2xl mb-1">Fred's Bucks</h2>
+            <p className="text-zinc-400 text-sm mb-6">Enter the code from your coupon sheet</p>
+
+            <input
+              type="text"
+              value={fbCode}
+              onChange={e => setFbCode(e.target.value.toUpperCase())}
+              onKeyDown={e => { if (e.key === "Enter") lookupFredBucks(); }}
+              placeholder="FB-2026-XXXX"
+              autoFocus
+              className="w-full bg-zinc-800 border-2 border-zinc-700 focus:border-amber-400 rounded-2xl px-5 py-4 text-white font-mono text-2xl tracking-widest text-center placeholder-zinc-600 focus:outline-none mb-3"
+            />
+            {fbCodeError && <p className="text-red-400 text-sm mb-3 font-bold">{fbCodeError}</p>}
+
+            <button onClick={lookupFredBucks} disabled={fbLooking}
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black py-4 rounded-2xl text-lg transition-colors mb-3">
+              {fbLooking ? "Looking up…" : "Look Up Code →"}
+            </button>
+            <button onClick={resetPOS} className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fred's Bucks — Confirm Redemption ────────────────────────── */}
+      {step === "fred_bucks_confirm" && fbLookup && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm text-center">
+            <p className="text-4xl mb-2">🐓</p>
+            <h2 className="font-black text-2xl mb-1">Fred's Bucks</h2>
+            <p className="text-zinc-400 text-sm mb-1">{fbLookup.teacher_name}</p>
+            <p className="text-amber-400 font-black text-sm mb-6">{fbLookup.remaining} buck{fbLookup.remaining !== 1 ? "s" : ""} available · ${(fbLookup.remaining * 5).toFixed(2)} value</p>
+
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">How many to use?</p>
+            <div className="flex items-center justify-center gap-5 mb-2">
+              <button onClick={() => setFbQty(q => Math.max(1, q - 1))}
+                className="w-12 h-12 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-2xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                disabled={fbQty <= 1}>−</button>
+              <span className="text-4xl font-black w-12 text-center">{fbQty}</span>
+              <button onClick={() => setFbQty(q => Math.min(fbLookup.remaining, q + 1))}
+                className="w-12 h-12 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-2xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                disabled={fbQty >= fbLookup.remaining}>+</button>
+            </div>
+            <p className="text-amber-400 font-black text-lg mb-1">${(fbQty * 5).toFixed(2)} applied</p>
+            {fbQty * 5 < total && (
+              <p className="text-red-400 text-sm mb-4">Order total ${total.toFixed(2)} — need {Math.ceil(total / 5)} buck{Math.ceil(total / 5) !== 1 ? "s" : ""} to cover it</p>
+            )}
+            {fbQty * 5 >= total && (
+              <p className="text-green-400 text-sm mb-4">✓ Covers the full order of ${total.toFixed(2)}</p>
+            )}
+
+            <button onClick={confirmFredBucks} disabled={isConfirming || fbQty * 5 < total}
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black py-4 rounded-2xl text-lg transition-colors mb-3">
+              {isConfirming ? "Processing…" : `Redeem ${fbQty} Buck${fbQty !== 1 ? "s" : ""} ✓`}
+            </button>
+            <button onClick={() => setStep("fred_bucks_code")} className="w-full text-zinc-600 hover:text-white text-sm py-2 transition-colors font-bold">
+              ← Change Code
             </button>
           </div>
         </div>

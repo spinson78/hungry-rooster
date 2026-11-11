@@ -384,7 +384,7 @@ export default function ReportsTab() {
 
         // Only actual point-of-sale transactions count as "sales"
         // billing_charge = Friday collections on tab debt already counted at time of purchase
-        const COOP_SALE_TYPES = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending"];
+        const COOP_SALE_TYPES = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "fred_bucks"];
         const coopTotal = coopFiltered.filter(s => COOP_SALE_TYPES.includes(s.type)).reduce((sum, s) => sum + Number(s.amount), 0);
         const coopBillingCollected = coopFiltered.filter(s => s.type === "billing_charge").reduce((sum, s) => sum + Number(s.amount), 0);
         const coopByType = [
@@ -393,6 +393,7 @@ export default function ReportsTab() {
           { key: "card_sale",            label: "QR / Card"    },
           { key: "cash_sale",            label: "Cash"         },
           { key: "zelle_venmo_pending",  label: "Zelle/Venmo"  },
+          { key: "fred_bucks",           label: "Fred's Bucks" },
           { key: "billing_charge",       label: "Weekly Charge"},
           { key: "adjustment",           label: "Adjustment"   },
         ].map(t => ({

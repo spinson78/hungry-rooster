@@ -162,6 +162,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
+  if (payment_type === "fred_bucks") {
+    const { fred_bucks_purchase_id, fred_bucks_qty } = body;
+    const { error: fbErr } = await supabase.from("school_transactions").insert({
+      account_id: null,
+      type: "fred_bucks",
+      amount: total,
+      description: `${description} [FB ×${fred_bucks_qty || 1} — ${fred_bucks_purchase_id}]`,
+    });
+    if (fbErr) {
+      console.error("school_transactions fred_bucks insert error:", JSON.stringify(fbErr));
+      return NextResponse.json({ error: "DB insert failed: " + fbErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
   if (payment_type === "zelle_venmo") {
     const { error: zvErr } = await supabase.from("school_transactions").insert({
       account_id: null,

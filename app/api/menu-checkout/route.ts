@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json();
 
-  // Block scheduled orders targeting a weekend or more than 10 days out
+  // Block scheduled orders targeting a weekend, more than 10 days out, or outside kitchen hours
   if (body.scheduled_for) {
     const scheduledDate = new Date(body.scheduled_for);
     const scheduledDay = scheduledDate.getDay();
@@ -42,6 +42,15 @@ export async function POST(req: NextRequest) {
     if (scheduledDate > maxDate) {
       return NextResponse.json(
         { error: "Orders can only be scheduled up to 10 days in advance." },
+        { status: 400 }
+      );
+    }
+    // Enforce 9:00 am–2:45 pm kitchen hours in CST (UTC-6)
+    const cstMinutes = (scheduledDate.getUTCHours() * 60 + scheduledDate.getUTCMinutes()) + 6 * 60;
+    const minutesIntoCSTDay = cstMinutes % (24 * 60);
+    if (minutesIntoCSTDay < 9 * 60 || minutesIntoCSTDay > 14 * 60 + 45) {
+      return NextResponse.json(
+        { error: "Scheduled orders must be between 9:00 AM and 2:45 PM (kitchen hours)." },
         { status: 400 }
       );
     }

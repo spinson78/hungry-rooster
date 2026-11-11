@@ -604,6 +604,7 @@ export default function SchoolTab() {
           card_sale:            "QR / Card",
           cash_sale:            "Cash",
           zelle_venmo_pending:  "Zelle/Venmo",
+          fred_bucks:           "Fred's Bucks",
           billing_charge:       "Weekly Charge",
           adjustment:           "Adjustment",
         };
@@ -613,16 +614,17 @@ export default function SchoolTab() {
           card_sale:            "text-teal-400",
           cash_sale:            "text-green-400",
           zelle_venmo_pending:  "text-blue-400",
+          fred_bucks:           "text-amber-400",
           billing_charge:       "text-orange-400",
           adjustment:           "text-zinc-400",
         };
         // Only actual point-of-sale transactions count toward "Sales"
         // billing_charge = Friday collections on existing tab debt (already counted as "purchase" when sold)
         // adjustment = admin edits — not merchandise
-        const SALE_TYPES = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending"];
+        const SALE_TYPES = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "fred_bucks"];
         const salesTotal = sales.filter(t => SALE_TYPES.includes(t.type)).reduce((s, t) => s + Number(t.amount), 0);
         const billingCollected = sales.filter(t => t.type === "billing_charge").reduce((s, t) => s + Number(t.amount), 0);
-        const byType = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "billing_charge", "adjustment"].map(type => ({
+        const byType = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "fred_bucks", "billing_charge", "adjustment"].map(type => ({
           type,
           count: sales.filter(t => t.type === type).length,
           total: sales.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0),

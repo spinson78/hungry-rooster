@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("school_transactions")
       .select("id,type,amount,description,account_id,created_at")
-      .in("type", ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "billing_charge", "adjustment"])
+      .in("type", ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "fred_bucks", "billing_charge", "adjustment"])
       .order("created_at", { ascending: false });
     if (from) query = query.gte("created_at", from);
     if (to)   query = query.lte("created_at", to);
