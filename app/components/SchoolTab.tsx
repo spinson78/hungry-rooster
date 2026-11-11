@@ -616,15 +616,20 @@ export default function SchoolTab() {
           billing_charge:       "text-orange-400",
           adjustment:           "text-zinc-400",
         };
-        const salesTotal = sales.reduce((s, t) => s + Number(t.amount), 0);
+        // Only actual point-of-sale transactions count toward "Sales"
+        // billing_charge = Friday collections on existing tab debt (already counted as "purchase" when sold)
+        // adjustment = admin edits — not merchandise
+        const SALE_TYPES = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending"];
+        const salesTotal = sales.filter(t => SALE_TYPES.includes(t.type)).reduce((s, t) => s + Number(t.amount), 0);
+        const billingCollected = sales.filter(t => t.type === "billing_charge").reduce((s, t) => s + Number(t.amount), 0);
         const byType = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending", "billing_charge", "adjustment"].map(type => ({
           type,
           count: sales.filter(t => t.type === type).length,
           total: sales.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0),
         }));
-        // Group by week
+        // Group by week — only actual sales, not billing collections
         const byWeek: Record<string, { label: string; total: number; count: number }> = {};
-        sales.forEach(t => {
+        sales.filter(t => SALE_TYPES.includes(t.type)).forEach(t => {
           const d = new Date(t.created_at);
           const day = d.getDay();
           const sun = new Date(d); sun.setDate(d.getDate() - day); sun.setHours(0,0,0,0);
@@ -653,13 +658,20 @@ export default function SchoolTab() {
             {/* Summary cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Transactions</p>
-                <p className="font-black text-xl text-white">{sales.length}</p>
+                <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Items Sold</p>
+                <p className="font-black text-xl text-white">{sales.filter(t => SALE_TYPES.includes(t.type)).length}</p>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                 <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Total Sales</p>
                 <p className="font-black text-xl text-yellow-400">${salesTotal.toFixed(2)}</p>
               </div>
+              {billingCollected > 0 && (
+                <div className="bg-zinc-900 border border-orange-500/20 rounded-xl p-4">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Tab Collected</p>
+                  <p className="font-black text-xl text-orange-400">${billingCollected.toFixed(2)}</p>
+                  <p className="text-zinc-600 text-xs">Friday billing runs</p>
+                </div>
+              )}
               {byType.filter(t => t.count > 0).map(t => (
                 <div key={t.type} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                   <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">{SALE_LABEL[t.type]}</p>

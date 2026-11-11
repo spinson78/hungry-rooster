@@ -382,7 +382,11 @@ export default function ReportsTab() {
           return true;
         });
 
-        const coopTotal = coopFiltered.reduce((sum, s) => sum + Number(s.amount), 0);
+        // Only actual point-of-sale transactions count as "sales"
+        // billing_charge = Friday collections on tab debt already counted at time of purchase
+        const COOP_SALE_TYPES = ["purchase", "auto_charge_purchase", "card_sale", "cash_sale", "zelle_venmo_pending"];
+        const coopTotal = coopFiltered.filter(s => COOP_SALE_TYPES.includes(s.type)).reduce((sum, s) => sum + Number(s.amount), 0);
+        const coopBillingCollected = coopFiltered.filter(s => s.type === "billing_charge").reduce((sum, s) => sum + Number(s.amount), 0);
         const coopByType = [
           { key: "purchase",             label: "Account Tab"  },
           { key: "auto_charge_purchase", label: "Auto Charge"  },
@@ -397,8 +401,9 @@ export default function ReportsTab() {
           total: coopFiltered.filter(s => s.type === t.key).reduce((sum, s) => sum + Number(s.amount), 0),
         })).filter(t => t.count > 0);
 
+        // Weekly breakdown uses only actual sales, not billing collections
         const coopByWeek: Record<string, { label: string; total: number; count: number }> = {};
-        coopFiltered.forEach(s => {
+        coopFiltered.filter(s => COOP_SALE_TYPES.includes(s.type)).forEach(s => {
           const d = new Date(s.created_at);
           const sun = new Date(d); sun.setDate(d.getDate() - d.getDay()); sun.setHours(0,0,0,0);
           const key = sun.toISOString().split("T")[0];
@@ -425,13 +430,20 @@ export default function ReportsTab() {
             {/* Coop summary cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">Transactions</p>
-                <p className="text-2xl font-black text-white">{coopFiltered.length}</p>
+                <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">Items Sold</p>
+                <p className="text-2xl font-black text-white">{coopFiltered.filter(s => COOP_SALE_TYPES.includes(s.type)).length}</p>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
                 <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">Total Sales</p>
                 <p className="text-2xl font-black text-yellow-400">{fmt(coopTotal)}</p>
               </div>
+              {coopBillingCollected > 0 && (
+                <div className="bg-zinc-900 border border-orange-500/20 rounded-2xl p-5">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">Tab Collected</p>
+                  <p className="text-2xl font-black text-orange-400">{fmt(coopBillingCollected)}</p>
+                  <p className="text-zinc-600 text-xs">Friday billing runs</p>
+                </div>
+              )}
               {coopByType.map(t => (
                 <div key={t.key} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
                   <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">{t.label}</p>
