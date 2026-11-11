@@ -35,11 +35,11 @@ function isWeeklyOrderClosed(): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, phone, order_type, package: pkg, babka_flavor, is_installment, quantity: rawQty } = await req.json();
-  if (!name || !phone || !order_type || !pkg) {
+  const { name, phone, order_type, package: pkg, babka_flavor, is_installment, quantity: rawQty,
+          challah_qty: rawChallahQty, babka_qty: rawBabkaQty } = await req.json();
+  if (!name || !phone || !order_type) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
-  const quantity = order_type === "weekly" ? Math.min(10, Math.max(1, parseInt(rawQty) || 1)) : 1;
 
   // Block weekly orders after Wednesday 11 PM through Friday noon (America/Chicago)
   if (order_type === "weekly" && isWeeklyOrderClosed()) {
@@ -47,6 +47,52 @@ export async function POST(req: NextRequest) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
+
+  // ── Weekly combined order (challah + babka in one checkout) ─────────────
+  if (order_type === "weekly" && (rawChallahQty !== undefined || rawBabkaQty !== undefined)) {
+    const challahQty = Math.min(10, Math.max(0, parseInt(rawChallahQty) || 0));
+    const babkaQty   = Math.min(10, Math.max(0, parseInt(rawBabkaQty)   || 0));
+    if (challahQty === 0 && babkaQty === 0) {
+      return NextResponse.json({ error: "Please add at least one item." }, { status: 400 });
+    }
+    const flavorNote = babka_flavor ? ` (${babka_flavor})` : "";
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    if (challahQty > 0) {
+      lineItems.push({
+        price_data: { currency: "usd", product_data: { name: "THE COOP · Challah" }, unit_amount: 650 },
+        quantity: challahQty,
+      });
+    }
+    if (babkaQty > 0) {
+      lineItems.push({
+        price_data: { currency: "usd", product_data: { name: `THE COOP · Babka${flavorNote}` }, unit_amount: 1800 },
+        quantity: babkaQty,
+      });
+    }
+    const customer = await stripe.customers.create({ name, phone,
+      metadata: { order_type, challah_qty: String(challahQty), babka_qty: String(babkaQty), babka_flavor: babka_flavor || "" } });
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      mode: "payment",
+      line_items: lineItems,
+      success_url: `${baseUrl}/coopchallah/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/coopchallah`,
+      metadata: {
+        name, phone, order_type,
+        package: `weekly_combined_c${challahQty}_b${babkaQty}`,
+        babka_flavor: babka_flavor || "",
+        challah_qty: String(challahQty),
+        babka_qty: String(babkaQty),
+        is_installment: "false",
+      },
+    });
+    return NextResponse.json({ url: session.url });
+  }
+
+  // ── Semester / Full Year single-package order ────────────────────────────
+  if (!pkg) return NextResponse.json({ error: "Missing package" }, { status: 400 });
+  const quantity = Math.min(10, Math.max(1, parseInt(rawQty) || 1));
+
   const label = PACKAGE_LABELS[pkg] || pkg;
   const flavorNote = babka_flavor ? ` (${babka_flavor} babka)` : "";
   const qtyNote = quantity > 1 ? ` × ${quantity}` : "";
@@ -74,8 +120,6 @@ export async function POST(req: NextRequest) {
       sessionDescription = `${productName} — Installment 1 of 4`;
     } else {
       const prices: Record<string, number> = {
-        weekly_challah: 650,
-        weekly_babka: 1800,
         s1_1challah: 7600,
         s1_2challah: 15200,
         s1_1challah_1babka: 29000,

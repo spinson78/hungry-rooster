@@ -82,26 +82,67 @@ function getNextFriday(): string {
 export default function CoopChallahPage() {
   const [incentiveOpen, setIncentiveOpen] = useState(true);
   const [tab, setTab] = useState<Tab>("weekly");
+
+  // ── Weekly cart state ──────────────────────────────────────────────────
+  const [challahQty, setChallahQty] = useState(0);
+  const [babkaQty, setBabkaQty] = useState(0);
+  const weeklyTotal = challahQty * 6.50 + babkaQty * 18.00;
+
+  // ── Semester / Full Year state ─────────────────────────────────────────
   const [selected, setSelected] = useState<Pkg | null>(null);
-  const [quantity, setQuantity] = useState(1);
   const [paymentModal, setPaymentModal] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
+
   const [form, setForm] = useState({ name: "", phone: "", babka_flavor: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
+  const switchTab = (t: Tab) => {
+    setTab(t);
+    setSelected(null);
+    setChallahQty(0);
+    setBabkaQty(0);
+    setError("");
+  };
+
   const selectPackage = (pkg: Pkg) => {
     setSelected(pkg);
-    setQuantity(1);
     setIsInstallment(false);
     setError("");
-    if (pkg.installmentEligible) {
-      setPaymentModal(true);
+    if (pkg.installmentEligible) setPaymentModal(true);
+  };
+
+  // Weekly combined submit
+  const handleWeeklySubmit = async () => {
+    if (challahQty === 0 && babkaQty === 0) { setError("Please add at least one item."); return; }
+    if (!form.name || !form.phone) { setError("Please enter your name and phone number."); return; }
+    if (babkaQty > 0 && !form.babka_flavor) { setError("Please choose a babka flavor."); return; }
+    setError("");
+    setSubmitting(true);
+    const res = await fetch("/api/coopchallah/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name,
+        phone: form.phone,
+        order_type: "weekly",
+        challah_qty: challahQty,
+        babka_qty: babkaQty,
+        babka_flavor: babkaQty > 0 ? form.babka_flavor : null,
+      }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      setError(data.error || "Something went wrong. Please try again.");
+      setSubmitting(false);
     }
   };
 
+  // Semester / Full Year submit
   const handleSubmit = async (installment = false) => {
     if (!selected) return;
     if (!form.name || !form.phone) { setError("Please enter your name and phone number."); return; }
@@ -118,7 +159,7 @@ export default function CoopChallahPage() {
         package: selected.id,
         babka_flavor: selected.hasBabka ? form.babka_flavor : null,
         is_installment: installment,
-        quantity: tab === "weekly" ? quantity : 1,
+        quantity: 1,
       }),
     });
     const data = await res.json();
@@ -187,7 +228,7 @@ export default function CoopChallahPage() {
       {/* ── Tab bar ─────────────────────────────────────────────────────── */}
       <div className="px-6 py-4 flex gap-2 overflow-x-auto border-b border-zinc-900">
         {tabs.map(t => (
-          <button key={t.v} onClick={() => { setTab(t.v); setSelected(null); }}
+          <button key={t.v} onClick={() => switchTab(t.v)}
             className={`px-5 py-2.5 rounded-full text-sm font-black whitespace-nowrap flex-shrink-0 transition-colors ${
               tab === t.v ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 border border-zinc-800 hover:border-zinc-600"
             } ${t.v === "fullyear" ? "ring-1 ring-yellow-400/30" : ""}`}>
@@ -203,70 +244,170 @@ export default function CoopChallahPage() {
         </div>
       </div>
 
-      {/* ── Package cards ───────────────────────────────────────────────── */}
-      <div className="px-6 py-6">
-        {isClosed(tab) ? (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-3">📅</p>
-            <p className="text-zinc-500 font-bold">Registration is closed for this period.</p>
-            <p className="text-zinc-700 text-sm mt-1">Check back when the next enrollment opens.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-            {PACKAGES[tab].map(pkg => (
-              <button key={pkg.id} onClick={() => selectPackage(pkg)}
-                className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
-                  selected?.id === pkg.id
-                    ? "border-yellow-400 bg-yellow-400/10"
-                    : "border-zinc-800 bg-zinc-950 hover:border-zinc-600"
-                }`}>
-                {pkg.badge && (
-                  <span className="absolute top-3 right-3 bg-yellow-400 text-black text-xs font-black px-2.5 py-1 rounded-full">
-                    {pkg.badge}
-                  </span>
-                )}
-                {pkg.installmentEligible && (
-                  <span className="absolute bottom-3 right-3 text-teal-400 text-xs font-black">4 installments available</span>
-                )}
-                <p className="font-black text-lg mb-1 pr-16">{pkg.label}</p>
-                <p className="text-zinc-500 text-xs mb-3">{pkg.detail}</p>
-                <p className="text-yellow-400 font-black text-2xl">${pkg.price.toFixed(2)}</p>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ── Weekly Cart ─────────────────────────────────────────────────── */}
+      {tab === "weekly" && (
+        <div className="px-6 py-6 pb-12">
+          {isClosed("weekly") ? (
+            <div className="text-center py-16">
+              <p className="text-4xl mb-3">📅</p>
+              <p className="text-zinc-500 font-bold">Weekly orders are closed right now.</p>
+              <p className="text-zinc-700 text-sm mt-1">Ordering reopens Friday at noon. Cutoff is Wednesday at 11 PM.</p>
+            </div>
+          ) : (
+            <div className="max-w-md mx-auto">
+              {/* Challah row */}
+              <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 mb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-black text-lg">🍞 Challah</p>
+                    <p className="text-zinc-500 text-xs">Fresh for this Friday · $6.50 each</p>
+                  </div>
+                  <p className="text-yellow-400 font-black text-lg">${(challahQty * 6.50).toFixed(2)}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setChallahQty(q => Math.max(0, q - 1))}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                    disabled={challahQty <= 0}>−</button>
+                  <span className="text-2xl font-black w-8 text-center">{challahQty}</span>
+                  <button onClick={() => setChallahQty(q => Math.min(10, q + 1))}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                    disabled={challahQty >= 10}>+</button>
+                </div>
+              </div>
 
-      {/* ── Order form ──────────────────────────────────────────────────── */}
-      {selected && !isClosed(tab) && !paymentModal && (
+              {/* Babka row */}
+              <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 mb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-black text-lg">🌀 Babka</p>
+                    <p className="text-zinc-500 text-xs">Cinnamon or chocolate · $18.00 each</p>
+                  </div>
+                  <p className="text-yellow-400 font-black text-lg">${(babkaQty * 18.00).toFixed(2)}</p>
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <button onClick={() => setBabkaQty(q => Math.max(0, q - 1))}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                    disabled={babkaQty <= 0}>−</button>
+                  <span className="text-2xl font-black w-8 text-center">{babkaQty}</span>
+                  <button onClick={() => setBabkaQty(q => Math.min(10, q + 1))}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                    disabled={babkaQty >= 10}>+</button>
+                </div>
+                {babkaQty > 0 && (
+                  <div>
+                    <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Babka Flavor</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["cinnamon", "chocolate"].map(f => (
+                        <button key={f} onClick={() => set("babka_flavor", f)}
+                          className={`py-2.5 rounded-xl border-2 font-black text-sm capitalize transition-colors ${
+                            form.babka_flavor === f ? "border-yellow-400 bg-yellow-400/10 text-yellow-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                          }`}>
+                          {f === "cinnamon" ? "🤎 Cinnamon" : "🍫 Chocolate"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Order form + total */}
+              {(challahQty > 0 || babkaQty > 0) && (
+                <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
+                  {/* Order summary */}
+                  <div className="border-b border-zinc-800 pb-4 mb-4 space-y-1">
+                    {challahQty > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Challah × {challahQty}</span>
+                        <span className="font-bold">${(challahQty * 6.50).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {babkaQty > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-400">Babka × {babkaQty}{form.babka_flavor ? ` (${form.babka_flavor})` : ""}</span>
+                        <span className="font-bold">${(babkaQty * 18.00).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-black pt-1">
+                      <span>Total</span>
+                      <span className="text-yellow-400">${weeklyTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Your Name *</label>
+                    <input type="text" value={form.name} onChange={e => set("name", e.target.value)}
+                      placeholder="Parent name"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                  </div>
+                  <div className="mb-5">
+                    <label className="text-xs text-zinc-400 uppercase tracking-widest mb-1 block">Phone Number *</label>
+                    <input type="tel" value={form.phone} onChange={e => set("phone", e.target.value)}
+                      placeholder="(214) 555-0100"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-400 text-sm" />
+                  </div>
+
+                  {error && <p className="text-red-400 text-sm mb-4 font-bold">{error}</p>}
+
+                  <button onClick={handleWeeklySubmit} disabled={submitting}
+                    className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black py-4 rounded-full text-base transition-colors">
+                    {submitting ? "Redirecting…" : `Pay $${weeklyTotal.toFixed(2)} →`}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Package cards (Semester / Full Year) ────────────────────────── */}
+      {tab !== "weekly" && (
+        <div className="px-6 py-6">
+          {isClosed(tab) ? (
+            <div className="text-center py-16">
+              <p className="text-4xl mb-3">📅</p>
+              <p className="text-zinc-500 font-bold">Registration is closed for this period.</p>
+              <p className="text-zinc-700 text-sm mt-1">Check back when the next enrollment opens.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              {PACKAGES[tab].map(pkg => (
+                <button key={pkg.id} onClick={() => selectPackage(pkg)}
+                  className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
+                    selected?.id === pkg.id
+                      ? "border-yellow-400 bg-yellow-400/10"
+                      : "border-zinc-800 bg-zinc-950 hover:border-zinc-600"
+                  }`}>
+                  {pkg.badge && (
+                    <span className="absolute top-3 right-3 bg-yellow-400 text-black text-xs font-black px-2.5 py-1 rounded-full">
+                      {pkg.badge}
+                    </span>
+                  )}
+                  {pkg.installmentEligible && (
+                    <span className="absolute bottom-3 right-3 text-teal-400 text-xs font-black">4 installments available</span>
+                  )}
+                  <p className="font-black text-lg mb-1 pr-16">{pkg.label}</p>
+                  <p className="text-zinc-500 text-xs mb-3">{pkg.detail}</p>
+                  <p className="text-yellow-400 font-black text-2xl">${pkg.price.toFixed(2)}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Order form (Semester / Full Year) ───────────────────────────── */}
+      {tab !== "weekly" && selected && !isClosed(tab) && !paymentModal && (
         <div className="px-6 pb-12">
           <div className="max-w-md mx-auto bg-zinc-950 border border-zinc-800 rounded-3xl p-6">
             <h3 className="font-black text-lg mb-1">Your Order</h3>
             <p className="text-zinc-500 text-sm mb-5">
-              {selected.label}{tab === "weekly" && quantity > 1 ? ` × ${quantity}` : ""} — <span className="text-yellow-400 font-black">${(selected.price * (tab === "weekly" ? quantity : 1)).toFixed(2)}</span>
+              {selected.label} — <span className="text-yellow-400 font-black">${selected.price.toFixed(2)}</span>
             </p>
-
-            {/* Quantity selector — weekly only */}
-            {tab === "weekly" && (
-              <div className="mb-4">
-                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Quantity</label>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
-                    disabled={quantity <= 1}>−</button>
-                  <span className="text-2xl font-black w-8 text-center">{quantity}</span>
-                  <button onClick={() => setQuantity(q => Math.min(10, q + 1))}
-                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
-                    disabled={quantity >= 10}>+</button>
-                  <span className="text-zinc-500 text-sm ml-1">= <span className="text-yellow-400 font-black">${(selected.price * quantity).toFixed(2)}</span></span>
-                </div>
-              </div>
-            )}
 
             {/* Babka flavor */}
             {selected.hasBabka && (
               <div className="mb-4">
-                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Babka Flavor{tab !== "weekly" ? " (for entire subscription)" : ""}</label>
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Babka Flavor (for entire subscription)</label>
                 <div className="grid grid-cols-2 gap-3">
                   {["cinnamon", "chocolate"].map(f => (
                     <button key={f} onClick={() => set("babka_flavor", f)}
@@ -300,7 +441,7 @@ export default function CoopChallahPage() {
 
             <button onClick={() => handleSubmit(false)} disabled={submitting}
               className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black py-4 rounded-full text-base transition-colors">
-              {submitting ? "Redirecting…" : `Pay $${(selected.price * (tab === "weekly" ? quantity : 1)).toFixed(2)} →`}
+              {submitting ? "Redirecting…" : `Pay $${selected.price.toFixed(2)} →`}
             </button>
             <button onClick={() => setSelected(null)} className="w-full text-zinc-600 hover:text-white text-sm py-2 mt-2 transition-colors font-bold">
               ← Change selection
