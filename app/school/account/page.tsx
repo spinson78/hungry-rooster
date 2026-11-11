@@ -17,6 +17,32 @@ export default function ParentPortalPage() {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // PIN reset flow
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetErr, setResetErr] = useState("");
+
+  const requestReset = async () => {
+    if (!resetEmail) { setResetErr("Please enter your email address."); return; }
+    setResetLoading(true);
+    setResetErr("");
+    setResetMsg("");
+    const res = await fetch("/api/school/reset-pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: resetEmail }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setResetMsg("Done! Check your email for the new Account ID.");
+    } else {
+      setResetErr(data.error || "Something went wrong. Please try again.");
+    }
+    setResetLoading(false);
+  };
   const [account, setAccount] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -129,6 +155,39 @@ export default function ParentPortalPage() {
           </button>
           <div className="text-center">
             <a href="/school/register" className="text-teal-400 text-sm hover:underline">Don&apos;t have an account yet? Register →</a>
+          </div>
+
+          {/* Forgot Account ID */}
+          <div className="mt-6 border-t border-zinc-800 pt-6">
+            {!showReset ? (
+              <button onClick={() => setShowReset(true)} className="w-full text-zinc-500 hover:text-zinc-300 text-sm transition-colors">
+                Forgot your Account ID? →
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-zinc-400 text-sm text-center font-bold">Reset Account ID</p>
+                <p className="text-zinc-500 text-xs text-center">Enter your email and we&apos;ll send a new ID. Your account must have a $0 balance, and resets are limited to 2 total.</p>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={e => setResetEmail(e.target.value)}
+                  placeholder="Your email address"
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400"
+                />
+                {resetErr && <p className="text-red-400 text-xs">{resetErr}</p>}
+                {resetMsg && <p className="text-green-400 text-xs font-bold">{resetMsg}</p>}
+                {!resetMsg && (
+                  <button onClick={requestReset} disabled={resetLoading}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white font-black py-3 rounded-full text-sm transition-colors">
+                    {resetLoading ? "Sending…" : "Send New Account ID →"}
+                  </button>
+                )}
+                <button onClick={() => { setShowReset(false); setResetEmail(""); setResetErr(""); setResetMsg(""); }}
+                  className="w-full text-zinc-600 text-xs py-1">
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

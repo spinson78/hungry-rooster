@@ -75,6 +75,88 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
+  // ── Reset Student PIN ─────────────────────────────────────────────────
+  if (action === "reset_pin") {
+    const { account_id } = body;
+    if (!account_id) return NextResponse.json({ error: "account_id required" }, { status: 400 });
+
+    const { data: acct } = await supabase
+      .from("school_accounts")
+      .select("student_name, parent_name, parent_email, balance, pin_reset_count, student_pin")
+      .eq("id", account_id)
+      .single();
+
+    if (!acct) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+
+    if (Number(acct.balance) > 0) {
+      return NextResponse.json({
+        error: `Cannot reset PIN — account has an outstanding balance of $${Number(acct.balance).toFixed(2)}. Balance must be $0.00 first.`,
+      }, { status: 403 });
+    }
+
+    const resetCount = Number(acct.pin_reset_count) || 0;
+    if (resetCount >= 2) {
+      return NextResponse.json({
+        error: "PIN reset limit reached (2 of 2 used). Contact The Hungry Rooster to resolve.",
+      }, { status: 403 });
+    }
+
+    // Generate a new unique 4-6 digit PIN
+    let newPin = "";
+    let attempts = 0;
+    while (attempts < 20) {
+      newPin = String(Math.floor(1000 + Math.random() * 9000)); // 4-digit
+      const { data: clash } = await supabase
+        .from("school_accounts")
+        .select("id")
+        .eq("student_pin", newPin)
+        .neq("id", account_id)
+        .maybeSingle();
+      if (!clash) break;
+      attempts++;
+    }
+    if (!newPin) return NextResponse.json({ error: "Could not generate unique PIN" }, { status: 500 });
+
+    await supabase.from("school_accounts").update({
+      student_pin: newPin,
+      pin_reset_count: resetCount + 1,
+    }).eq("id", account_id);
+
+    // Email parent with new PIN
+    const resetsRemaining = 1 - resetCount; // after this reset
+    if (acct.parent_email && process.env.RESEND_API_KEY) {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "THE COOP <sales@thehungryroostertx.com>",
+          to: acct.parent_email,
+          subject: `${acct.student_name}'s COOP account ID has been reset`,
+          html: `
+            <div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#0a0a0a;color:#fff;padding:28px;border-radius:12px;">
+              <h2 style="color:#e9c46a;margin:0 0 16px;">☕ Account ID Reset</h2>
+              <p>Hi ${acct.parent_name},</p>
+              <p><strong>${acct.student_name}</strong>'s COOP account ID has been reset at your request. The new ID is below — please keep it private.</p>
+              <div style="background:#1c1c1e;border:2px solid #e9c46a;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
+                <p style="color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;">New Account ID</p>
+                <p style="font-size:48px;font-weight:900;color:#e9c46a;letter-spacing:8px;margin:0;">${newPin}</p>
+              </div>
+              <p style="color:#ef4444;font-size:13px;font-weight:bold;">⚠️ Please note: account IDs can only be reset ${resetCount + 1 === 1 ? "one more time" : "no more times"} after this. Keep it private to avoid further issues.</p>
+              <p style="color:#71717a;font-size:12px;margin-top:16px;">Questions? Reply to this email. — THE COOP by The Hungry Rooster</p>
+            </div>
+          `,
+        }),
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      new_pin: newPin,
+      resets_used: resetCount + 1,
+      resets_remaining: resetsRemaining,
+    });
+  }
+
   // ── Manual Balance Adjustment ─────────────────────────────────────────
   if (action === "adjust") {
     const { account_id, amount, description } = body;
