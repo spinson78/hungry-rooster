@@ -35,10 +35,11 @@ function isWeeklyOrderClosed(): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, phone, order_type, package: pkg, babka_flavor, is_installment } = await req.json();
+  const { name, phone, order_type, package: pkg, babka_flavor, is_installment, quantity: rawQty } = await req.json();
   if (!name || !phone || !order_type || !pkg) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+  const quantity = order_type === "weekly" ? Math.min(10, Math.max(1, parseInt(rawQty) || 1)) : 1;
 
   // Block weekly orders after Wednesday 11 PM through Friday noon (America/Chicago)
   if (order_type === "weekly" && isWeeklyOrderClosed()) {
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.thehungryroostertx.com";
   const label = PACKAGE_LABELS[pkg] || pkg;
   const flavorNote = babka_flavor ? ` (${babka_flavor} babka)` : "";
-  const productName = `THE COOP · ${label}${flavorNote}`;
+  const qtyNote = quantity > 1 ? ` × ${quantity}` : "";
+  const productName = `THE COOP · ${label}${flavorNote}${qtyNote}`;
 
   try {
     // Create or find Stripe customer
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
           product_data: { name: sessionDescription },
           unit_amount: amountCents,
         },
-        quantity: 1,
+        quantity,
       }],
       success_url: `${baseUrl}/coopchallah/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/coopchallah`,
@@ -112,6 +114,7 @@ export async function POST(req: NextRequest) {
         package: pkg,
         babka_flavor: babka_flavor || "",
         is_installment: is_installment ? "true" : "false",
+        quantity: String(quantity),
       },
     };
 

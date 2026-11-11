@@ -83,6 +83,7 @@ export default function CoopChallahPage() {
   const [incentiveOpen, setIncentiveOpen] = useState(true);
   const [tab, setTab] = useState<Tab>("weekly");
   const [selected, setSelected] = useState<Pkg | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [paymentModal, setPaymentModal] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", babka_flavor: "" });
@@ -93,6 +94,7 @@ export default function CoopChallahPage() {
 
   const selectPackage = (pkg: Pkg) => {
     setSelected(pkg);
+    setQuantity(1);
     setIsInstallment(false);
     setError("");
     if (pkg.installmentEligible) {
@@ -116,6 +118,7 @@ export default function CoopChallahPage() {
         package: selected.id,
         babka_flavor: selected.hasBabka ? form.babka_flavor : null,
         is_installment: installment,
+        quantity: tab === "weekly" ? quantity : 1,
       }),
     });
     const data = await res.json();
@@ -239,7 +242,26 @@ export default function CoopChallahPage() {
         <div className="px-6 pb-12">
           <div className="max-w-md mx-auto bg-zinc-950 border border-zinc-800 rounded-3xl p-6">
             <h3 className="font-black text-lg mb-1">Your Order</h3>
-            <p className="text-zinc-500 text-sm mb-5">{selected.label} — <span className="text-yellow-400 font-black">${selected.price.toFixed(2)}</span></p>
+            <p className="text-zinc-500 text-sm mb-5">
+              {selected.label}{tab === "weekly" && quantity > 1 ? ` × ${quantity}` : ""} — <span className="text-yellow-400 font-black">${(selected.price * (tab === "weekly" ? quantity : 1)).toFixed(2)}</span>
+            </p>
+
+            {/* Quantity selector — weekly only */}
+            {tab === "weekly" && (
+              <div className="mb-4">
+                <label className="text-xs text-zinc-400 uppercase tracking-widest mb-2 block">Quantity</label>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                    disabled={quantity <= 1}>−</button>
+                  <span className="text-2xl font-black w-8 text-center">{quantity}</span>
+                  <button onClick={() => setQuantity(q => Math.min(10, q + 1))}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-black text-xl flex items-center justify-center hover:bg-zinc-700 transition-colors disabled:opacity-30"
+                    disabled={quantity >= 10}>+</button>
+                  <span className="text-zinc-500 text-sm ml-1">= <span className="text-yellow-400 font-black">${(selected.price * quantity).toFixed(2)}</span></span>
+                </div>
+              </div>
+            )}
 
             {/* Babka flavor */}
             {selected.hasBabka && (
@@ -278,7 +300,7 @@ export default function CoopChallahPage() {
 
             <button onClick={() => handleSubmit(false)} disabled={submitting}
               className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-black py-4 rounded-full text-base transition-colors">
-              {submitting ? "Redirecting…" : `Pay $${selected.price.toFixed(2)} →`}
+              {submitting ? "Redirecting…" : `Pay $${(selected.price * (tab === "weekly" ? quantity : 1)).toFixed(2)} →`}
             </button>
             <button onClick={() => setSelected(null)} className="w-full text-zinc-600 hover:text-white text-sm py-2 mt-2 transition-colors font-bold">
               ← Change selection
