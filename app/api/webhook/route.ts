@@ -200,9 +200,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // ── COOP QR kiosk payments — handled by POS polling, no order record needed ─
+    // ── COOP QR kiosk payments — record as card_sale, skip dinner drop insert ───
     if (meta.source === "coop_qr_kiosk") {
-      console.log(`COOP QR kiosk session ${session.id} — skipping regular order insert`);
+      const qrAmount = (session.amount_total || 0) / 100;
+      const qrDesc = meta.description || "QR kiosk payment";
+      await supabase.from("school_transactions").insert({
+        account_id: null,
+        type: "card_sale",
+        amount: qrAmount,
+        description: `${qrDesc} [${session.id}]`,
+      });
+      console.log(`COOP QR kiosk session ${session.id} — recorded card_sale $${qrAmount}`);
       return NextResponse.json({ received: true });
     }
 
