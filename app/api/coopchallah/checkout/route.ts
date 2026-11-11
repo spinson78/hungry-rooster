@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Please add at least one item." }, { status: 400 });
     }
     const flavorNote = babka_flavor ? ` (${babka_flavor})` : "";
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [];
     if (challahQty > 0) {
       lineItems.push({
         price_data: { currency: "usd", product_data: { name: "THE COOP · Challah" }, unit_amount: 650 },
