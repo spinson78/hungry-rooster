@@ -139,10 +139,10 @@ export default function EstherPage() {
   const buildItems = () => {
     const bakery = (menu?.items ?? [])
       .filter((item) => (quantities[item.name] || 0) > 0)
-      .map((item) => ({ name: item.name, description: item.description, quantity: quantities[item.name] }));
+      .map((item) => ({ name: item.name, quantity: quantities[item.name] }));
     const addonList = SHABBAT_ADDONS
       .filter((a) => (addons[a.name] || 0) > 0)
-      .map((a) => ({ name: addonDisplayName(a.name), description: a.description, quantity: addons[a.name] }));
+      .map((a) => ({ name: addonDisplayName(a.name), quantity: addons[a.name] }));
     return [...bakery, ...addonList];
   };
 
@@ -180,8 +180,18 @@ export default function EstherPage() {
           },
         }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Something went wrong. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError("Something went wrong. Please try again.");
+        setSubmitting(false);
+      }
     } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);

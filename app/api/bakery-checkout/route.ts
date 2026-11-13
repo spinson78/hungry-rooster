@@ -49,22 +49,28 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hungry-rooster.vercel.app";
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: allLineItems,
-    mode: "payment",
-    success_url: `${baseUrl}/esther/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/esther`,
-    metadata: {
-      ...metadata,
-      subtotal:   (subtotalCents / 100).toFixed(2),
-      tax_amount: (taxCents      / 100).toFixed(2),
-      tip_amount: (tipCents      / 100).toFixed(2),
-    },
-    custom_text: {
-      submit: { message: "Your Friday Bakery order will be delivered Friday. Shabbat Shalom!" },
-    },
-  });
+  let session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: allLineItems,
+      mode: "payment",
+      success_url: `${baseUrl}/esther/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/esther`,
+      metadata: {
+        ...metadata,
+        subtotal:   (subtotalCents / 100).toFixed(2),
+        tax_amount: (taxCents      / 100).toFixed(2),
+        tip_amount: (tipCents      / 100).toFixed(2),
+      },
+      custom_text: {
+        submit: { message: "Your Friday Bakery order will be delivered Friday. Shabbat Shalom!" },
+      },
+    });
+  } catch (err) {
+    console.error("Stripe checkout session error:", err);
+    return NextResponse.json({ error: "Payment setup failed. Please try again." }, { status: 500 });
+  }
 
   return NextResponse.json({ url: session.url });
 }
