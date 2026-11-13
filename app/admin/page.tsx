@@ -281,7 +281,7 @@ export default function AdminPage() {
   const [passwordError, setPasswordError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "catering-inquiries" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school" | "challah" | "celebrations" | "operations" | "timeclock">("menus");
+  const [tab, setTab] = useState<"menus" | "dinner-orders" | "shabbat-orders" | "bakery-orders" | "catering-orders" | "catering-inquiries" | "group-orders" | "blast" | "sms" | "invoices" | "banner" | "reports" | "orders-log" | "gifts" | "reviews" | "seo" | "recover" | "school" | "challah" | "celebrations" | "thanksgiving" | "operations" | "timeclock">("menus");
   const [dinnerOrders, setDinnerOrders] = useState<Order[]>([]);
   const [shabbatOrders, setShabbatOrders] = useState<Order[]>([]);
   const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
