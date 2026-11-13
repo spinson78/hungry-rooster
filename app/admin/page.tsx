@@ -14,6 +14,7 @@ import CelebrationTab from "@/app/components/CelebrationTab";
 import OperationsTab from "@/app/components/OperationsTab";
 import TimeclockTab from "@/app/components/TimeclockTab";
 import CateringInquiriesTab from "@/app/components/CateringInquiriesTab";
+import ThanksgivingTab from "@/app/components/ThanksgivingTab";
 
 function RecoverOrderPanel() {
   const [sessionId, setSessionId] = useState("");
@@ -960,6 +961,9 @@ export default function AdminPage() {
           <button onClick={() => setTab("celebrations")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "celebrations" ? "bg-yellow-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             🎉 Celebrations
           </button>
+          <button onClick={() => setTab("thanksgiving")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "thanksgiving" ? "bg-orange-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
+            🦃 Thanksgiving
+          </button>
           <button onClick={() => setTab("operations")} className={`px-5 py-3 rounded-full font-black text-sm transition-colors ${tab === "operations" ? "bg-orange-400 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"}`}>
             ⚙️ Operations
           </button>
@@ -1525,6 +1529,7 @@ This cannot be undone.`);
         {tab === "operations" && <OperationsTab />}
         {tab === "timeclock" && <TimeclockTab />}
         {tab === "catering-inquiries" && <CateringInquiriesTab />}
+        {tab === "thanksgiving" && <ThanksgivingTab />}
 
         {/* RECOVER ORDER TAB */}
         {tab === "recover" && <RecoverOrderPanel />}

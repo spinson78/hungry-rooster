@@ -188,6 +188,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // ── Thanksgiving orders — handled by /api/thanksgiving/success ───────────
+    if (meta.order_type === "thanksgiving") {
+      console.log(`Thanksgiving session ${session.id} — skipping regular order insert`);
+      return NextResponse.json({ received: true });
+    }
+
     // ── Akiba Lunch orders — handled by /api/akiba-lunch/success ─────────────
     if (meta.student_name && meta.cart) {
       console.log(`Akiba Lunch session ${session.id} — skipping regular order insert`);
