@@ -3,6 +3,7 @@ import DinnerDropSection from "./components/DinnerDropSection";
 import NavBar from "./components/NavBar";
 import ShabbatSection from "./components/ShabbatSection";
 import ShabbatReminderPopup from "./components/ShabbatReminderPopup";
+import ThanksgivingPopup from "./components/ThanksgivingPopup";
 import JoinListSection from "./components/JoinListSection";
 
 export const metadata: Metadata = {
@@ -223,6 +224,7 @@ export default function Home() {
         </div>
       </footer>
 
+      <ThanksgivingPopup />
       <ShabbatReminderPopup />
     </main>
   );
