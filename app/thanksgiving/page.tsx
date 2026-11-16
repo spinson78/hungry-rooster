@@ -62,7 +62,13 @@ export default function ThanksgivingPage() {
       const res = await fetch("/api/thanksgiving/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, items }),
+        body: JSON.stringify({
+          customer_name: form.name,
+          customer_email: form.email,
+          customer_address: form.address,
+          special_requests: form.special_requests,
+          items,
+        }),
       });
       const data = await res.json();
       if (data.url) {
