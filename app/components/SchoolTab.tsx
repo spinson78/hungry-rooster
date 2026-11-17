@@ -136,15 +136,17 @@ export default function SchoolTab() {
   type SaleTxn = { id: string; type: string; amount: number; description: string; account_id: string | null; created_at: string };
   const [sales, setSales] = useState<SaleTxn[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
-  const [salesRange, setSalesRange] = useState<"week" | "month" | "ytd" | "all">("month");
+  const [salesRange, setSalesRange] = useState<"today" | "week" | "month" | "ytd" | "all">("today");
   const [reconciling, setReconciling] = useState(false);
   const [reconcileResult, setReconcileResult] = useState<{ missing_count: number; missing: { stripe_id: string; type: string; amount: number; description: string; created: string }[] } | null>(null);
 
-  const fetchSales = useCallback(async (rangeVal: "week" | "month" | "ytd" | "all") => {
+  const fetchSales = useCallback(async (rangeVal: "today" | "week" | "month" | "ytd" | "all") => {
     setSalesLoading(true);
     const now = new Date();
     let from = "";
-    if (rangeVal === "week") {
+    if (rangeVal === "today") {
+      const s = new Date(now); s.setHours(0,0,0,0); from = s.toISOString();
+    } else if (rangeVal === "week") {
       const s = new Date(now); s.setDate(s.getDate() - s.getDay()); s.setHours(0,0,0,0); from = s.toISOString();
     } else if (rangeVal === "month") {
       from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -631,18 +633,28 @@ export default function SchoolTab() {
           count: sales.filter(t => t.type === type).length,
           total: sales.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0),
         }));
-        // Group by week — only actual sales, not billing collections
+        // Group by day (for Today/Week) or by week (for Month/YTD/All)
+        const groupByDay = salesRange === "today" || salesRange === "week";
         const byWeek: Record<string, { label: string; total: number; count: number }> = {};
         sales.filter(t => SALE_TYPES.includes(t.type)).forEach(t => {
           const d = new Date(t.created_at);
-          const day = d.getDay();
-          const sun = new Date(d); sun.setDate(d.getDate() - day); sun.setHours(0,0,0,0);
-          const key = sun.toISOString().split("T")[0];
-          if (!byWeek[key]) {
+          let key: string;
+          let label: string;
+          if (groupByDay) {
+            // Group by calendar day (America/Chicago)
+            const opts: Intl.DateTimeFormatOptions = { timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric" };
+            key = d.toLocaleDateString("en-US", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" });
+            label = d.toLocaleDateString("en-US", opts);
+          } else {
+            // Group by week (Sun–Sat)
+            const day = d.getDay();
+            const sun = new Date(d); sun.setDate(d.getDate() - day); sun.setHours(0,0,0,0);
+            key = sun.toISOString().split("T")[0];
             const fri = new Date(sun); fri.setDate(sun.getDate() + 5);
             const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-            byWeek[key] = { label: `${sun.toLocaleDateString("en-US", opts)} – ${fri.toLocaleDateString("en-US", opts)}`, total: 0, count: 0 };
+            label = `${sun.toLocaleDateString("en-US", opts)} – ${fri.toLocaleDateString("en-US", opts)}`;
           }
+          if (!byWeek[key]) byWeek[key] = { label, total: 0, count: 0 };
           byWeek[key].total += Number(t.amount);
           byWeek[key].count++;
         });
@@ -650,7 +662,7 @@ export default function SchoolTab() {
           <div>
             {/* Range filter */}
             <div className="flex items-center gap-2 mb-6">
-              {([["week","This Week"],["month","This Month"],["ytd","YTD"],["all","All Time"]] as const).map(([v, label]) => (
+              {([["today","Today"],["week","This Week"],["month","This Month"],["ytd","YTD"],["all","All Time"]] as const).map(([v, label]) => (
                 <button key={v} onClick={() => setSalesRange(v)}
                   className={`px-4 py-2 rounded-full text-sm font-black transition-colors ${salesRange === v ? "bg-teal-500 text-black" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:text-white"}`}>
                   {label}
@@ -740,10 +752,10 @@ export default function SchoolTab() {
               ))}
             </div>
 
-            {/* Weekly breakdown */}
+            {/* Daily / Weekly breakdown */}
             {Object.keys(byWeek).length > 0 && (
               <div className="mb-6">
-                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Weekly Breakdown</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">{groupByDay ? "Daily Breakdown" : "Weekly Breakdown"}</h3>
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                   {Object.entries(byWeek).sort((a,b) => b[0].localeCompare(a[0])).map(([key, w]) => (
                     <div key={key} className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 last:border-0">
