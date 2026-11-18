@@ -26,8 +26,6 @@ async function reconcile(req: NextRequest, doWrite: boolean) {
   const hoursBack = parseInt(searchParams.get("hours") || "168");
   const since = Math.floor(Date.now() / 1000) - hoursBack * 3600;
 
-  // ── 1. Pull all COOP-related Stripe charges in the window ─────────────────
-  // These include: QR kiosk sessions (source=coop_qr_kiosk) and auto-charges (from /purchase route)
   const missing: Array<{
     stripe_id: string;
     type: "qr_kiosk" | "auto_charge";
@@ -36,81 +34,107 @@ async function reconcile(req: NextRequest, doWrite: boolean) {
     created: string;
   }> = [];
 
-  // QR kiosk → checkout sessions
-  const sessions = await stripe.checkout.sessions.list({ limit: 100, created: { gte: since } });
-  for (const s of sessions.data) {
-    if (s.metadata?.source !== "coop_qr_kiosk") continue;
-    if (s.payment_status !== "paid") continue;
-    const amount = (s.amount_total || 0) / 100;
-    const description = s.metadata?.description || "QR kiosk payment";
+  // ── QR kiosk: paginate through ALL checkout sessions in the window ────────
+  let sessionCursor: string | undefined = undefined;
+  while (true) {
+    const sessionPage = await stripe.checkout.sessions.list({
+      limit: 100,
+      created: { gte: since },
+      ...(sessionCursor ? { starting_after: sessionCursor } : {}),
+    });
 
-    // Check if already in school_transactions (match on session ID in description)
-    const { data: existing } = await supabase
-      .from("school_transactions")
-      .select("id")
-      .like("description", `%[${s.id}]%`)
-      .maybeSingle();
+    for (const s of sessionPage.data) {
+      if (s.metadata?.source !== "coop_qr_kiosk") continue;
+      if (s.payment_status !== "paid") continue;
 
-    if (!existing) {
-      missing.push({ stripe_id: s.id, type: "qr_kiosk", amount, description, created: new Date(s.created * 1000).toISOString() });
+      const amount = (s.amount_total || 0) / 100;
+      const description = s.metadata?.description || "QR kiosk payment";
 
-      if (doWrite) {
-        await supabase.from("school_transactions").insert({
-          account_id: null,
-          type: "card_sale",
+      const { data: existing } = await supabase
+        .from("school_transactions")
+        .select("id")
+        .like("description", `%[${s.id}]%`)
+        .maybeSingle();
+
+      if (!existing) {
+        missing.push({
+          stripe_id: s.id,
+          type: "qr_kiosk",
           amount,
-          description: `${description} [${s.id}] [backfilled]`,
-          created_at: new Date(s.created * 1000).toISOString(),
+          description,
+          created: new Date(s.created * 1000).toISOString(),
         });
+
+        if (doWrite) {
+          const { error: err } = await supabase.from("school_transactions").insert({
+            account_id: null,
+            type: "card_sale",
+            amount,
+            description: `${description} [${s.id}] [backfilled]`,
+          });
+          if (err) console.error("Reconcile QR insert error:", err.message, s.id);
+        }
       }
     }
+
+    if (!sessionPage.has_more) break;
+    sessionCursor = sessionPage.data[sessionPage.data.length - 1].id;
   }
 
-  // Auto-charges → payment intents with COOP description
-  const intents = await stripe.paymentIntents.list({ limit: 100, created: { gte: since } });
-  for (const pi of intents.data) {
-    // Only COOP auto-charges — they have a description starting with "COOP —"
-    if (!pi.description?.startsWith("COOP —")) continue;
-    if (pi.status !== "succeeded") continue;
-    const amount = (pi.amount || 0) / 100;
+  // ── Auto-charges: paginate through ALL payment intents in the window ──────
+  let intentCursor: string | undefined = undefined;
+  while (true) {
+    const intentPage = await stripe.paymentIntents.list({
+      limit: 100,
+      created: { gte: since },
+      ...(intentCursor ? { starting_after: intentCursor } : {}),
+    });
 
-    // Check if already in school_transactions (match on payment intent ID)
-    const { data: existing } = await supabase
-      .from("school_transactions")
-      .select("id")
-      .like("description", `%[auto-charged ${pi.id}]%`)
-      .maybeSingle();
+    for (const pi of intentPage.data) {
+      if (!pi.description?.startsWith("COOP —")) continue;
+      if (pi.status !== "succeeded") continue;
 
-    if (!existing) {
-      // Try to find the account by stripe_customer_id
-      let accountId: string | null = null;
-      if (pi.customer) {
-        const { data: acct } = await supabase
-          .from("school_accounts")
-          .select("id")
-          .eq("stripe_customer_id", pi.customer)
-          .maybeSingle();
-        accountId = acct?.id ?? null;
-      }
+      const amount = (pi.amount || 0) / 100;
 
-      missing.push({
-        stripe_id: pi.id,
-        type: "auto_charge",
-        amount,
-        description: pi.description || "Auto-charge",
-        created: new Date(pi.created * 1000).toISOString(),
-      });
+      const { data: existing } = await supabase
+        .from("school_transactions")
+        .select("id")
+        .like("description", `%[auto-charged ${pi.id}]%`)
+        .maybeSingle();
 
-      if (doWrite) {
-        await supabase.from("school_transactions").insert({
-          account_id: accountId,
-          type: "auto_charge_purchase",
+      if (!existing) {
+        let accountId: string | null = null;
+        if (pi.customer) {
+          const { data: acct } = await supabase
+            .from("school_accounts")
+            .select("id")
+            .eq("stripe_customer_id", pi.customer)
+            .maybeSingle();
+          accountId = acct?.id ?? null;
+        }
+
+        missing.push({
+          stripe_id: pi.id,
+          type: "auto_charge",
           amount,
-          description: `${pi.description} [auto-charged ${pi.id}] [backfilled]`,
-          created_at: new Date(pi.created * 1000).toISOString(),
+          description: pi.description || "Auto-charge",
+          created: new Date(pi.created * 1000).toISOString(),
         });
+
+        if (doWrite) {
+          const { error: err } = await supabase.from("school_transactions").insert({
+            account_id: accountId,
+            type: "auto_charge_purchase",
+            amount,
+            description: `${pi.description} [auto-charged ${pi.id}] [backfilled]`,
+          });
+          if (err) console.error("Reconcile auto-charge insert error:", err.message, pi.id);
+        }
       }
     }
+
+    if (!intentPage.has_more) break;
+    intentCursor = intentPage.data[intentPage.data.length - 1].id;
   }
 
   return NextResponse.json({
