@@ -21,9 +21,9 @@ async function reconcile(req: NextRequest, doWrite: boolean) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // How far back to look (default: 2 days)
+  // How far back to look (default: 7 days)
   const { searchParams } = new URL(req.url);
-  const hoursBack = parseInt(searchParams.get("hours") || "48");
+  const hoursBack = parseInt(searchParams.get("hours") || "168");
   const since = Math.floor(Date.now() / 1000) - hoursBack * 3600;
 
   // ── 1. Pull all COOP-related Stripe charges in the window ─────────────────
@@ -60,6 +60,7 @@ async function reconcile(req: NextRequest, doWrite: boolean) {
           type: "card_sale",
           amount,
           description: `${description} [${s.id}] [backfilled]`,
+          created_at: new Date(s.created * 1000).toISOString(),
         });
       }
     }
@@ -106,6 +107,7 @@ async function reconcile(req: NextRequest, doWrite: boolean) {
           type: "auto_charge_purchase",
           amount,
           description: `${pi.description} [auto-charged ${pi.id}] [backfilled]`,
+          created_at: new Date(pi.created * 1000).toISOString(),
         });
       }
     }

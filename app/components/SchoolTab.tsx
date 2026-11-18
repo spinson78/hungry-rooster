@@ -673,7 +673,7 @@ export default function SchoolTab() {
                 onClick={async () => {
                   setReconciling(true);
                   setReconcileResult(null);
-                  const r = await fetch("/api/school/admin/reconcile?hours=48");
+                  const r = await fetch("/api/school/admin/reconcile?hours=168");
                   const d = await r.json();
                   setReconcileResult(d);
                   setReconciling(false);
@@ -692,13 +692,13 @@ export default function SchoolTab() {
                   <p className="font-black text-amber-400 text-sm">
                     {reconcileResult.missing_count === 0
                       ? "✓ All Stripe charges are recorded — nothing missing"
-                      : `⚠️ ${reconcileResult.missing_count} Stripe charge${reconcileResult.missing_count !== 1 ? "s" : ""} not in sales log`}
+                      : `⚠️ ${reconcileResult.missing_count} Stripe charge${reconcileResult.missing_count !== 1 ? "s" : ""} missing from sales log — click Backfill to add them`}
                   </p>
                   {reconcileResult.missing_count > 0 && (
                     <button
                       onClick={async () => {
                         setReconciling(true);
-                        await fetch("/api/school/admin/reconcile?hours=48", { method: "POST" });
+                        await fetch("/api/school/admin/reconcile?hours=168", { method: "POST" });
                         setReconcileResult(null);
                         setReconciling(false);
                         fetchSales(salesRange);

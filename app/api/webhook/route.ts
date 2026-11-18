@@ -210,13 +210,30 @@ export async function POST(req: NextRequest) {
     if (meta.source === "coop_qr_kiosk") {
       const qrAmount = (session.amount_total || 0) / 100;
       const qrDesc = meta.description || "QR kiosk payment";
-      await supabase.from("school_transactions").insert({
-        account_id: null,
-        type: "card_sale",
-        amount: qrAmount,
-        description: `${qrDesc} [${session.id}]`,
-      });
-      console.log(`COOP QR kiosk session ${session.id} — recorded card_sale $${qrAmount}`);
+
+      // Idempotency: check school_transactions directly — do NOT rely solely on processed_sessions
+      // because if the handler timed out after marking processed but before inserting, the
+      // transaction is permanently lost on retry. Check the actual record instead.
+      const { data: existingQr } = await supabase
+        .from("school_transactions")
+        .select("id")
+        .like("description", `%[${session.id}]%`)
+        .maybeSingle();
+
+      if (!existingQr) {
+        await supabase.from("school_transactions").insert({
+          account_id: null,
+          type: "card_sale",
+          amount: qrAmount,
+          description: `${qrDesc} [${session.id}]`,
+        });
+        console.log(`COOP QR kiosk session ${session.id} — recorded card_sale $${qrAmount}`);
+      } else {
+        console.log(`COOP QR kiosk session ${session.id} — already recorded, skipping`);
+      }
+
+      // Mark processed after the insert succeeds
+      await supabase.from("processed_sessions").insert({ stripe_session_id: session.id, order_type: "coop_qr_kiosk" }).then(() => {});
       return NextResponse.json({ received: true });
     }
 
