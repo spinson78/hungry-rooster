@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const MENU_ITEMS = [
   "Dinner Rolls (1 dozen)",
@@ -34,7 +34,6 @@ export default function ThanksgivingTab() {
   const [orders, setOrders] = useState<TGOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"orders" | "manifest" | "labels">("orders");
-  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/thanksgiving/orders")
@@ -52,92 +51,11 @@ export default function ThanksgivingTab() {
     });
   });
 
-  const triggerPrint = (html: string) => {
-    if (!printRef.current) return;
-    printRef.current.innerHTML = html;
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        if (printRef.current) printRef.current.innerHTML = "";
-      }, 500);
-    }, 150);
-  };
-
-  const printLabels = () => {
-    const labelHtml = orders.map(o => {
-      const itemLines = (o.items || [])
-        .map(i => `<div>${i.qty}× ${i.name}</div>`)
-        .join("");
-      return `
-        <div class="label">
-          <div class="label-meta">#${o.order_number} · 🦃 Nov 26 Delivery</div>
-          <div class="label-name">${o.customer_name}</div>
-          <div class="label-addr">${o.customer_address}</div>
-          <div class="label-items">${itemLines}</div>
-          ${o.special_requests ? `<div class="label-note">📝 ${o.special_requests}</div>` : ""}
-          <div class="label-footer">$${Number(o.total).toFixed(2)} · ${o.customer_email}</div>
-        </div>`;
-    }).join("");
-    triggerPrint(`<div class="labels-wrap">${labelHtml}</div>`);
-  };
-
-  const printManifest = () => {
-    const orderRows = orders.map((o, idx) => {
-      const itemSummary = (o.items || []).map(i => `${i.qty}× ${i.name}`).join(", ");
-      return `<tr>
-        <td>${idx + 1}</td>
-        <td><strong>${o.customer_name}</strong></td>
-        <td style="font-size:11px;">${o.customer_address}</td>
-        <td style="font-size:11px;">${itemSummary}</td>
-        <td style="text-align:right;">$${Number(o.total).toFixed(2)}</td>
-        <td>☐</td>
-      </tr>`;
-    }).join("");
-
-    const totalsRows = MENU_ITEMS
-      .filter(name => itemTotals[name] > 0)
-      .map(name => `<tr><td>${name}</td><td style="font-weight:900;font-size:20px;">${itemTotals[name]}</td></tr>`)
-      .join("");
-
-    triggerPrint(`
-      <h1>🦃 Thanksgiving Order Manifest</h1>
-      <p style="color:#666;">Delivery: Wednesday, November 26, 2026 · ${orders.length} orders · $${totalRevenue.toFixed(2)} total</p>
-      <h2>📦 Production Sheet</h2>
-      <table style="max-width:380px;margin-bottom:28px;">
-        <tr><th>Item</th><th>Qty Needed</th></tr>
-        ${totalsRows}
-      </table>
-      <h2>🚚 Delivery Orders</h2>
-      <table>
-        <tr><th>#</th><th>Name</th><th>Address</th><th>Items</th><th>Total</th><th>✓</th></tr>
-        ${orderRows}
-      </table>
-      <p style="color:#999;font-size:11px;margin-top:20px;">Printed ${new Date().toLocaleString()}</p>
-    `);
-  };
+  const openLabels = () => window.open("/api/thanksgiving/print?type=labels", "_blank");
+  const openManifest = () => window.open("/api/thanksgiving/print?type=manifest", "_blank");
 
   return (
     <div>
-      {/* Hidden print container — rendered into this div, then window.print() is called */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #tg-print-root, #tg-print-root * { visibility: visible; }
-          #tg-print-root { position: absolute; top: 0; left: 0; width: 100%; font-family: sans-serif; }
-          .label { border: 2px solid #000; padding: 14px; margin: 10px 0; page-break-inside: avoid; max-width: 380px; }
-          .label-meta { font-size: 10px; color: #666; margin-bottom: 3px; }
-          .label-name { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
-          .label-addr { font-size: 12px; color: #333; margin-bottom: 8px; }
-          .label-items { border-top: 1px solid #ccc; padding-top: 7px; font-size: 13px; line-height: 1.6; }
-          .label-note { margin-top: 6px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 5px; }
-          .label-footer { margin-top: 6px; font-size: 10px; color: #999; }
-          table { border-collapse: collapse; width: 100%; }
-          th { text-align: left; padding: 7px 8px; background: #f5f5f5; border-bottom: 2px solid #ccc; }
-          td { padding: 5px 8px; border-bottom: 1px solid #eee; }
-        }
-        @media screen { #tg-print-root { display: none; } }
-      `}</style>
-      <div id="tg-print-root" ref={printRef} />
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div>
@@ -210,7 +128,7 @@ export default function ThanksgivingTab() {
       {view === "manifest" && !loading && (
         <div>
           <div className="flex justify-end mb-4">
-            <button onClick={printManifest}
+            <button onClick={openManifest}
               className="bg-orange-500 hover:bg-orange-400 text-black font-black px-6 py-2.5 rounded-full text-sm transition-colors">
               🖨️ Print Full Manifest
             </button>
@@ -252,7 +170,7 @@ export default function ThanksgivingTab() {
       {view === "labels" && !loading && (
         <div>
           <div className="flex justify-end mb-4">
-            <button onClick={printLabels}
+            <button onClick={openLabels}
               className="bg-orange-500 hover:bg-orange-400 text-black font-black px-6 py-2.5 rounded-full text-sm transition-colors">
               🖨️ Print All Labels
             </button>
