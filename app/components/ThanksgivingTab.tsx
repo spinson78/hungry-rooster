@@ -51,8 +51,8 @@ export default function ThanksgivingTab() {
     });
   });
 
-  const openLabels = () => window.open("/api/thanksgiving/print?type=labels", "_blank");
-  const openManifest = () => window.open("/api/thanksgiving/print?type=manifest", "_blank");
+  const openLabels = () => window.open("/admin/thanksgiving-print?type=labels", "_blank");
+  const openManifest = () => window.open("/admin/thanksgiving-print?type=manifest", "_blank");
 
   return (
     <div>
