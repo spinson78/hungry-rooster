@@ -55,8 +55,12 @@ export default function ThanksgivingTab() {
   const triggerPrint = (html: string) => {
     if (!printRef.current) return;
     printRef.current.innerHTML = html;
-    window.print();
-    printRef.current.innerHTML = "";
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        if (printRef.current) printRef.current.innerHTML = "";
+      }, 500);
+    }, 150);
   };
 
   const printLabels = () => {
@@ -117,8 +121,9 @@ export default function ThanksgivingTab() {
       {/* Hidden print container — rendered into this div, then window.print() is called */}
       <style>{`
         @media print {
-          body > *:not(#tg-print-root) { display: none !important; }
-          #tg-print-root { display: block !important; font-family: sans-serif; }
+          body * { visibility: hidden; }
+          #tg-print-root, #tg-print-root * { visibility: visible; }
+          #tg-print-root { position: absolute; top: 0; left: 0; width: 100%; font-family: sans-serif; }
           .label { border: 2px solid #000; padding: 14px; margin: 10px 0; page-break-inside: avoid; max-width: 380px; }
           .label-meta { font-size: 10px; color: #666; margin-bottom: 3px; }
           .label-name { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
