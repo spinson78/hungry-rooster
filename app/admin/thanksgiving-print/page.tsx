@@ -58,12 +58,7 @@ export default function ThanksgivingPrintPage() {
       });
   }, []);
 
-  // Auto-print once loaded
-  useEffect(() => {
-    if (!loading && orders.length > 0) {
-      setTimeout(() => window.print(), 400);
-    }
-  }, [loading, orders]);
+  // No auto-print — user clicks the button
 
   const itemTotals: Record<string, number> = {};
   MENU_ITEMS.forEach(n => { itemTotals[n] = 0; });
@@ -153,14 +148,19 @@ export default function ThanksgivingPrintPage() {
 
         /* ── Print ── */
         @media print {
+          @page { size: 4in 3in; margin: 0; }
           .no-print { display: none !important; }
           .preview { display: block; padding: 0; background: none; gap: 0; }
-          @page { margin: 0; }
-        }
-        @media print and (max-width: 4.1in) {
-          /* label printing */
-          @page { size: 4in 3in; margin: 0; }
-          .label { border: none; }
+          .label {
+            border: none;
+            width: 4in;
+            min-height: 3in;
+            max-height: 3in;
+            overflow: hidden;
+            page-break-after: always;
+            break-after: page;
+          }
+          .label:last-child { page-break-after: avoid; break-after: avoid; }
         }
       `}</style>
 
