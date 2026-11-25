@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const { data: orders } = await supabase
     .from("thanksgiving_orders")
     .select("*")
-    .eq("status", "paid")
+      .eq("status", "confirmed")
     .order("created_at", { ascending: true });
 
   const list = orders || [];

@@ -50,7 +50,7 @@ export default function ThanksgivingPrintPage() {
     supabase
       .from("thanksgiving_orders")
       .select("*")
-      .eq("status", "paid")
+      .eq("status", "confirmed")
       .order("created_at", { ascending: true })
       .then(({ data }) => {
         setOrders((data as TGOrder[]) || []);
