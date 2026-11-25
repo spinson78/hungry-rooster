@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const MENU_ITEMS = [
   "Dinner Rolls (1 dozen)",
@@ -34,6 +34,7 @@ export default function ThanksgivingTab() {
   const [orders, setOrders] = useState<TGOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"orders" | "manifest" | "labels">("orders");
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/thanksgiving/orders")
@@ -43,7 +44,6 @@ export default function ThanksgivingTab() {
 
   const totalRevenue = orders.reduce((s, o) => s + Number(o.total), 0);
 
-  // Item totals across all orders
   const itemTotals: Record<string, number> = {};
   MENU_ITEMS.forEach(name => { itemTotals[name] = 0; });
   orders.forEach(o => {
@@ -52,91 +52,87 @@ export default function ThanksgivingTab() {
     });
   });
 
+  const triggerPrint = (html: string) => {
+    if (!printRef.current) return;
+    printRef.current.innerHTML = html;
+    window.print();
+    printRef.current.innerHTML = "";
+  };
+
   const printLabels = () => {
-    const win = window.open("", "_blank");
-    if (!win) return;
     const labelHtml = orders.map(o => {
       const itemLines = (o.items || [])
-        .map(i => `<div style="font-size:13px;margin:3px 0;">${i.qty}× ${i.name}</div>`)
+        .map(i => `<div>${i.qty}× ${i.name}</div>`)
         .join("");
       return `
-        <div style="border:2px solid #000;padding:16px;margin:12px 0;page-break-inside:avoid;font-family:sans-serif;max-width:380px;">
-          <div style="font-size:11px;color:#666;margin-bottom:4px;">#${o.order_number} · Nov 26 Delivery</div>
-          <div style="font-size:18px;font-weight:900;margin-bottom:8px;">🦃 ${o.customer_name}</div>
-          <div style="font-size:12px;color:#333;margin-bottom:10px;">${o.customer_address}</div>
-          <div style="border-top:1px solid #ccc;padding-top:8px;">
-            ${itemLines}
-          </div>
-          ${o.special_requests ? `<div style="margin-top:8px;font-size:11px;color:#666;border-top:1px solid #eee;padding-top:6px;">Note: ${o.special_requests}</div>` : ""}
-          <div style="margin-top:8px;font-size:11px;color:#999;">Total: $${Number(o.total).toFixed(2)} · ${o.customer_email}</div>
+        <div class="label">
+          <div class="label-meta">#${o.order_number} · 🦃 Nov 26 Delivery</div>
+          <div class="label-name">${o.customer_name}</div>
+          <div class="label-addr">${o.customer_address}</div>
+          <div class="label-items">${itemLines}</div>
+          ${o.special_requests ? `<div class="label-note">📝 ${o.special_requests}</div>` : ""}
+          <div class="label-footer">$${Number(o.total).toFixed(2)} · ${o.customer_email}</div>
         </div>`;
     }).join("");
-
-    win.document.write(`
-      <!DOCTYPE html><html><head>
-        <title>Thanksgiving Delivery Labels</title>
-        <style>
-          body { margin: 20px; }
-          @media print { body { margin: 0; } }
-        </style>
-      </head><body>
-        <h2 style="font-family:sans-serif;margin-bottom:16px;">🦃 Thanksgiving Delivery Labels — Nov 26, 2026</h2>
-        ${labelHtml}
-        <script>window.onload=()=>window.print();</script>
-      </body></html>`);
-    win.document.close();
+    triggerPrint(`<div class="labels-wrap">${labelHtml}</div>`);
   };
 
   const printManifest = () => {
-    const win = window.open("", "_blank");
-    if (!win) return;
-
-    const orderRows = orders.map(o => {
+    const orderRows = orders.map((o, idx) => {
       const itemSummary = (o.items || []).map(i => `${i.qty}× ${i.name}`).join(", ");
       return `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${o.order_number}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${o.customer_name}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;">${o.customer_address}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px;">${itemSummary}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">$${Number(o.total).toFixed(2)}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">☐</td>
+        <td>${idx + 1}</td>
+        <td><strong>${o.customer_name}</strong></td>
+        <td style="font-size:11px;">${o.customer_address}</td>
+        <td style="font-size:11px;">${itemSummary}</td>
+        <td style="text-align:right;">$${Number(o.total).toFixed(2)}</td>
+        <td>☐</td>
       </tr>`;
     }).join("");
 
     const totalsRows = MENU_ITEMS
       .filter(name => itemTotals[name] > 0)
-      .map(name => `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${name}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;font-weight:900;font-size:18px;">${itemTotals[name]}</td>
-      </tr>`).join("");
+      .map(name => `<tr><td>${name}</td><td style="font-weight:900;font-size:20px;">${itemTotals[name]}</td></tr>`)
+      .join("");
 
-    win.document.write(`
-      <!DOCTYPE html><html><head>
-        <title>Thanksgiving Order Manifest</title>
-        <style>body{font-family:sans-serif;margin:24px;} table{border-collapse:collapse;width:100%;} th{text-align:left;padding:8px;background:#f5f5f5;border-bottom:2px solid #ccc;}</style>
-      </head><body>
-        <h1>🦃 Thanksgiving Order Manifest</h1>
-        <p style="color:#666;">Delivery: Wednesday, November 26, 2026 · ${orders.length} orders · $${totalRevenue.toFixed(2)} total</p>
-
-        <h2 style="margin-top:28px;">📦 Item Totals — Production Sheet</h2>
-        <table style="max-width:400px;margin-bottom:32px;">
-          <tr><th>Item</th><th>Total Qty Needed</th></tr>
-          ${totalsRows}
-        </table>
-
-        <h2>🚚 Delivery Orders</h2>
-        <table>
-          <tr><th>#</th><th>Name</th><th>Address</th><th>Items</th><th>Total</th><th>✓</th></tr>
-          ${orderRows}
-        </table>
-        <p style="color:#999;font-size:11px;margin-top:24px;">Printed ${new Date().toLocaleString()}</p>
-        <script>window.onload=()=>window.print();</script>
-      </body></html>`);
-    win.document.close();
+    triggerPrint(`
+      <h1>🦃 Thanksgiving Order Manifest</h1>
+      <p style="color:#666;">Delivery: Wednesday, November 26, 2026 · ${orders.length} orders · $${totalRevenue.toFixed(2)} total</p>
+      <h2>📦 Production Sheet</h2>
+      <table style="max-width:380px;margin-bottom:28px;">
+        <tr><th>Item</th><th>Qty Needed</th></tr>
+        ${totalsRows}
+      </table>
+      <h2>🚚 Delivery Orders</h2>
+      <table>
+        <tr><th>#</th><th>Name</th><th>Address</th><th>Items</th><th>Total</th><th>✓</th></tr>
+        ${orderRows}
+      </table>
+      <p style="color:#999;font-size:11px;margin-top:20px;">Printed ${new Date().toLocaleString()}</p>
+    `);
   };
 
   return (
     <div>
+      {/* Hidden print container — rendered into this div, then window.print() is called */}
+      <style>{`
+        @media print {
+          body > *:not(#tg-print-root) { display: none !important; }
+          #tg-print-root { display: block !important; font-family: sans-serif; }
+          .label { border: 2px solid #000; padding: 14px; margin: 10px 0; page-break-inside: avoid; max-width: 380px; }
+          .label-meta { font-size: 10px; color: #666; margin-bottom: 3px; }
+          .label-name { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+          .label-addr { font-size: 12px; color: #333; margin-bottom: 8px; }
+          .label-items { border-top: 1px solid #ccc; padding-top: 7px; font-size: 13px; line-height: 1.6; }
+          .label-note { margin-top: 6px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 5px; }
+          .label-footer { margin-top: 6px; font-size: 10px; color: #999; }
+          table { border-collapse: collapse; width: 100%; }
+          th { text-align: left; padding: 7px 8px; background: #f5f5f5; border-bottom: 2px solid #ccc; }
+          td { padding: 5px 8px; border-bottom: 1px solid #eee; }
+        }
+        @media screen { #tg-print-root { display: none; } }
+      `}</style>
+      <div id="tg-print-root" ref={printRef} />
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div>
